@@ -346,3 +346,17 @@ header {
   cursor: pointer;
   background-color: #3b4874
 }
+
+.approx {
+  position: relative;
+}
+
+.approx::before {
+  content: '≈';
+  position: absolute;
+  z-index: 2;
+  font-size: 26px;
+  top: 50%;
+  margin-top: -18px;
+  left: 14px;
+}

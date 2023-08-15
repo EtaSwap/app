@@ -102,12 +102,12 @@ const erc20ABI = [{
 function Swap(props) {
     const { address, isConnected, tokens: tokensMap, connect, connectionData, signer } = props;
     const tokens = [...tokensMap].map(wrap => wrap[1]);
-    const [provider, setProvider] = useState(null);
     const [oracleContracts, setOracleContracts] = useState({
         saucerSwap: null,
         pangolin: null,
     });
     const [slippage, setSlippage] = useState(2.5);
+    const [feeOnTransfer, setFeeOnTransfer] = useState(false);
     const [messageApi, contextHolder] = message.useMessage()
     const [tokenOneAmount, setTokenOneAmount] = useState(0)
     const [tokenTwoAmount, setTokenTwoAmount] = useState(0)
@@ -151,16 +151,18 @@ function Swap(props) {
         } else {
             setTokenTwoAmount(0);
         }
+        setFeeOnTransfer(false);
     }
 
     const changeAmountTwo = (e) => {
-        setTokenOneAmount(e.target.value)
+        setTokenTwoAmount(e.target.value)
         const bestPrice = convertPrice(getSortedPrices()[0].price);
         if (e.target.value && parseFloat(bestPrice) !== 0) {
             setTokenOneAmount((e.target.value / parseFloat(bestPrice)).toFixed(5))
         } else {
             setTokenOneAmount(0);
         }
+        setFeeOnTransfer(true);
     }
 
     const switchTokens = () => {
@@ -234,25 +236,17 @@ function Swap(props) {
     const fetchDex = async () => {
         const deadline = Math.floor(Date.now() / 1000) + 1000;
 
-        console.log("before swap")
-
-        console.log(connectionData);
         const allowanceTx = await new AccountAllowanceApproveTransaction()
-            .approveTokenAllowance(tokenOne.address, connectionData?.accountIds?.[0], exchange, ethers.utils.parseUnits(tokenOneAmount, tokenOne.decimals).toString())
+            .approveTokenAllowance(
+                tokenOne.address,
+                connectionData?.accountIds?.[0],
+                exchange,
+                feeOnTransfer
+                    ? ethers.utils.parseUnits(tokenOneAmount, tokenOne.decimals).mul((100+slippage)*10).div(1000).toString()
+                    : ethers.utils.parseUnits(tokenOneAmount, tokenOne.decimals).toString(),
+            )
             .freezeWithSigner(signer);
-        const allowanceSubmit = await allowanceTx.executeWithSigner(signer);
-        console.log(allowanceSubmit);
-
-        if(allowanceSubmit.success) {
-            console.log(TransactionReceipt.fromBytes(allowanceSubmit.receipt));
-        }
-
-        console.log(tokenOne.solidityAddress);
-        console.log(tokenTwo.solidityAddress);
-        console.log(ethers.utils.parseUnits(tokenOneAmount, tokenOne.decimals).toString());
-        console.log(ethers.utils.parseUnits(tokenTwoAmount, tokenTwo.decimals).mul((100-slippage)*10).div(1000).toString());
-        console.log(deadline);
-        console.log(ethers.utils.parseUnits(tokenOneAmount, tokenOne.decimals).div(100).toString());
+        await allowanceTx.executeWithSigner(signer);
 
         let swapTransaction = await new ContractExecuteTransaction()
             .setContractId(exchange)
@@ -261,20 +255,23 @@ function Swap(props) {
                 .addString("SaucerSwapV2")
                 .addAddress(tokenOne.solidityAddress)
                 .addAddress(tokenTwo.solidityAddress)
-                .addUint256(ethers.utils.parseUnits(tokenOneAmount, tokenOne.decimals).toString())
-                .addUint256(ethers.utils.parseUnits(tokenTwoAmount, tokenTwo.decimals).mul((100-slippage)*10).div(1000).toString())
+                .addUint256(
+                    feeOnTransfer
+                        ? ethers.utils.parseUnits(tokenOneAmount, tokenOne.decimals).mul((100+slippage)*10).div(1000).toString()
+                        : ethers.utils.parseUnits(tokenOneAmount, tokenOne.decimals).toString()
+                )
+                .addUint256(
+                    feeOnTransfer
+                        ? ethers.utils.parseUnits(tokenTwoAmount, tokenTwo.decimals).toString()
+                        : ethers.utils.parseUnits(tokenTwoAmount, tokenTwo.decimals).mul((100-slippage)*10).div(1000).toString()
+                )
                 .addUint256(deadline)
-                .addBool(false)
+                .addBool(feeOnTransfer)
                 .addUint256(ethers.utils.parseUnits(tokenOneAmount, tokenOne.decimals).div(100).toString())
             )
             .freezeWithSigner(signer);
 
-        let res = await swapTransaction.executeWithSigner(signer);
-        console.log(res);
-
-        if(res.success) {
-            console.log(TransactionReceipt.fromBytes(res.receipt));
-        }
+        await swapTransaction.executeWithSigner(signer);
     }
 
     useEffect(() => {
@@ -378,8 +375,12 @@ function Swap(props) {
                     </Popover>
                 </div>
                 <div className='inputs'>
-                    <Input placeholder='0' value={tokenOneAmount} onChange={changeAmountOne} disabled={isAtLeastOnePrice()} />
-                    <Input placeholder='0' value={tokenTwoAmount} onChange={changeAmountTwo} disabled={isAtLeastOnePrice()} />
+                    <div className={ feeOnTransfer ? 'approx' : '' }>
+                        <Input placeholder='0' value={tokenOneAmount} onChange={changeAmountOne} disabled={isAtLeastOnePrice()} />
+                    </div>
+                    <div className={ feeOnTransfer ? '' : 'approx' }>
+                        <Input placeholder='0' value={tokenTwoAmount} onChange={changeAmountTwo} disabled={isAtLeastOnePrice()} />
+                    </div>
                     <div className="switchButton" onClick={switchTokens}>
                         <ArrowDownOutlined className='switchArrow'/>
                     </div>

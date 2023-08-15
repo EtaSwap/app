@@ -4,7 +4,7 @@ import Logo from '../logo.svg'
 import {Link} from 'react-router-dom'
 
 const connectWallet = (connect, isConnected, connectionData, setConnectionData) => {
-  if (isConnected) {
+  if (isConnected()) {
     connect.disconnect(connectionData?.topic);
     setConnectionData(null);
   } else {
@@ -13,11 +13,11 @@ const connectWallet = (connect, isConnected, connectionData, setConnectionData) 
 }
 
 function Header(props) {
-  const {connect, connectionData, setConnectionData} = props;
+  const { connect, connectionData, setConnectionData, isConnected } = props;
   return (
     <header>
       <div className='leftH'>
-        <img src={Logo} alt='η' className='logo' />
+        <img src={Logo} alt='η' className='logo' title='EtaSwap' />
         <Link to='/' className='link'>
         <div className='headerItem'>Swap</div>  
         </Link>
@@ -34,7 +34,7 @@ function Header(props) {
           Hedera testnet
         </div>
         <div className='connectButton' key={connectionData?.accountIds?.[0]}
-        onClick={() => connectWallet(connect, connectionData, setConnectionData)}
+        onClick={() => connectWallet(connect, isConnected, connectionData, setConnectionData)}
          >{connectionData?.accountIds?.[0] || "Connect" }</div>
         </div>
     </header>
