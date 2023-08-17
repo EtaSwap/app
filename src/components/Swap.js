@@ -13,18 +13,11 @@ const oracleSettings = {
 };
 
 const oracles = {
-    saucerSwap: '0x5AFa43e1595e88401455A06aEd98F11D7b8d9FEF',
-    pangolin: '0x8900644acC7EEf318678404cfadD1A96FE660e77',
+    saucerSwap: '0xC4889ce757b1e9f608b67853A8c07A91BF012338',
+    pangolin: '0x1a168d2688848658ba3581527e399a61145168dC',
 };
 
-const exchange = '0.0.487035';
-const uniswapAdapter = '0x0000000000000000000000000000000000076e7e';
-
-//
-// const oracles = {
-//     saucerSwap: '0.0.476173',
-//     pangolin: '0.0.476174',
-// };
+const exchange = '0.0.509659';
 
 const basicOracleABI = [
     {
@@ -111,8 +104,8 @@ function Swap(props) {
     const [messageApi, contextHolder] = message.useMessage()
     const [tokenOneAmount, setTokenOneAmount] = useState(0)
     const [tokenTwoAmount, setTokenTwoAmount] = useState(0)
-    const [tokenOne, setTokenOne] = useState(tokens[0])
-    const [tokenTwo, setTokenTwo] = useState(tokens[1])
+    const [tokenOne, setTokenOne] = useState(tokens[1])
+    const [tokenTwo, setTokenTwo] = useState(tokens[7])
     const [isOpen, setIsOpen] = useState(false)
     const [checkAllRatesOpen, setCheckAllRatesOpen] = useState(false);
     const [changeToken, setChangeToken] = useState(1)
@@ -275,7 +268,7 @@ function Swap(props) {
     }
 
     useEffect(() => {
-        fetchDexSwap(tokens[0]?.solidityAddress, tokens[1]?.solidityAddress)
+        fetchDexSwap(tokens[1]?.solidityAddress, tokens[7]?.solidityAddress)
     }, [signer])
 
     useEffect(() => {
@@ -284,8 +277,8 @@ function Swap(props) {
                 saucerSwap: new ethers.Contract(oracles.saucerSwap, basicOracleABI, provider),
                 pangolin: new ethers.Contract(oracles.pangolin, basicOracleABI, provider),
             });
-            setTokenOne(tokens[0]);
-            setTokenTwo(tokens[1]);
+            setTokenOne(tokens[1]);
+            setTokenTwo(tokens[7]);
     }, [signer]);
 
     useEffect(() => {

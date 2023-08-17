@@ -11,7 +11,7 @@ import { HashConnect, HashConnectTypes } from 'hashconnect';
 import axios from 'axios';
 import { ContractId } from '@hashgraph/sdk';
 
-const hashconnect = new HashConnect(true);
+const hashconnect = new HashConnect();
 
 function App() {
   const [connectionData, setConnectionData] = useState({});
@@ -79,7 +79,6 @@ function App() {
           });
         }
       });
-      console.log([...tokenMap]);
       setTokens(tokenMap);
     });
   }, []);
