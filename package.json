@@ -22,7 +22,7 @@
   },
   "scripts": {
     "start": "react-scripts start",
-    "build": "BUILD_PATH='./docs' react-scripts build",
+    "build": "GENERATE_SOURCEMAP=false BUILD_PATH='./docs' react-scripts build",
     "test": "react-scripts test",
     "eject": "react-scripts eject"
   },
@@ -34,14 +34,14 @@
   },
   "browserslist": {
     "production": [
-      ">0.2%",
+      ">10%",
       "not dead",
       "not op_mini all"
     ],
     "development": [
-      "last 1 chrome version",
-      "last 1 firefox version",
-      "last 1 safari version"
+      "last 20 chrome version",
+      "last 20 firefox version",
+      "last 20 safari version"
     ]
   }
 }
