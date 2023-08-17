@@ -17,9 +17,6 @@ function App() {
   const [connectionData, setConnectionData] = useState({});
   const [signer, setSigner] = useState({});
   const [tokens, setTokens] = useState(new Map());
-  const {connect} = useConnect({
-    connector: new MetaMaskConnector(),
-  });
 
   const isConnected = () => {
     return !!connectionData?.accountIds?.[0];
@@ -34,6 +31,8 @@ function App() {
 
     hashconnect.pairingEvent.on((pairingData) => {
       setConnectionData(pairingData);
+      const provider = hashconnect.getProvider('testnet', pairingData?.topic, pairingData?.accountIds?.[0]);
+      setSigner(hashconnect.getSigner(provider));
     });
 
     hashconnect.init(appMetadata, "testnet", true).then((initData) => {
