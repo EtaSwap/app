@@ -1,7 +1,7 @@
 {
   "files": {
     "main.css": "/static/css/main.bb28e818.css",
-    "main.js": "/static/js/main.523f21dd.js",
+    "main.js": "/static/js/main.a763a866.js",
     "static/media/hedera-logo.png": "/static/media/hedera-logo.cf14c8a58162b037d7bc.png",
     "static/media/pangolin.png": "/static/media/pangolin.139e4bef03dbc808e4a9.png",
     "static/media/saucerswap.ico": "/static/media/saucerswap.940556ea4a58a5aa76b6.ico",
@@ -10,6 +10,6 @@
   },
   "entrypoints": [
     "static/css/main.bb28e818.css",
-    "static/js/main.523f21dd.js"
+    "static/js/main.a763a866.js"
   ]
 }

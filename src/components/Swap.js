@@ -5,19 +5,24 @@ import { useSendTransaction, useWaitForTransaction } from "wagmi"
 import { ethers } from 'ethers';
 import PangolinLogo from '../pangolin.png';
 import SaucerSwapLogo from '../saucerswap.ico';
-import { ContractExecuteTransaction, ContractFunctionParameters, TransactionReceipt, AccountAllowanceApproveTransaction } from '@hashgraph/sdk';
+import {
+    ContractExecuteTransaction,
+    ContractFunctionParameters,
+    TransactionReceipt,
+    AccountAllowanceApproveTransaction
+} from '@hashgraph/sdk';
 
 const oracleSettings = {
-    saucerSwap: { icon: SaucerSwapLogo },
-    pangolin: { icon: PangolinLogo },
+    saucerSwap: { icon: SaucerSwapLogo, aggregatorId: 'SaucerSwapV2', feePromille: 5 },
+    pangolin: { icon: PangolinLogo, aggregatorId: 'Pangolin', feePromille: 5 },
 };
 
 const oracles = {
-    saucerSwap: '0xC4889ce757b1e9f608b67853A8c07A91BF012338',
-    pangolin: '0x1a168d2688848658ba3581527e399a61145168dC',
+    saucerSwap: '0xE2Dc61bd0f550f3E4208FA0f3985743402934351',
+    pangolin: '0x2Ee639e1b3595a477A84f26453414eB2141A0238',
 };
 
-const exchange = '0.0.509659';
+const exchange = '0.0.1112771';
 
 const basicOracleABI = [
     {
@@ -64,16 +69,10 @@ const basicOracleABI = [
                 "internalType": "uint256",
                 "name": "weight",
                 "type": "uint256"
-            },
-            {
-                "internalType": "address",
-                "name": "pool",
-                "type": "address"
             }
         ],
         "stateMutability": "view",
-        "type": "function",
-        "constant": true,
+        "type": "function"
     }
 ];
 
@@ -235,7 +234,7 @@ function Swap(props) {
                 connectionData?.accountIds?.[0],
                 exchange,
                 feeOnTransfer
-                    ? ethers.utils.parseUnits(tokenOneAmount, tokenOne.decimals).mul((100+slippage)*10).div(1000).toString()
+                    ? ethers.utils.parseUnits(tokenOneAmount, tokenOne.decimals).mul(1000 + slippage * 10 + oracleSettings.saucerSwap.feePromille).div(1000).toString()
                     : ethers.utils.parseUnits(tokenOneAmount, tokenOne.decimals).toString(),
             )
             .freezeWithSigner(signer);
@@ -243,24 +242,23 @@ function Swap(props) {
 
         let swapTransaction = await new ContractExecuteTransaction()
             .setContractId(exchange)
-            .setGas(5000000)
+            .setGas(900000)
             .setFunction("swap", new ContractFunctionParameters()
                 .addString("SaucerSwapV2")
                 .addAddress(tokenOne.solidityAddress)
                 .addAddress(tokenTwo.solidityAddress)
                 .addUint256(
                     feeOnTransfer
-                        ? ethers.utils.parseUnits(tokenOneAmount, tokenOne.decimals).mul((100+slippage)*10).div(1000).toString()
+                        ? ethers.utils.parseUnits(tokenOneAmount, tokenOne.decimals).mul(1000 + slippage * 10 + oracleSettings.saucerSwap.feePromille).div(1000).toString()
                         : ethers.utils.parseUnits(tokenOneAmount, tokenOne.decimals).toString()
                 )
                 .addUint256(
                     feeOnTransfer
                         ? ethers.utils.parseUnits(tokenTwoAmount, tokenTwo.decimals).toString()
-                        : ethers.utils.parseUnits(tokenTwoAmount, tokenTwo.decimals).mul((100-slippage)*10).div(1000).toString()
+                        : ethers.utils.parseUnits(tokenTwoAmount, tokenTwo.decimals).mul(1000 - slippage * 10 - oracleSettings.saucerSwap.feePromille).div(1000).toString()
                 )
                 .addUint256(deadline)
                 .addBool(feeOnTransfer)
-                .addUint256(ethers.utils.parseUnits(tokenOneAmount, tokenOne.decimals).div(100).toString())
             )
             .freezeWithSigner(signer);
 
@@ -272,14 +270,23 @@ function Swap(props) {
     }, [signer])
 
     useEffect(() => {
-            const provider = new ethers.providers.JsonRpcProvider('https://testnet.hashio.io/api');
-            setOracleContracts({
-                saucerSwap: new ethers.Contract(oracles.saucerSwap, basicOracleABI, provider),
-                pangolin: new ethers.Contract(oracles.pangolin, basicOracleABI, provider),
-            });
-            setTokenOne(tokens[1]);
-            setTokenTwo(tokens[7]);
+        const provider = new ethers.providers.JsonRpcProvider('https://testnet.hashio.io/api');
+        setOracleContracts({
+            saucerSwap: new ethers.Contract(oracles.saucerSwap, basicOracleABI, provider),
+            pangolin: new ethers.Contract(oracles.pangolin, basicOracleABI, provider),
+        });
+        setTokenOne(tokens[1]);
+        setTokenTwo(tokens[7]);
     }, [signer]);
+
+    // useEffect(() => {
+    //     if (oracleContracts.saucerSwap) {
+    //         Promise.all(Object.keys(oracleContracts).map(name => oracleContracts[name].FeePromille()))
+    //             .then(fees => {
+    //                 fees.map((fee, i) => oracleSettings[Object.keys(oracleContracts)[i]].fee = fee);
+    //             });
+    //     }
+    // }, [oracleContracts]);
 
     useEffect(() => {
         messageApi.destroy()
@@ -322,7 +329,9 @@ function Swap(props) {
             <div>
                 <Radio.Group onChange={handleSlippage} value={slippage}>
                     <Radio.Button value={1}>1%</Radio.Button>
+                    <Radio.Button value={2}>2%</Radio.Button>
                     <Radio.Button value={2.5}>2.5%</Radio.Button>
+                    <Radio.Button value={3.5}>3.5%</Radio.Button>
                     <Radio.Button value={5}>5%</Radio.Button>
                 </Radio.Group>
             </div>
@@ -368,11 +377,13 @@ function Swap(props) {
                     </Popover>
                 </div>
                 <div className='inputs'>
-                    <div className={ feeOnTransfer ? 'approx' : '' }>
-                        <Input placeholder='0' value={tokenOneAmount} onChange={changeAmountOne} disabled={isAtLeastOnePrice()} />
+                    <div className={feeOnTransfer ? 'approx' : ''}>
+                        <Input placeholder='0' value={tokenOneAmount} onChange={changeAmountOne}
+                               disabled={isAtLeastOnePrice()}/>
                     </div>
-                    <div className={ feeOnTransfer ? '' : 'approx' }>
-                        <Input placeholder='0' value={tokenTwoAmount} onChange={changeAmountTwo} disabled={isAtLeastOnePrice()} />
+                    <div className={feeOnTransfer ? '' : 'approx'}>
+                        <Input placeholder='0' value={tokenTwoAmount} onChange={changeAmountTwo}
+                               disabled={isAtLeastOnePrice()}/>
                     </div>
                     <div className="switchButton" onClick={switchTokens}>
                         <ArrowDownOutlined className='switchArrow'/>
@@ -389,11 +400,13 @@ function Swap(props) {
                 <div className='ratesLogoWrapper'>
                     <div className='ratesLogoInner'>
                         <span className='ratesLogoTop'>Best rate: {convertPrice(getSortedPrices()?.[0]?.price)}</span>
-                        <button className='ratesLogoToggle' onClick={() => switchAllRates()}>{checkAllRatesOpen ? 'Hide all rates' : 'Check all rates'}</button>
+                        <button className='ratesLogoToggle'
+                                onClick={() => switchAllRates()}>{checkAllRatesOpen ? 'Hide all rates' : 'Check all rates'}</button>
                     </div>
-                    { checkAllRatesOpen
+                    {checkAllRatesOpen
                         ? getSortedPrices().map(({ name, price }) => <div className='ratesLogo' key={name}>
-                            <img className='ratesLogoIcon' title={name} src={oracleSettings[name].icon} alt={name}/> {convertPrice(price)}
+                            <img className='ratesLogoIcon' title={name} src={oracleSettings[name].icon}
+                                 alt={name}/> {convertPrice(price)}
                         </div>)
                         : ''
                     }
@@ -409,12 +422,3 @@ function Swap(props) {
 }
 
 export default Swap
-
-
-// 3 00000000 HBAR
-// 9 000000 SAUCE
-//
-// SAUCE/HBAR = 0.03   -> +00 null diff
-// HBAR/SAUCE = 33.33  -> -00 null diff
-//
-//
