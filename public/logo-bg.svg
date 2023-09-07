@@ -5,6 +5,13 @@
         height="440"
         version="1.0"
 >
+    <defs>
+        <linearGradient id="background" gradientTransform="rotate(50)">
+            <stop offset="28%" stop-color="#E8FFCE" />
+            <stop offset="75%" stop-color="#ACFADF" />
+        </linearGradient>
+    </defs>
+    <rect width="100%" height="100%" fill="url(#background)"/>
     <path
             d="M110,376 A190,190 0 1,1 240,410"
             fill='none'

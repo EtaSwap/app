@@ -5,15 +5,12 @@ body {
     sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  height: 100vh;
+  min-height: 100vh;
+  min-height: 100dvh;
   width: 100vw;
   background-color: rgb(25, 33, 52) !important;
-  background: rgb(25, 33, 52);
-  background: linear-gradient(
-    180deg,
-    #E8FFCE 28%,
-    #ACFADF 75%
-  );
+  background: -o-linear-gradient( 130deg, #E8FFCE 28%, #ACFADF 75% );
+  background: linear-gradient( 320deg, #E8FFCE 28%, #ACFADF 75% );
   color: #1f1d31;
 }
 
@@ -84,19 +81,29 @@ code {
 }
 
 .ant-modal {
-  border: 1px solid #363e54;
-  width: 400px !important;
+  border: 1px solid #E8FFCE;
+  width: 350px !important;
+  max-width: 100%;
   border-radius: 10px;
+  padding-bottom: 0!important;
 }
 
 .ant-modal-header {
   background-color: #0e111b !important;
 }
 
+.ant-modal-mask {
+  background: rgba(255,255,255,0.35)!important;
+}
+
 .ant-modal-title {
   color: #E8FFCE !important;
   padding-top: 17px !important;
   margin-left: 20px !important;
+}
+
+.ant-modal-body {
+  padding-bottom: 6px;
 }
 
 .ant-modal-close-icon {

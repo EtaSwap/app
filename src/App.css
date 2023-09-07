@@ -73,6 +73,13 @@ header {
   background-color: #364881;
 }
 
+.disconnectIcon {
+  width: 20px;
+  height: 20px;
+  margin-left: 4px;
+  vertical-align: top;
+}
+
 .mainWindow {
   margin-top: 40px;
   display: flex;
@@ -87,7 +94,7 @@ header {
 .tradeBox {
   width: 400px;
   background-color: #0E111B;
-  border: 2px solid #21273a;
+  border: 2px solid #ACFADF;
   min-height: 300px;
   border-radius: 15px;
   display: flex;
@@ -104,7 +111,7 @@ header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  width: 98%;
+  width: 100%;
   color: #E8FFCE;
 }
 
@@ -151,6 +158,7 @@ header {
 
 .inputs {
   position: relative;
+  width: 100%;
 }
 
 .assetOne {
@@ -265,6 +273,12 @@ header {
   color: #E8FFCE;
 }
 
+.tokenChoiceProviders img {
+  width: 16px;
+  height: 16px;
+  margin: 5px;
+}
+
 .tokenName {
   margin-left: 10px;
   font-size: 16px;
@@ -361,4 +375,29 @@ header {
   top: 50%;
   margin-top: -18px;
   left: 14px;
+}
+
+
+.networkChoice {
+  display: flex;
+  justify-content: flex-start;
+  align-items: center;
+  padding: 7px 15px;
+  margin: 0 10px;
+  border-radius: 5px;
+}
+
+.networkChoice:hover {
+  cursor: pointer;
+  background-color: #1f2639;
+  color: #E8FFCE;
+}
+
+.tokenChoice:hover .tokenTicker {
+  color: #E8FFCE;
+}
+
+.networkLogo {
+  width: 40px;
+  height: 40px;
 }

@@ -1,99 +1,167 @@
 import "./App.css";
 import React, { useState, useEffect } from 'react';
 import Header from "./components/Header";
-import {Routes, Route} from "react-router-dom";
+import { Routes, Route } from "react-router-dom";
 import Swap from "./components/Swap";
 import Tokens from "./components/Tokens";
 import Docs from "./components/Docs";
-import {useConnect, useAccount} from "wagmi"
-import {MetaMaskConnector} from "@wagmi/connectors/metaMask"
-import { HashConnect, HashConnectTypes } from 'hashconnect';
+import { HashConnect } from 'hashconnect';
 import axios from 'axios';
 import { ContractId } from '@hashgraph/sdk';
+import { ethers } from 'ethers';
+import HederaLogo from './img/hedera-logo.png';
 
 const hashconnect = new HashConnect();
 
+const appMetadata = {
+    name: "EtaSwap",
+    description: "DEX aggregator",
+    icon: "https://etaswap.com/logo.svg",
+};
+
 function App() {
-  const [connectionData, setConnectionData] = useState({});
-  const [signer, setSigner] = useState({});
-  const [tokens, setTokens] = useState(new Map());
+    const [connectionData, setConnectionData] = useState({});
+    const [signer, setSigner] = useState({});
+    const [tokens, setTokens] = useState(new Map());
+    const [network, setNetwork] = useState('testnet');
 
-  const isConnected = () => {
-    return !!connectionData?.accountIds?.[0];
-  }
-
-  useEffect(()=>{
-    let appMetadata = {
-      name: "EtaSwap",
-      description: "DEX aggregator",
-      icon: "https://etaswap.com/logo.svg",
-    };
-
-    hashconnect.pairingEvent.on((pairingData) => {
-      setConnectionData(pairingData);
-      const provider = hashconnect.getProvider('testnet', pairingData?.topic, pairingData?.accountIds?.[0]);
-      setSigner(hashconnect.getSigner(provider));
-    });
-
-    hashconnect.init(appMetadata, "testnet", true).then((initData) => {
-      setConnectionData(initData?.savedPairings?.[0]);
-      const provider = hashconnect.getProvider('testnet', initData?.topic, initData?.savedPairings?.[0]?.accountIds?.[0]);
-      setSigner(hashconnect.getSigner(provider));
-    });
-  }, []);
-
-  useEffect(() => {
-    Promise.all([
-        axios.get('https://test-api.saucerswap.finance/tokens'),
-        axios.get('https://raw.githubusercontent.com/pangolindex/tokenlists/main/pangolin.tokenlist.json'),
-    ]).then(([saucerSwapTokens, pangolinTokens]) => {
-      const tokenMap = new Map();
-      saucerSwapTokens.data.map(token => {
-        const solidityAddress = `0x${ContractId.fromString(token.id).toSolidityAddress()}`;
-        tokenMap.set(solidityAddress, {
-          name: token.name,
-          symbol: token.symbol,
-          decimals: token.decimals,
-          address: token.id,
-          solidityAddress,
-          icon: token.icon ? `https://www.saucerswap.finance/${token.icon?.replace(/^\//, '')}` : '',
-          providers: ['SaucerSwap'],
-          dueDiligenceComplete: token.dueDiligenceComplete,
-        });
-      });
-      pangolinTokens.data.tokens.filter(token => token.chainId === 296).map(token => {
-        const existing = tokenMap.get(token.address);
-        if (existing) {
-          existing.providers.push('Pangolin');
-        } else {
-          tokenMap.set(token.address, {
-            name: token.name,
-            symbol: token.symbol,
-            decimals: token.decimals,
-            address: ContractId.fromSolidityAddress(token.address).toString(),
-            solidityAddress: token.address,
-            icon: token.logoURI || '',
-            providers: ['Pangolin'],
-            dueDiligenceComplete: false,
-          });
+    const initHashconnect = async (skipConnect = false) => {
+        const initData = await hashconnect.init(appMetadata, network, true);
+        if (initData?.savedPairings?.[0]?.network === network) {
+            //reload page
+            setConnectionData(initData?.savedPairings?.[0]);
+            const provider = hashconnect.getProvider(network, initData?.topic, initData?.savedPairings?.[0]?.accountIds?.[0]);
+            setSigner(hashconnect.getSigner(provider));
+        } else if (!skipConnect) {
+            //new connection
+            await hashconnect.disconnect(connectionData?.topic);
+            await hashconnect.clearConnectionsAndData();
+            await hashconnect.init(appMetadata, network, true);
+            hashconnect.connectToLocalWallet();
         }
-      });
-      setTokens(tokenMap);
-    });
-  }, []);
 
-  return (
-    <div className="App">
-    <Header connect={hashconnect} connectionData={connectionData} isConnected={isConnected} setConnectionData={setConnectionData}/>
-    <div className="mainWindow">
-      <Routes>
-        <Route path="/" element={<Swap isConnected={isConnected} tokens={tokens} connect={hashconnect} connectionData={connectionData} signer={signer} />}/>
-        <Route path="/tokens" element={<Tokens tokens={tokens}/>}/>
-        <Route path="/docs" element={<Docs/>}/>
-        </Routes>
-    </div>
+    }
+
+    useEffect(() => {
+        hashconnect.pairingEvent.on((pairingData) => {
+            console.log(pairingData);
+            setConnectionData(pairingData);
+            const provider = hashconnect.getProvider(network, pairingData?.topic, pairingData?.accountIds?.[0]);
+            setSigner(hashconnect.getSigner(provider));
+        });
+
+        initHashconnect(true);
+    }, []);
+
+    useEffect(() => {
+        let tokenSources = [
+            axios.get('https://api.saucerswap.finance/tokens'),
+            axios.get('https://raw.githubusercontent.com/pangolindex/tokenlists/main/pangolin.tokenlist.json'),
+            axios.get('https://heliswap.infura-ipfs.io/ipfs/Qmf5u6N2ohZnBc1yxepYzS3RYagkMZbU5dwwU4TGxXt9Lf'),
+        ];
+        if (network === 'testnet') {
+            tokenSources = [
+                axios.get('https://test-api.saucerswap.finance/tokens'),
+                axios.get('https://raw.githubusercontent.com/pangolindex/tokenlists/main/pangolin.tokenlist.json'),
+            ];
+        }
+        Promise.all(tokenSources).then(([
+            saucerSwapTokens,
+            pangolinTokens,
+            heliswapTokens,
+        ]) => {
+            const tokenMap = new Map();
+            tokenMap.set(ethers.constants.AddressZero, {
+                name: 'Hbar',
+                symbol: 'HBAR',
+                decimals: 8,
+                address: '',
+                solidityAddress: ethers.constants.AddressZero,
+                icon: HederaLogo,
+                providers: ['SaucerSwap', 'Pangolin', 'Heliswap'],
+            });
+
+            saucerSwapTokens.data.map(token => {
+                const solidityAddress = `0x${ContractId.fromString(token.id).toSolidityAddress()}`;
+                tokenMap.set(solidityAddress, {
+                    name: token.name,
+                    symbol: token.symbol,
+                    decimals: token.decimals,
+                    address: token.id,
+                    solidityAddress,
+                    icon: token.icon ? `https://www.saucerswap.finance/${token.icon?.replace(/^\//, '')}` : '',
+                    providers: ['SaucerSwap'],
+                    dueDiligenceComplete: token.dueDiligenceComplete,
+                });
+            });
+
+            pangolinTokens.data.tokens.filter(token => token.chainId === (network === 'mainnet' ? 295 : 296)).map(token => {
+                const existing = tokenMap.get(token.address);
+                if (existing) {
+                    existing.providers.push('Pangolin');
+                } else {
+                    tokenMap.set(token.address, {
+                        name: token.name,
+                        symbol: token.symbol,
+                        decimals: token.decimals,
+                        address: ContractId.fromSolidityAddress(token.address).toString(),
+                        solidityAddress: token.address,
+                        icon: token.logoURI || '',
+                        providers: ['Pangolin'],
+                        dueDiligenceComplete: false,
+                    });
+                }
+            });
+
+            if (heliswapTokens?.data?.tokens) {
+                heliswapTokens.data.tokens.map(token => {
+                    const existing = tokenMap.get(token.address);
+                    if (existing) {
+                        existing.providers.push('HeliSwap');
+                    } else {
+                        tokenMap.set(token.address, {
+                            name: token.name,
+                            symbol: token.symbol,
+                            decimals: token.decimals,
+                            address: ContractId.fromSolidityAddress(token.address).toString(),
+                            solidityAddress: token.address,
+                            icon: token.logoURI || '',
+                            providers: ['HeliSwap'],
+                            dueDiligenceComplete: false,
+                        });
+                    }
+                });
+            }
+            setTokens(tokenMap);
+        });
+    }, [network]);
+
+    return (
+        <div className="App">
+            <Header
+                connect={hashconnect}
+                connectionData={connectionData}
+                setConnectionData={setConnectionData}
+                network={network}
+                setNetwork={setNetwork}
+                setSigner={setSigner}
+                initHashconnect={() => initHashconnect}
+            />
+            <div className="mainWindow">
+                <Routes>
+                    <Route path="/" element={<Swap
+                        tokens={tokens}
+                        connect={hashconnect}
+                        connectionData={connectionData}
+                        signer={signer}
+                        network={network}
+                    />}/>
+                    <Route path="/tokens" element={<Tokens tokens={tokens}/>}/>
+                    <Route path="/docs" element={<Docs/>}/>
+                </Routes>
+            </div>
         </div>
-  )
+    )
 }
 
 export default App;

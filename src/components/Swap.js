@@ -1,10 +1,11 @@
 import { Input, Popover, Radio, Modal, message } from 'antd'
 import { ArrowDownOutlined, SettingOutlined } from '@ant-design/icons'
 import { useState, useEffect } from 'react'
-import { useSendTransaction, useWaitForTransaction } from "wagmi"
+import { mainnet, useSendTransaction, useWaitForTransaction } from "wagmi"
 import { ethers } from 'ethers';
-import PangolinLogo from '../pangolin.png';
-import SaucerSwapLogo from '../saucerswap.ico';
+import PangolinLogo from '../img/pangolin.png';
+import SaucerSwapLogo from '../img/saucerswap.ico';
+import HeliSwapLogo from '../img/heliswap.png';
 import {
     ContractExecuteTransaction,
     ContractFunctionParameters,
@@ -12,17 +13,16 @@ import {
     AccountAllowanceApproveTransaction
 } from '@hashgraph/sdk';
 
-const oracleSettings = {
-    saucerSwap: { icon: SaucerSwapLogo, aggregatorId: 'SaucerSwapV2', feePromille: 5 },
-    pangolin: { icon: PangolinLogo, aggregatorId: 'Pangolin', feePromille: 5 },
+const GAS_LIMITS = {
+    exactTokenToToken: 900000, //877969    875079
+    exactHBARToToken: 245000, //221207     203366
+    exactTokenToHBAR: 1670000, //1629306   1623679
+    tokenToExactToken: 920000, //894071    891182
+    HBARToExactToken: 235000, //211040     218135
+    tokenToExactHBAR: 1690000, //1645353   1639941
 };
 
-const oracles = {
-    saucerSwap: '0xE2Dc61bd0f550f3E4208FA0f3985743402934351',
-    pangolin: '0x2Ee639e1b3595a477A84f26453414eB2141A0238',
-};
-
-const exchange = '0.0.1112771';
+const exchange = '0.0.1173826';
 
 const basicOracleABI = [
     {
@@ -51,11 +51,6 @@ const basicOracleABI = [
                 "internalType": "contract IERC20",
                 "name": "dstToken",
                 "type": "address"
-            },
-            {
-                "internalType": "contract IERC20",
-                "name": "connector",
-                "type": "address"
             }
         ],
         "name": "getRate",
@@ -76,27 +71,13 @@ const basicOracleABI = [
     }
 ];
 
-const erc20ABI = [{
-    "constant": true,
-    "inputs": [],
-    "name": "decimals",
-    "outputs": [
-        {
-            "name": "",
-            "type": "uint8"
-        }
-    ],
-    "payable": false,
-    "stateMutability": "view",
-    "type": "function"
-}];
-
 function Swap(props) {
-    const { address, isConnected, tokens: tokensMap, connect, connectionData, signer } = props;
+    const { address, tokens: tokensMap, connect, connectionData, signer, network } = props;
     const tokens = [...tokensMap].map(wrap => wrap[1]);
     const [oracleContracts, setOracleContracts] = useState({
-        saucerSwap: null,
-        pangolin: null,
+        SaucerSwap: null,
+        Pangolin: null,
+        HeliSwap: null,
     });
     const [slippage, setSlippage] = useState(2.5);
     const [feeOnTransfer, setFeeOnTransfer] = useState(false);
@@ -106,11 +87,12 @@ function Swap(props) {
     const [tokenOne, setTokenOne] = useState(tokens[1])
     const [tokenTwo, setTokenTwo] = useState(tokens[7])
     const [isOpen, setIsOpen] = useState(false)
-    const [checkAllRatesOpen, setCheckAllRatesOpen] = useState(false);
+    const [checkAllRatesOpen, setCheckAllRatesOpen] = useState(true);
     const [changeToken, setChangeToken] = useState(1)
     const [prices, setPrices] = useState({
-        saucerSwap: null,
-        pangolin: null,
+        SaucerSwap: null,
+        Pangolin: null,
+        HeliSwap: null,
     })
     const [txDetails, setTxDetails] = useState({
         to: null,
@@ -126,6 +108,24 @@ function Swap(props) {
             value: String(txDetails.value)
         }
     })
+
+    const oracleSettings = () => network === 'mainnet' ? {
+        SaucerSwap: { icon: SaucerSwapLogo, aggregatorId: 'SaucerSwapV2', feePromille: 3, whbar: '0x0000000000000000000000000000000000163b59' },
+        Pangolin: { icon: PangolinLogo, aggregatorId: 'Pangolin', feePromille: 3, whbar: '0x00000000000000000000000000000000001a8837' },
+        HeliSwap: { icon: HeliSwapLogo, aggregatorId: 'HeliSwap', feePromille: 5, whbar: '0x00000000000000000000000000000000002cc823' },
+    } : {
+        SaucerSwap: { icon: SaucerSwapLogo, aggregatorId: 'SaucerSwapV2', feePromille: 3, whbar: '0x000000000000000000000000000000000000e6a2' },
+        Pangolin: { icon: PangolinLogo, aggregatorId: 'Pangolin', feePromille: 3, whbar: '0x000000000000000000000000000000000002690a' },
+    };
+
+    const oracles = () => network === 'mainnet' ? {
+        SaucerSwap: '0x4afa14cbA5043BE757c028b0D0B5148df12ce9e4',
+        Pangolin: '0x9dAdB3285AC2d65A2cbB1341Aa0c14edc8c2F2b9',
+        HeliSwap: '0x9dAdB3285AC2d65A2cbB1341Aa0c14edc8c2F2b9',
+    } : {
+        SaucerSwap: '0x4afa14cbA5043BE757c028b0D0B5148df12ce9e4',
+        Pangolin: '0x9dAdB3285AC2d65A2cbB1341Aa0c14edc8c2F2b9',
+    };
 
     const { isLoading, isSuccess } = useWaitForTransaction({
         hash: data?.hash
@@ -159,8 +159,9 @@ function Swap(props) {
 
     const switchTokens = () => {
         setPrices({
-            saucerSwap: null,
-            pangolin: null,
+            SaucerSwap: null,
+            Pangolin: null,
+            HeliSwap: null,
         })
         setTokenOneAmount(0)
         setTokenTwoAmount(0)
@@ -170,14 +171,15 @@ function Swap(props) {
     }
 
     const openModal = (token) => {
-        setChangeToken(token)
-        setIsOpen(true)
+        setChangeToken(token);
+        setIsOpen(true);
     }
 
     const modifyToken = (i) => {
         setPrices({
-            saucerSwap: null,
-            pangolin: null,
+            SaucerSwap: null,
+            Pangolin: null,
+            HeliSwap: null,
         })
         setTokenOneAmount(0)
         setTokenTwoAmount(0)
@@ -191,20 +193,29 @@ function Swap(props) {
         setIsOpen(false)
     }
 
-    const fetchDexSwap = async (one, two) => {
+    const fetchDexSwap = async (tokenA, tokenB) => {
         const res = await Promise.allSettled(Object.keys(oracleContracts).map(async i => {
-            return oracleContracts[i].getRate(one, two, '0xFFfFfFffFFfffFFfFFfFFFFFffFFFffffFfFFFfF');
+            let _tokenA = tokenA;
+            let _tokenB = tokenB;
+            if (tokenA === ethers.constants.AddressZero) {
+                _tokenA = oracleSettings()[i].whbar;
+            }
+            if (tokenB === ethers.constants.AddressZero) {
+                _tokenB = oracleSettings()[i].whbar;
+            }
+            return oracleContracts[i].getRate(_tokenA, _tokenB);
         }));
 
         setPrices({
-            saucerSwap: res[0].status === 'fulfilled' ? res[0].value.rate : null,
-            pangolin: res[1].status === 'fulfilled' ? res[1].value.rate : null,
+            SaucerSwap: res[0].status === 'fulfilled' ? res[0].value.rate : null,
+            Pangolin: res[1].status === 'fulfilled' ? res[1].value.rate : null,
+            HeliSwap: null,
         });
     }
 
     const getSortedPrices = () => {
         return Object.keys(prices)
-            .filter(name => prices[name])
+            .filter(name => prices[name] && !prices[name]?.eq(0))
             .sort((a, b) => prices[b].sub(prices[a]))
             .map(name => ({ name, price: prices[name] }));
     }
@@ -225,68 +236,107 @@ function Swap(props) {
         return !Object.values(prices).find(price => !price?.isZero());
     }
 
+    const getGasPrice = () => {
+        if (!tokenOne || !tokenTwo) {
+            return 0;
+        }
+        if (feeOnTransfer) {
+            if (tokenOne.solidityAddress === ethers.constants.AddressZero) {
+                return GAS_LIMITS.HBARToExactToken;
+            } else if (tokenTwo.solidityAddress === ethers.constants.AddressZero) {
+                return GAS_LIMITS.tokenToExactHBAR;
+            } else {
+                return GAS_LIMITS.tokenToExactToken;
+            }
+        } else {
+            if (tokenOne.solidityAddress === ethers.constants.AddressZero) {
+                return GAS_LIMITS.exactHBARToToken;
+            } else if (tokenTwo.solidityAddress === ethers.constants.AddressZero) {
+                return GAS_LIMITS.exactTokenToHBAR;
+            } else {
+                return GAS_LIMITS.exactTokenToToken;
+            }
+        }
+    }
+
     const fetchDex = async () => {
         const deadline = Math.floor(Date.now() / 1000) + 1000;
 
-        const allowanceTx = await new AccountAllowanceApproveTransaction()
-            .approveTokenAllowance(
-                tokenOne.address,
-                connectionData?.accountIds?.[0],
-                exchange,
-                feeOnTransfer
-                    ? ethers.utils.parseUnits(tokenOneAmount, tokenOne.decimals).mul(1000 + slippage * 10 + oracleSettings.saucerSwap.feePromille).div(1000).toString()
-                    : ethers.utils.parseUnits(tokenOneAmount, tokenOne.decimals).toString(),
-            )
-            .freezeWithSigner(signer);
-        await allowanceTx.executeWithSigner(signer);
+        const bestRate = getSortedPrices()?.[0];
+        if (!bestRate?.price || bestRate.price.eq(0)) {
+            messageApi.open({
+                type: 'error',
+                content: 'Failed to fetch rate',
+                duration: 2
+            });
+            return null;
+        }
+
+        if (tokenOne.solidityAddress !== ethers.constants.AddressZero) {
+            const allowanceTx = await new AccountAllowanceApproveTransaction()
+                .approveTokenAllowance(
+                    tokenOne.address,
+                    connectionData?.accountIds?.[0],
+                    exchange,
+                    feeOnTransfer
+                        ? ethers.utils.parseUnits(tokenOneAmount, tokenOne.decimals).mul(1000 + slippage * 10 + oracleSettings()[bestRate.name].feePromille).div(1000).toString()
+                        : ethers.utils.parseUnits(tokenOneAmount, tokenOne.decimals).toString(),
+                )
+                .freezeWithSigner(signer);
+            await allowanceTx.executeWithSigner(signer);
+        }
 
         let swapTransaction = await new ContractExecuteTransaction()
             .setContractId(exchange)
-            .setGas(900000)
+            .setGas(getGasPrice())
             .setFunction("swap", new ContractFunctionParameters()
-                .addString("SaucerSwapV2")
+                .addString(oracleSettings()[bestRate.name].aggregatorId)
                 .addAddress(tokenOne.solidityAddress)
                 .addAddress(tokenTwo.solidityAddress)
                 .addUint256(
                     feeOnTransfer
-                        ? ethers.utils.parseUnits(tokenOneAmount, tokenOne.decimals).mul(1000 + slippage * 10 + oracleSettings.saucerSwap.feePromille).div(1000).toString()
+                        ? ethers.utils.parseUnits(tokenOneAmount, tokenOne.decimals).mul(1000 + slippage * 10 + oracleSettings()[bestRate.name].feePromille).div(1000).toString()
                         : ethers.utils.parseUnits(tokenOneAmount, tokenOne.decimals).toString()
                 )
                 .addUint256(
                     feeOnTransfer
                         ? ethers.utils.parseUnits(tokenTwoAmount, tokenTwo.decimals).toString()
-                        : ethers.utils.parseUnits(tokenTwoAmount, tokenTwo.decimals).mul(1000 - slippage * 10 - oracleSettings.saucerSwap.feePromille).div(1000).toString()
+                        : ethers.utils.parseUnits(tokenTwoAmount, tokenTwo.decimals).mul(1000 - slippage * 10 - oracleSettings()[bestRate.name].feePromille).div(1000).toString()
                 )
                 .addUint256(deadline)
                 .addBool(feeOnTransfer)
             )
+            .setPayableAmount(tokenOne.solidityAddress === ethers.constants.AddressZero
+                ? (feeOnTransfer
+                    ? ethers.utils.formatUnits(ethers.utils.parseUnits(tokenOneAmount, 8).mul(1000 + slippage * 10 + oracleSettings()[bestRate.name].feePromille).div(1000), 8)
+                    : ethers.utils.formatUnits(ethers.utils.parseUnits(tokenOneAmount, 8), 8)
+                )
+                : 0)
             .freezeWithSigner(signer);
 
         await swapTransaction.executeWithSigner(signer);
     }
 
     useEffect(() => {
-        fetchDexSwap(tokens[1]?.solidityAddress, tokens[7]?.solidityAddress)
-    }, [signer])
+        setTokenOneAmount(0);
+        setTokenTwoAmount(0);
+        const provider = new ethers.providers.JsonRpcProvider(`https://${network}.hashio.io/api`);
+        console.log(network);
+        setOracleContracts( network === 'mainnet' ? {
+            SaucerSwap: new ethers.Contract(oracles().SaucerSwap, basicOracleABI, provider),
+            Pangolin: new ethers.Contract(oracles().Pangolin, basicOracleABI, provider),
+            HeliSwap: new ethers.Contract(oracles().HeliSwap, basicOracleABI, provider),
+        } : {
+            SaucerSwap: new ethers.Contract(oracles().SaucerSwap, basicOracleABI, provider),
+            Pangolin: new ethers.Contract(oracles().Pangolin, basicOracleABI, provider),
+        });
+    }, [signer, tokensMap]);
 
     useEffect(() => {
-        const provider = new ethers.providers.JsonRpcProvider('https://testnet.hashio.io/api');
-        setOracleContracts({
-            saucerSwap: new ethers.Contract(oracles.saucerSwap, basicOracleABI, provider),
-            pangolin: new ethers.Contract(oracles.pangolin, basicOracleABI, provider),
-        });
-        setTokenOne(tokens[1]);
-        setTokenTwo(tokens[7]);
-    }, [signer]);
-
-    // useEffect(() => {
-    //     if (oracleContracts.saucerSwap) {
-    //         Promise.all(Object.keys(oracleContracts).map(name => oracleContracts[name].FeePromille()))
-    //             .then(fees => {
-    //                 fees.map((fee, i) => oracleSettings[Object.keys(oracleContracts)[i]].fee = fee);
-    //             });
-    //     }
-    // }, [oracleContracts]);
+        setTokenOne(tokens[0]);
+        setTokenTwo(tokens[8]);
+        fetchDexSwap(tokens[0]?.solidityAddress, tokens[8]?.solidityAddress)
+    }, [oracleContracts]);
 
     useEffect(() => {
         messageApi.destroy()
@@ -317,7 +367,7 @@ function Swap(props) {
     }, [isSuccess])
 
     useEffect(() => {
-        if (txDetails.to && isConnected) {
+        if (txDetails.to && !!connectionData?.accountIds?.[0]) {
             sendTransaction()
             message.success('Transaction sent')
         }
@@ -350,14 +400,22 @@ function Swap(props) {
                             <div className='tokenChoice' key={index}
                                  onClick={() => modifyToken(index)}
                             >
-                                <img src={token.icon} alt={token.ticker} className="tokenLogo"/>
+                                <img src={token.icon} alt={token.symbol} className="tokenLogo"/>
                                 <div className='tokenChoiceNames'>
                                     <div className='tokenName'>
                                         {token.name}
                                     </div>
                                     <div className='tokenTicker'>
-                                        {token.ticker}
+                                        {token.symbol}
                                     </div>
+                                </div>
+                                <div className='tokenChoiceProviders'>
+                                    {token.providers.map(provider => {
+                                        if (oracleSettings()[provider]) {
+                                            return <img src={oracleSettings()[provider].icon} alt={provider}
+                                                        key={provider}/>
+                                        }
+                                    })}
                                 </div>
                             </div>
                         )
@@ -390,11 +448,11 @@ function Swap(props) {
                     </div>
                     <div className='assetOne' onClick={() => openModal(1)}>
                         <img src={tokenOne?.icon} alt="assetOnelogo" className='logo'/>
-                        {tokenOne?.ticker}
+                        {tokenOne?.symbol}
                     </div>
                     <div className='assetTwo' onClick={() => openModal(2)}>
                         <img src={tokenTwo?.icon} alt="assetTwologo" className='logo'/>
-                        {tokenTwo?.ticker}
+                        {tokenTwo?.symbol}
                     </div>
                 </div>
                 <div className='ratesLogoWrapper'>
@@ -405,7 +463,7 @@ function Swap(props) {
                     </div>
                     {checkAllRatesOpen
                         ? getSortedPrices().map(({ name, price }) => <div className='ratesLogo' key={name}>
-                            <img className='ratesLogoIcon' title={name} src={oracleSettings[name].icon}
+                            <img className='ratesLogoIcon' title={name} src={oracleSettings()[name].icon}
                                  alt={name}/> {convertPrice(price)}
                         </div>)
                         : ''
@@ -413,7 +471,7 @@ function Swap(props) {
                 </div>
                 <div>
                 </div>
-                <div className='swapButton' onClick={fetchDex} disabled={!tokenOneAmount || !isConnected}>
+                <div className='swapButton' onClick={fetchDex} disabled={!tokenOneAmount || !connectionData?.accountIds?.[0]}>
                     Swap
                 </div>
             </div>

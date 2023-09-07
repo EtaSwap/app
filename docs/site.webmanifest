@@ -1,6 +1,6 @@
 {
-    "name": "EtaSwap app",
-    "short_name": "EtaSwap app",
+    "name": "EtaSwap (beta)",
+    "short_name": "EtaSwap (beta)",
     "icons": [
         {
             "src": "/android-chrome-192x192.png",
