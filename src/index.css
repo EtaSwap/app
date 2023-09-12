@@ -12,6 +12,7 @@ body {
   background: -o-linear-gradient( 130deg, #E8FFCE 28%, #ACFADF 75% );
   background: linear-gradient( 320deg, #E8FFCE 28%, #ACFADF 75% );
   color: #1f1d31;
+  position: relative;
 }
 
 code {
@@ -113,4 +114,21 @@ code {
 
 .ant-modal-close-icon:hover {
   color: #E8FFCE !important;
+}
+
+.social {
+  position: absolute;
+  bottom: 10px;
+  left: 50%;
+  margin-left: -101px;
+}
+.social__link {
+  text-decoration: none;
+  display: inline-block;
+  margin: 0 4px;
+}
+.social__image {
+  width: 40px;
+  height: 40px;
+  vertical-align: top;
 }

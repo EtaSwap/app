@@ -16,14 +16,14 @@ const hashconnect = new HashConnect();
 const appMetadata = {
     name: "EtaSwap",
     description: "DEX aggregator",
-    icon: "https://etaswap.com/logo.svg",
+    icon: "https://etaswap.com/logo-bg.svg",
 };
 
 function App() {
     const [connectionData, setConnectionData] = useState({});
     const [signer, setSigner] = useState({});
     const [tokens, setTokens] = useState(new Map());
-    const [network, setNetwork] = useState('testnet');
+    const [network, setNetwork] = useState('mainnet');
 
     const initHashconnect = async (skipConnect = false) => {
         const initData = await hashconnect.init(appMetadata, network, true);
@@ -44,7 +44,6 @@ function App() {
 
     useEffect(() => {
         hashconnect.pairingEvent.on((pairingData) => {
-            console.log(pairingData);
             setConnectionData(pairingData);
             const provider = hashconnect.getProvider(network, pairingData?.topic, pairingData?.accountIds?.[0]);
             setSigner(hashconnect.getSigner(provider));
@@ -78,29 +77,28 @@ function App() {
                 address: '',
                 solidityAddress: ethers.constants.AddressZero,
                 icon: HederaLogo,
-                providers: ['SaucerSwap', 'Pangolin', 'Heliswap'],
+                providers: ['SaucerSwap', 'Pangolin', 'HeliSwap'],
             });
 
             saucerSwapTokens.data.map(token => {
-                const solidityAddress = `0x${ContractId.fromString(token.id).toSolidityAddress()}`;
-                tokenMap.set(solidityAddress, {
-                    name: token.name,
-                    symbol: token.symbol,
-                    decimals: token.decimals,
-                    address: token.id,
-                    solidityAddress,
-                    icon: token.icon ? `https://www.saucerswap.finance/${token.icon?.replace(/^\//, '')}` : '',
-                    providers: ['SaucerSwap'],
-                    dueDiligenceComplete: token.dueDiligenceComplete,
-                });
+                    const solidityAddress = `0x${ContractId.fromString(token.id).toSolidityAddress()}`;
+                    tokenMap.set(solidityAddress.toLowerCase(), {
+                        name: token.name,
+                        symbol: token.symbol,
+                        decimals: token.decimals,
+                        address: token.id,
+                        solidityAddress,
+                        icon: token.icon ? `https://www.saucerswap.finance/${token.icon?.replace(/^\//, '')}` : '',
+                        providers: ['SaucerSwap'],
+                    });
             });
 
             pangolinTokens.data.tokens.filter(token => token.chainId === (network === 'mainnet' ? 295 : 296)).map(token => {
-                const existing = tokenMap.get(token.address);
+                const existing = tokenMap.get(token.address.toLowerCase());
                 if (existing) {
                     existing.providers.push('Pangolin');
                 } else {
-                    tokenMap.set(token.address, {
+                    tokenMap.set(token.address.toLowerCase(), {
                         name: token.name,
                         symbol: token.symbol,
                         decimals: token.decimals,
@@ -115,11 +113,11 @@ function App() {
 
             if (heliswapTokens?.data?.tokens) {
                 heliswapTokens.data.tokens.map(token => {
-                    const existing = tokenMap.get(token.address);
+                    const existing = tokenMap.get(token.address.toLowerCase());
                     if (existing) {
                         existing.providers.push('HeliSwap');
                     } else {
-                        tokenMap.set(token.address, {
+                        tokenMap.set(token.address.toLowerCase(), {
                             name: token.name,
                             symbol: token.symbol,
                             decimals: token.decimals,
@@ -156,7 +154,7 @@ function App() {
                         signer={signer}
                         network={network}
                     />}/>
-                    <Route path="/tokens" element={<Tokens tokens={tokens}/>}/>
+                    <Route path="/tokens" element={<Tokens tokens={tokens} network={network}/>}/>
                     <Route path="/docs" element={<Docs/>}/>
                 </Routes>
             </div>
