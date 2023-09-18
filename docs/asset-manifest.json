@@ -1,7 +1,7 @@
 {
   "files": {
-    "main.css": "/static/css/main.f28ee6d3.css",
-    "main.js": "/static/js/main.97eeb2b8.js",
+    "main.css": "/static/css/main.984e0f36.css",
+    "main.js": "/static/js/main.9348e2ea.js",
     "static/media/pangolin.png": "/static/media/pangolin.536ec485f1c5157a1b53.png",
     "static/media/heliswap.png": "/static/media/heliswap.b9d459943ee7444f0c81.png",
     "static/media/saucerswap.ico": "/static/media/saucerswap.940556ea4a58a5aa76b6.ico",
@@ -9,7 +9,7 @@
     "static/media/logo.svg": "/static/media/logo.4c5d207a8bed5ac5c232e2754d7336e3.svg"
   },
   "entrypoints": [
-    "static/css/main.f28ee6d3.css",
-    "static/js/main.97eeb2b8.js"
+    "static/css/main.984e0f36.css",
+    "static/js/main.9348e2ea.js"
   ]
 }

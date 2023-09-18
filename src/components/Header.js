@@ -39,15 +39,15 @@ function Header({ connect, connectionData, setConnectionData, network, setNetwor
       <div className='leftH'>
         <img src={Logo} alt='η' className='logo' title='EtaSwap' />
         <Link to='/' className='link'>
-        <div className='headerItem'>Swap</div>
+          <div className='headerItem'>Swap</div>
         </Link>
         <Link to='/tokens' className='link'>
-        <div className='headerItem'>Tokens</div>
+          <div className='headerItem'>Tokens</div>
         </Link>
-        <Link to='/docs' className='link'>
-        <div className='headerItem'>Docs</div>
-        </Link>
-        </div>
+        <a href='https://docs.etaswap.com/' target='_blank' className='link'>
+          <div className='headerItem'>Docs</div>
+        </a>
+      </div>
       <div className='rightH'>
         <div className='headerItem' onClick={() => setNetworkModalOpen(true)}>
           <img src={HederaLogo} alt={network} className='logo' />

@@ -1,6 +1,6 @@
 import { Input, Popover, Radio, Modal, message } from 'antd'
 import { ArrowDownOutlined, SettingOutlined } from '@ant-design/icons'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { mainnet, useSendTransaction, useWaitForTransaction } from "wagmi"
 import { ethers } from 'ethers';
 import PangolinLogo from '../img/pangolin.png';
@@ -73,7 +73,6 @@ function Swap(props) {
     const { address, tokens: tokensMap, connect, connectionData, signer, network } = props;
     const tokens = [...tokensMap]
         .map(wrap => wrap[1])
-        .filter(token => network === 'mainnet' ? token.providers.length > 1 : true)
         .sort((a, b) =>
             a.providers.length > b.providers.length
                 ? -1
@@ -95,8 +94,11 @@ function Swap(props) {
     const [tokenOne, setTokenOne] = useState(tokens[1])
     const [tokenTwo, setTokenTwo] = useState(tokens[7])
     const [isOpen, setIsOpen] = useState(false)
-    const [checkAllRatesOpen, setCheckAllRatesOpen] = useState(true);
+    const [checkAllRatesOpen, setCheckAllRatesOpen] = useState(false);
     const [changeToken, setChangeToken] = useState(1)
+    const refreshCount = useRef(0);
+    const refreshTimer = useRef(0);
+    const [isRefreshAnimationActive, setIsRefreshAnimationActive] = useState(false);
     const [prices, setPrices] = useState({
         SaucerSwap: null,
         Pangolin: null,
@@ -106,15 +108,6 @@ function Swap(props) {
         to: null,
         data: null,
         value: null
-    })
-
-    const { data, sendTransaction } = useSendTransaction({
-        request: {
-            from: address,
-            to: String(txDetails.to),
-            data: String(txDetails.data),
-            value: String(txDetails.value)
-        }
     })
 
     const oracleSettings = () => network === 'mainnet' ? {
@@ -136,10 +129,6 @@ function Swap(props) {
     };
 
     const exchange = () => network === 'mainnet' ? '0.0.3745835' : '0.0.1173826';
-
-    const { isLoading, isSuccess } = useWaitForTransaction({
-        hash: data?.hash
-    })
 
     const handleSlippage = (e) => {
         setSlippage(e.target.value)
@@ -378,40 +367,28 @@ function Swap(props) {
         fetchDexSwap(tokens[0]?.solidityAddress, tokens[1]?.solidityAddress)
     }, [oracleContracts]);
 
-    useEffect(() => {
-        messageApi.destroy()
-        if (isLoading) {
-            messageApi.open({
-                content: 'Waiting for transaction to be mined',
-                type: 'loading',
-                duration: 0
-            })
+    const refreshRate = () => {
+        setIsRefreshAnimationActive(false);
+        refreshCount.current = refreshCount.current + 2;
+        console.log(tokenOne?.name, tokenTwo?.name);
+        if (tokenOne?.solidityAddress && tokenTwo?.solidityAddress) {
+            console.log('fetch');
+            fetchDexSwap(tokenOne.solidityAddress, tokenTwo.solidityAddress);
         }
-    }, [isLoading])
+        console.log((3000 + refreshCount.current * refreshCount.current));
+        setTimeout(() => setIsRefreshAnimationActive(true), 0);
+        refreshTimer.current = setTimeout(refreshRate, (25000 + 30 * refreshCount.current * refreshCount.current));
+    };
 
     useEffect(() => {
-        messageApi.destroy()
-        if (isSuccess) {
-            messageApi.open({
-                type: 'success',
-                content: 'Transaction Success',
-                duration: 2
-            })
-        } else if (txDetails.to) {
-            messageApi.open({
-                type: 'error',
-                content: 'Transaction Failed',
-                duration: 2
-            })
+        setIsRefreshAnimationActive(false);
+        clearTimeout(refreshTimer.current);
+        refreshCount.current = 0;
+        if (tokenOne?.solidityAddress && tokenTwo?.solidityAddress) {
+            setTimeout(() => setIsRefreshAnimationActive(true), 1500);
         }
-    }, [isSuccess])
-
-    useEffect(() => {
-        if (txDetails.to && !!connectionData?.accountIds?.[0]) {
-            sendTransaction()
-            message.success('Transaction sent')
-        }
-    }, [txDetails])
+        refreshTimer.current = setTimeout(refreshRate, 25000 + 1500);
+    }, [tokenOne, tokenTwo]);
 
     const settingsContent = (
         <>
@@ -499,7 +476,7 @@ function Swap(props) {
                     <div className='ratesLogoInner'>
                         <span className='ratesLogoTop'>Best rate: {getBestPriceDescr()}</span>
                         <button className='ratesLogoToggle'
-                                onClick={() => switchAllRates()}>{checkAllRatesOpen ? 'Hide all rates' : 'Check all rates'}</button>
+                                onClick={() => switchAllRates()}>{checkAllRatesOpen ? 'Hide all rates' : 'Show all rates'}</button>
                     </div>
                     {checkAllRatesOpen
                         ? getSortedPrices().map(({ name, price, lowVolume }) => <div className='ratesLogo' key={name}>
@@ -508,6 +485,9 @@ function Swap(props) {
                         </div>)
                         : ''
                     }
+                </div>
+                <div className="refreshTicker">
+                    <div className={isRefreshAnimationActive ? 'active' : ''} style={{animationDuration: parseInt((25000 + 30 * refreshCount.current * refreshCount.current)/1000).toString() + 's'}}></div>
                 </div>
                 <div className='assocWarning'>&#9432; Make sure selected tokens is associated to your account.</div>
                 <button className='swapButton' onClick={fetchDex} disabled={swapDisabled()}>

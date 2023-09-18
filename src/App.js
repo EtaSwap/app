@@ -4,12 +4,13 @@ import Header from "./components/Header";
 import { Routes, Route } from "react-router-dom";
 import Swap from "./components/Swap";
 import Tokens from "./components/Tokens";
-import Docs from "./components/Docs";
 import { HashConnect } from 'hashconnect';
 import axios from 'axios';
 import { ContractId } from '@hashgraph/sdk';
 import { ethers } from 'ethers';
 import HederaLogo from './img/hedera-logo.png';
+import tokenListMainnet from './tokenListMainnet.json';
+import tokenListTestnet from './tokenListTestnet.json';
 
 const hashconnect = new HashConnect();
 
@@ -58,11 +59,13 @@ function App() {
             axios.get('https://raw.githubusercontent.com/pangolindex/tokenlists/main/pangolin.tokenlist.json'),
             axios.get('https://heliswap.infura-ipfs.io/ipfs/Qmf5u6N2ohZnBc1yxepYzS3RYagkMZbU5dwwU4TGxXt9Lf'),
         ];
+        let tokenList = new Set(tokenListMainnet);
         if (network === 'testnet') {
             tokenSources = [
                 axios.get('https://test-api.saucerswap.finance/tokens'),
                 axios.get('https://raw.githubusercontent.com/pangolindex/tokenlists/main/pangolin.tokenlist.json'),
             ];
+            tokenList = new Set(tokenListTestnet);
         }
         Promise.all(tokenSources).then(([
             saucerSwapTokens,
@@ -81,7 +84,8 @@ function App() {
             });
 
             saucerSwapTokens.data.map(token => {
-                    const solidityAddress = `0x${ContractId.fromString(token.id).toSolidityAddress()}`;
+                const solidityAddress = `0x${ContractId.fromString(token.id).toSolidityAddress()}`;
+                if (tokenList.has(token.id)) {
                     tokenMap.set(solidityAddress.toLowerCase(), {
                         name: token.name,
                         symbol: token.symbol,
@@ -91,13 +95,14 @@ function App() {
                         icon: token.icon ? `https://www.saucerswap.finance/${token.icon?.replace(/^\//, '')}` : '',
                         providers: ['SaucerSwap'],
                     });
+                }
             });
 
             pangolinTokens.data.tokens.filter(token => token.chainId === (network === 'mainnet' ? 295 : 296)).map(token => {
                 const existing = tokenMap.get(token.address.toLowerCase());
                 if (existing) {
                     existing.providers.push('Pangolin');
-                } else {
+                } else if (tokenList.has(ContractId.fromSolidityAddress(token.address).toString())) {
                     tokenMap.set(token.address.toLowerCase(), {
                         name: token.name,
                         symbol: token.symbol,
@@ -116,7 +121,7 @@ function App() {
                     const existing = tokenMap.get(token.address.toLowerCase());
                     if (existing) {
                         existing.providers.push('HeliSwap');
-                    } else {
+                    } else if (tokenList.has(ContractId.fromSolidityAddress(token.address).toString())) {
                         tokenMap.set(token.address.toLowerCase(), {
                             name: token.name,
                             symbol: token.symbol,
@@ -155,7 +160,6 @@ function App() {
                         network={network}
                     />}/>
                     <Route path="/tokens" element={<Tokens tokens={tokens} network={network}/>}/>
-                    <Route path="/docs" element={<Docs/>}/>
                 </Routes>
             </div>
         </div>

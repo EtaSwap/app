@@ -10,7 +10,6 @@ function Tokens(props) {
       <div style={{display: "flex", flexDirection: "row", flexWrap: "wrap", gap: 20, margin: "0 auto", alignItems: "center", justifyContent: "center"}}>
       {[...tokens]
           .map(token => token[1])
-          .filter(token => network === 'mainnet' ? token.providers.length > 1 : true)
           .sort((a, b) =>
           a.providers.length > b.providers.length
               ? -1

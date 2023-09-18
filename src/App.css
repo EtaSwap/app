@@ -407,3 +407,24 @@ header {
   padding-top: 10px;
   font-size: 12px;
 }
+
+@keyframes refresh {
+  to {
+    transform: scaleX(0);
+  }
+}
+
+.refreshTicker{
+  margin-top: 4px;
+  width: 100%;
+}
+
+.refreshTicker div {
+  height: 3px;
+  transform-origin: left center;
+}
+
+.refreshTicker .active {
+  background: #E8FFCE;
+  animation: refresh 25s linear forwards;
+}
