@@ -1,15 +1,13 @@
 import { Input, Popover, Radio, Modal, message } from 'antd'
 import { ArrowDownOutlined, SettingOutlined } from '@ant-design/icons'
 import { useState, useEffect, useRef } from 'react'
-import { mainnet, useSendTransaction, useWaitForTransaction } from "wagmi"
-import { ethers } from 'ethers';
+import { BigNumber, ethers } from 'ethers';
 import PangolinLogo from '../img/pangolin.png';
 import SaucerSwapLogo from '../img/saucerswap.ico';
 import HeliSwapLogo from '../img/heliswap.png';
 import {
     ContractExecuteTransaction,
     ContractFunctionParameters,
-    TransactionReceipt,
     AccountAllowanceApproveTransaction
 } from '@hashgraph/sdk';
 
@@ -86,7 +84,7 @@ function Swap(props) {
         Pangolin: null,
         HeliSwap: null,
     });
-    const [slippage, setSlippage] = useState(2.5);
+    const [slippage, setSlippage] = useState(1);
     const [feeOnTransfer, setFeeOnTransfer] = useState(false);
     const [messageApi, contextHolder] = message.useMessage()
     const [tokenOneAmount, setTokenOneAmount] = useState(0)
@@ -134,26 +132,42 @@ function Swap(props) {
         setSlippage(e.target.value)
     }
 
-    const changeAmountOne = (e) => {
-        setTokenOneAmount(e.target.value)
-        const bestPrice = convertPrice(getSortedPrices()[0].price);
-        if (e.target.value && parseFloat(bestPrice) !== 0) {
-            setTokenTwoAmount((e.target.value * parseFloat(bestPrice)).toFixed(5))
-        } else {
-            setTokenTwoAmount(0);
+    useEffect(() => {
+        if (!feeOnTransfer) {
+            const bestReceive = getSortedPrices()?.[0]?.amountOut?.toString();
+            if (tokenOneAmount && bestReceive && parseFloat(bestReceive) !== 0) {
+                setTokenTwoAmount(ethers.utils.formatUnits(bestReceive, tokenTwo?.decimals));
+            } else {
+                setTokenTwoAmount(0);
+            }
         }
+    }, [tokenOneAmount]);
+
+    const changeAmountOne = (e) => {
         setFeeOnTransfer(false);
+        const input = e.target.value;
+        if (input.match(/^([0-9]{1,})?(\.)?([0-9]{1,})?$/)) {
+            setTokenOneAmount(input || 0);
+        }
     }
 
-    const changeAmountTwo = (e) => {
-        setTokenTwoAmount(e.target.value)
-        const bestPrice = convertPrice(getSortedPrices()[0].price);
-        if (e.target.value && parseFloat(bestPrice) !== 0) {
-            setTokenOneAmount((e.target.value / parseFloat(bestPrice)).toFixed(5))
-        } else {
-            setTokenOneAmount(0);
+    useEffect(() => {
+        if (feeOnTransfer) {
+            const bestSpend = getSortedPrices()?.[0]?.amountOut?.toString();
+            if (tokenTwoAmount && bestSpend && parseFloat(bestSpend) !== 0) {
+                setTokenOneAmount(ethers.utils.formatUnits(bestSpend, tokenOne?.decimals));
+            } else {
+                setTokenOneAmount(0);
+            }
         }
+    }, [tokenTwoAmount]);
+
+    const changeAmountTwo = (e) => {
         setFeeOnTransfer(true);
+        const input = e.target.value;
+        if (input.match(/^([0-9]{1,})?(\.)?([0-9]{1,})?$/)) {
+            setTokenTwoAmount(input || 0);
+        }
     }
 
     const switchTokens = () => {
@@ -162,10 +176,10 @@ function Swap(props) {
             Pangolin: null,
             HeliSwap: null,
         })
-        setTokenOneAmount(0)
-        setTokenTwoAmount(0)
-        setTokenOne(tokenTwo)
-        setTokenTwo(tokenOne)
+        setTokenOneAmount(0);
+        setTokenTwoAmount(0);
+        setTokenOne(tokenTwo);
+        setTokenTwo(tokenOne);
         fetchDexSwap(tokenTwo.solidityAddress, tokenOne.solidityAddress)
     }
 
@@ -212,6 +226,20 @@ function Swap(props) {
         });
     }
 
+    function sqrt(value) {
+        const ONE = ethers.BigNumber.from(1);
+        const TWO = ethers.BigNumber.from(2);
+
+        const x = ethers.BigNumber.from(value);
+        let z = x.add(ONE).div(TWO);
+        let y = x;
+        while (z.sub(y).isNegative()) {
+            y = z;
+            z = x.div(z).add(z).div(TWO);
+        }
+        return y;
+    }
+
     const getSortedPrices = () => {
         const sortedPrices = Object.keys(prices)
             .filter(name => prices[name]?.rate && !prices[name]?.rate?.eq(0))
@@ -222,19 +250,39 @@ function Swap(props) {
         if (parseFloat(bestPrice) === 0) {
             return [];
         }
-        const tradeVolume = Math.sqrt((feeOnTransfer ? tokenTwoAmount : tokenOneAmount) * parseFloat(bestPrice));
-        const upperThresholdPrices = [];
-        const underThresholdPrices = [];
-        for (let price of sortedPrices) {
-            if (price.weight > tradeVolume * 2) {
-                upperThresholdPrices.push(price);
-            } else {
-                underThresholdPrices.push({ ...price, lowVolume: true });
+        const pricesRes = [];
+        for (let { name, price, weight } of sortedPrices) {
+            if (!price || !tokenOne?.decimals || !tokenTwo?.decimals) {
+                continue;
             }
+
+            const priceRes = { price, weight, name };
+
+            const volume = weight.pow(2);
+            const Va = sqrt(volume.mul(BigNumber.from(10).pow(18)).div(price));
+            const Vb = volume.div(Va);
+
+            if (feeOnTransfer) {
+                const amountOut = BigNumber.from(ethers.utils.parseUnits(tokenTwoAmount.toString(), tokenTwo.decimals));
+                const VaAfter = amountOut.mul(Va).div(Vb.sub(amountOut)).mul(1000).div(1000 + oracleSettings()[name].feePromille);
+                const priceImpact = amountOut.mul(10000).div(Vb);
+                priceRes.amountOut = VaAfter;
+                priceRes.priceImpact = priceImpact;
+                if (VaAfter.gt(0)) {
+                    pricesRes.push(priceRes);
+                }
+            } else {
+                const amountIn = BigNumber.from(ethers.utils.parseUnits(tokenOneAmount.toString(), tokenOne.decimals));
+                const VbAfter = amountIn.mul(Vb).div(Va.add(amountIn)).mul(1000).div(1000 - oracleSettings()[name].feePromille);
+                const priceImpact = VbAfter.mul(10000).div(Vb);
+                priceRes.amountOut = VbAfter;
+                priceRes.priceImpact = priceImpact;
+                pricesRes.push(priceRes);
+            }
+
         }
-        return upperThresholdPrices
-            .sort((a, b) => b.price.sub(a.price))
-            .concat(underThresholdPrices.sort((a, b) => b.price.sub(a.price)));
+
+        return pricesRes.sort((a, b) => feeOnTransfer ? a.amountOut.sub(b.amountOut) : b.amountOut.sub(a.amountOut));
     }
 
     const convertPrice = (price) => {
@@ -350,32 +398,37 @@ function Swap(props) {
 
     const getBestPriceDescr = () => {
         const bestPrice = getSortedPrices()?.[0];
-        return parseFloat(convertPrice(bestPrice?.price))?.toFixed(6) + (bestPrice?.lowVolume ? '(Low volume)' : '');
+        return parseFloat(convertPrice(bestPrice?.price))?.toFixed(6);
+    }
+
+    const getBestPriceName = () => {
+        return getSortedPrices()?.[0]?.name;
+    }
+
+    const getBestImpactError = () => {
+        return (getSortedPrices()?.[0]?.priceImpact || BigNumber.from(0)).gt(2000);
     }
 
     const swapDisabled = () => {
         const bestPrice = getSortedPrices()?.[0];
         return !tokenOneAmount
             || !connectionData?.accountIds?.[0]
-            || bestPrice?.lowVolume
-            || !bestPrice.price;
+            || !bestPrice?.price
+            || bestPrice?.priceImpact?.gt(2000);
     }
 
     useEffect(() => {
-        setTokenOne(tokens[0]);
-        setTokenTwo(tokens[1]);
-        fetchDexSwap(tokens[0]?.solidityAddress, tokens[1]?.solidityAddress)
+        setTokenOne(tokens[2]);
+        setTokenTwo(tokens[3]);
+        fetchDexSwap(tokens[2]?.solidityAddress, tokens[3]?.solidityAddress)
     }, [oracleContracts]);
 
     const refreshRate = () => {
         setIsRefreshAnimationActive(false);
         refreshCount.current = refreshCount.current + 2;
-        console.log(tokenOne?.name, tokenTwo?.name);
         if (tokenOne?.solidityAddress && tokenTwo?.solidityAddress) {
-            console.log('fetch');
             fetchDexSwap(tokenOne.solidityAddress, tokenTwo.solidityAddress);
         }
-        console.log((3000 + refreshCount.current * refreshCount.current));
         setTimeout(() => setIsRefreshAnimationActive(true), 0);
         refreshTimer.current = setTimeout(refreshRate, (25000 + 30 * refreshCount.current * refreshCount.current));
     };
@@ -395,11 +448,10 @@ function Swap(props) {
             <div>Slippage Tolerance</div>
             <div>
                 <Radio.Group onChange={handleSlippage} value={slippage}>
+                    <Radio.Button value={0.5}>0.5%</Radio.Button>
                     <Radio.Button value={1}>1%</Radio.Button>
+                    <Radio.Button value={1.5}>1.5%</Radio.Button>
                     <Radio.Button value={2}>2%</Radio.Button>
-                    <Radio.Button value={2.5}>2.5%</Radio.Button>
-                    <Radio.Button value={3.5}>3.5%</Radio.Button>
-                    <Radio.Button value={5}>5%</Radio.Button>
                 </Radio.Group>
             </div>
         </>
@@ -453,12 +505,20 @@ function Swap(props) {
                 </div>
                 <div className='inputs'>
                     <div className={feeOnTransfer ? 'approx' : ''}>
-                        <Input placeholder='0' value={tokenOneAmount} onChange={changeAmountOne}
-                               disabled={isAtLeastOnePrice()}/>
+                        <Input
+                            placeholder='0'
+                            value={tokenOneAmount}
+                            onChange={changeAmountOne}
+                            disabled={isAtLeastOnePrice()}
+                        />
                     </div>
                     <div className={feeOnTransfer ? '' : 'approx'}>
-                        <Input placeholder='0' value={tokenTwoAmount} onChange={changeAmountTwo}
-                               disabled={isAtLeastOnePrice()}/>
+                        <Input
+                            placeholder='0'
+                            value={tokenTwoAmount}
+                            onChange={changeAmountTwo}
+                            disabled={isAtLeastOnePrice()}
+                        />
                     </div>
                     <div className="switchButton" onClick={switchTokens}>
                         <ArrowDownOutlined className='switchArrow'/>
@@ -479,17 +539,29 @@ function Swap(props) {
                                 onClick={() => switchAllRates()}>{checkAllRatesOpen ? 'Hide all rates' : 'Show all rates'}</button>
                     </div>
                     {checkAllRatesOpen
-                        ? getSortedPrices().map(({ name, price, lowVolume }) => <div className='ratesLogo' key={name}>
+                        ? getSortedPrices().map(({ name, price, lowVolume, amountOut, priceImpact }) => <div className='ratesLogo' key={name}>
                             <img className='ratesLogoIcon' title={name} src={oracleSettings()?.[name]?.icon}
-                                 alt={name}/> {parseFloat(convertPrice(price))?.toFixed(6)} { lowVolume ? '(Low volume)' : '' }
+                                 alt={name}/> {ethers.utils.formatUnits(amountOut, feeOnTransfer ? tokenOne?.decimals : tokenTwo.decimals)}  (impact: {ethers.utils.formatUnits(priceImpact.toString(), 2)}%)
                         </div>)
                         : ''
                     }
                 </div>
+                { (tokenOneAmount && tokenTwoAmount)
+                    ? feeOnTransfer
+                    ? <div>Max to sell: { ethers.utils.formatUnits(ethers.utils.parseUnits(tokenOneAmount, tokenOne.decimals).mul(1000 + slippage * 10 + oracleSettings()[getBestPriceName()].feePromille).div(1000).toString(), tokenOne.decimals) }</div>
+                    : <div>Min receive: { ethers.utils.formatUnits(ethers.utils.parseUnits(tokenTwoAmount, tokenTwo.decimals).mul(1000 - slippage * 10 - oracleSettings()[getBestPriceName()].feePromille).div(1000).toString(), tokenTwo.decimals) }</div>
+                    : ''
+                }
                 <div className="refreshTicker">
                     <div className={isRefreshAnimationActive ? 'active' : ''} style={{animationDuration: parseInt((25000 + 30 * refreshCount.current * refreshCount.current)/1000).toString() + 's'}}></div>
                 </div>
-                <div className='assocWarning'>&#9432; Make sure selected tokens is associated to your account.</div>
+                <div className='assocWarning'>&#9432; Make sure selected tokens are associated to your account.</div>
+                {getBestImpactError()
+                    ? <div className='impactError'>&#9888; Price impact too high (lack of liquidity).</div>
+                    : ''
+                }
+                <>
+                </>
                 <button className='swapButton' onClick={fetchDex} disabled={swapDisabled()}>
                     Swap
                 </button>
