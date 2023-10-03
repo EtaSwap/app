@@ -10,6 +10,7 @@ import {
     ContractFunctionParameters,
     AccountAllowanceApproveTransaction
 } from '@hashgraph/sdk';
+import BasicOracleABI from '../abi/basic-oracle-abi.json';
 
 const GAS_LIMITS = {
     exactTokenToToken: 900000, //877969    875079
@@ -20,55 +21,7 @@ const GAS_LIMITS = {
     tokenToExactHBAR: 1690000, //1645353   1639941
 };
 
-const basicOracleABI = [
-    {
-        "inputs": [],
-        "name": "ConnectorShouldBeNone",
-        "type": "error"
-    },
-    {
-        "inputs": [],
-        "name": "PoolNotFound",
-        "type": "error"
-    },
-    {
-        "inputs": [],
-        "name": "PoolWithConnectorNotFound",
-        "type": "error"
-    },
-    {
-        "inputs": [
-            {
-                "internalType": "contract IERC20",
-                "name": "srcToken",
-                "type": "address"
-            },
-            {
-                "internalType": "contract IERC20",
-                "name": "dstToken",
-                "type": "address"
-            }
-        ],
-        "name": "getRate",
-        "outputs": [
-            {
-                "internalType": "uint256",
-                "name": "rate",
-                "type": "uint256"
-            },
-            {
-                "internalType": "uint256",
-                "name": "weight",
-                "type": "uint256"
-            }
-        ],
-        "stateMutability": "view",
-        "type": "function"
-    }
-];
-
-function Swap(props) {
-    const { address, tokens: tokensMap, connect, connectionData, signer, network } = props;
+function Swap({ wallet, tokens: tokensMap, connectionData, signer, network }) {
     const tokens = [...tokensMap]
         .map(wrap => wrap[1])
         .sort((a, b) =>
@@ -264,7 +217,7 @@ function Swap(props) {
 
             if (feeOnTransfer) {
                 const amountOut = BigNumber.from(ethers.utils.parseUnits(tokenTwoAmount.toString(), tokenTwo.decimals));
-                const VaAfter = amountOut.mul(Va).div(Vb.sub(amountOut)).mul(1000).div(1000 + oracleSettings()[name].feePromille);
+                const VaAfter = amountOut.mul(Va).div(Vb.sub(amountOut)).mul(1000).div(1000 + (oracleSettings()[name]?.feePromille || 0));
                 const priceImpact = amountOut.mul(10000).div(Vb);
                 priceRes.amountOut = VaAfter;
                 priceRes.priceImpact = priceImpact;
@@ -273,7 +226,7 @@ function Swap(props) {
                 }
             } else {
                 const amountIn = BigNumber.from(ethers.utils.parseUnits(tokenOneAmount.toString(), tokenOne.decimals));
-                const VbAfter = amountIn.mul(Vb).div(Va.add(amountIn)).mul(1000).div(1000 - oracleSettings()[name].feePromille);
+                const VbAfter = amountIn.mul(Vb).div(Va.add(amountIn)).mul(1000).div(1000 - (oracleSettings()[name]?.feePromille || 0));
                 const priceImpact = VbAfter.mul(10000).div(Vb);
                 priceRes.amountOut = VbAfter;
                 priceRes.priceImpact = priceImpact;
@@ -341,14 +294,14 @@ function Swap(props) {
             const allowanceTx = await new AccountAllowanceApproveTransaction()
                 .approveTokenAllowance(
                     tokenOne.address,
-                    connectionData?.accountIds?.[0],
+                    wallet?.address,
                     exchange(),
                     feeOnTransfer
                         ? ethers.utils.parseUnits(tokenOneAmount, tokenOne.decimals).mul(1000 + slippage * 10 + oracleSettings()[bestRate.name].feePromille).div(1000).toString()
                         : ethers.utils.parseUnits(tokenOneAmount, tokenOne.decimals).toString(),
                 )
-                .freezeWithSigner(signer);
-            await allowanceTx.executeWithSigner(signer);
+                .freezeWithSigner(wallet.signer);
+            await allowanceTx.executeWithSigner(wallet.signer);
         }
 
         let swapTransaction = await new ContractExecuteTransaction()
@@ -377,9 +330,9 @@ function Swap(props) {
                     : ethers.utils.formatUnits(ethers.utils.parseUnits(tokenOneAmount, 8), 8)
                 )
                 : 0)
-            .freezeWithSigner(signer);
+            .freezeWithSigner(wallet.signer);
 
-        await swapTransaction.executeWithSigner(signer);
+        await swapTransaction.executeWithSigner(wallet.signer);
     }
 
     useEffect(() => {
@@ -387,14 +340,14 @@ function Swap(props) {
         setTokenTwoAmount(0);
         const provider = new ethers.providers.JsonRpcProvider(`https://${network}.hashio.io/api`);
         setOracleContracts( network === 'mainnet' ? {
-            SaucerSwap: new ethers.Contract(oracles().SaucerSwap, basicOracleABI, provider),
-            Pangolin: new ethers.Contract(oracles().Pangolin, basicOracleABI, provider),
-            HeliSwap: new ethers.Contract(oracles().HeliSwap, basicOracleABI, provider),
+            SaucerSwap: new ethers.Contract(oracles().SaucerSwap, BasicOracleABI, provider),
+            Pangolin: new ethers.Contract(oracles().Pangolin, BasicOracleABI, provider),
+            HeliSwap: new ethers.Contract(oracles().HeliSwap, BasicOracleABI, provider),
         } : {
-            SaucerSwap: new ethers.Contract(oracles().SaucerSwap, basicOracleABI, provider),
-            Pangolin: new ethers.Contract(oracles().Pangolin, basicOracleABI, provider),
+            SaucerSwap: new ethers.Contract(oracles().SaucerSwap, BasicOracleABI, provider),
+            Pangolin: new ethers.Contract(oracles().Pangolin, BasicOracleABI, provider),
         });
-    }, [signer, tokensMap]);
+    }, [wallet, tokensMap]);
 
     const getBestPriceDescr = () => {
         const bestPrice = getSortedPrices()?.[0];
@@ -412,7 +365,7 @@ function Swap(props) {
     const swapDisabled = () => {
         const bestPrice = getSortedPrices()?.[0];
         return !tokenOneAmount
-            || !connectionData?.accountIds?.[0]
+            || !wallet?.address
             || !bestPrice?.price
             || bestPrice?.priceImpact?.gt(2000);
     }

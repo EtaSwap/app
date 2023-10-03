@@ -378,7 +378,6 @@ header {
   left: 14px;
 }
 
-
 .networkChoice {
   display: flex;
   justify-content: flex-start;
@@ -396,6 +395,32 @@ header {
 
 .tokenChoice:hover .tokenTicker {
   color: #E8FFCE;
+}
+
+.walletChoice {
+  display: flex;
+  justify-content: flex-start;
+  align-items: center;
+  padding: 15px;
+  margin: 0 10px;
+  border-radius: 5px;
+  background: none;
+  border: 0;
+}
+
+.walletChoice:hover {
+  cursor: pointer;
+  background-color: #1f2639;
+  color: #E8FFCE;
+}
+
+.walletChoice:hover .tokenTicker {
+  color: #E8FFCE;
+}
+
+.walletLogo {
+  width: 100%;
+  height: 50px;
 }
 
 .networkLogo {

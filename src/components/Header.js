@@ -5,31 +5,35 @@ import {Link} from 'react-router-dom'
 import Disconnect from '../img/disconnect.png'
 import { Modal } from 'antd';
 
-const networks = [
-    { name: 'testnet', title: 'Hedera testnet' },
-    { name: 'mainnet', title: 'Hedera mainnet' },
-];
+function Header({ wallet, setWallet, wallets, connect, connectionData, setConnectionData, network, setNetwork }) {
+  const [networkModalOpen, setNetworkModalOpen] = useState(false);
+  const [walletModalOpen, setWalletModalOpen] = useState(false);
 
-function Header({ connect, connectionData, setConnectionData, network, setNetwork, initHashconnect }) {
-    const [networkModalOpen, setNetworkModalOpen] = useState(false);
-  const connectWallet = () => {
-      console.log(initHashconnect());
-    initHashconnect()();
-    // connect.connectToLocalWallet();
-      // initHashconnect();
+  const networks = [
+      { name: 'testnet', title: 'Hedera testnet' },
+      { name: 'mainnet', title: 'Hedera mainnet' },
+  ];
+
+  const disconnectWallet = (name) => {
+      wallets[name].instance.disconnect();
   }
 
-  const disconnectWallet = () => {
-    connect.disconnect(connectionData?.topic);
-    setConnectionData(null);
+  const connectWallet = (name) => {
+    if (wallet.name) {
+        if (wallet.name === name) {
+            return null;
+        }
+        wallets[wallet.name].instance.disconnect();
+    }
+    setWallet(name);
+    wallets[name].instance.connect(network);
+    setWalletModalOpen(false);
   }
 
   const selectNetwork = (name) => {
       if (network !== name) {
           setNetwork(name);
-          connect.disconnect(connectionData?.topic);
-          connect.clearConnectionsAndData();
-          setConnectionData(null);
+          wallets[wallet.name].instance.disconnect();
       }
       setNetworkModalOpen(false);
   }
@@ -53,13 +57,13 @@ function Header({ connect, connectionData, setConnectionData, network, setNetwor
           <img src={HederaLogo} alt={network} className='logo' />
           Hedera {network}
         </div>
-        {!!connectionData?.accountIds?.[0]
-          ? <>{connectionData?.accountIds?.[0]}< div className='connectButton'
+        {!!wallet?.address
+          ? <>{wallet?.address}< div className='connectButton'
                 onClick={() => disconnectWallet()}
             ><img className='disconnectIcon' src={Disconnect} alt='disconnect'/></div></>
           : <div className='connectButton'
-                 onClick={() => connectWallet()}
-            >Connect HashPack</div>
+                 onClick={() => setWalletModalOpen(true)}
+            >Connect Wallet</div>
         }
       </div>
       <Modal open={networkModalOpen} footer={null} onCancel={() => {
@@ -72,6 +76,19 @@ function Header({ connect, connectionData, setConnectionData, network, setNetwor
                 <img src={HederaLogo} alt={network.title} className="networkLogo"/>
                 <div className='networkName'>{network.title}</div>
               </div>
+            )
+          })}
+        </div>
+      </Modal>
+      <Modal open={walletModalOpen} footer={null} onCancel={() => {
+        setWalletModalOpen(false)
+      }} title="Select wallet">
+        <div className='modalContent'>
+          {Object.values(wallets).map(({ name, title, icon }, i) => {
+            return (
+              <button className='walletChoice' key={i} onClick={() => connectWallet(name)}>
+                <img src={icon} alt={title} title={title} className="walletLogo"/>
+              </button>
             )
           })}
         </div>

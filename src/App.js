@@ -4,53 +4,35 @@ import Header from "./components/Header";
 import { Routes, Route } from "react-router-dom";
 import Swap from "./components/Swap";
 import Tokens from "./components/Tokens";
-import { HashConnect } from 'hashconnect';
 import axios from 'axios';
 import { ContractId } from '@hashgraph/sdk';
 import { ethers } from 'ethers';
 import HederaLogo from './img/hedera-logo.png';
+import HashpackLogo from './img/hashpack.svg';
+import BladeLogo from './img/blade.svg';
 import tokenListMainnet from './tokenListMainnet.json';
 import tokenListTestnet from './tokenListTestnet.json';
-
-const hashconnect = new HashConnect();
-
-const appMetadata = {
-    name: "EtaSwap",
-    description: "DEX aggregator",
-    icon: "https://etaswap.com/logo-bg.svg",
-};
+import { HashpackWallet } from './class/wallet/hashpack-wallet';
+import { BladeWallet } from './class/wallet/blade-wallet';
 
 function App() {
     const [connectionData, setConnectionData] = useState({});
+    const [wallet, setWallet] = useState({
+        name: '',
+        address: '',
+        signer: null,
+    });
     const [signer, setSigner] = useState({});
     const [tokens, setTokens] = useState(new Map());
     const [network, setNetwork] = useState('mainnet');
 
-    const initHashconnect = async (skipConnect = false) => {
-        const initData = await hashconnect.init(appMetadata, network, true);
-        if (initData?.savedPairings?.[0]?.network === network) {
-            //reload page
-            setConnectionData(initData?.savedPairings?.[0]);
-            const provider = hashconnect.getProvider(network, initData?.topic, initData?.savedPairings?.[0]?.accountIds?.[0]);
-            setSigner(hashconnect.getSigner(provider));
-        } else if (!skipConnect) {
-            //new connection
-            await hashconnect.disconnect(connectionData?.topic);
-            await hashconnect.clearConnectionsAndData();
-            await hashconnect.init(appMetadata, network, true);
-            hashconnect.connectToLocalWallet();
-        }
-
-    }
+    const wallets = {
+        hashpack: { name: 'hashpack', title: 'HashPack', instance: new HashpackWallet(setWallet), icon: HashpackLogo },
+        blade: { name: 'blade', title: 'Blade', instance: new BladeWallet(setWallet), icon: BladeLogo },
+    };
 
     useEffect(() => {
-        hashconnect.pairingEvent.on((pairingData) => {
-            setConnectionData(pairingData);
-            const provider = hashconnect.getProvider(network, pairingData?.topic, pairingData?.accountIds?.[0]);
-            setSigner(hashconnect.getSigner(provider));
-        });
-
-        initHashconnect(true);
+        wallets.hashpack.instance.connect(network, true);
     }, []);
 
     useEffect(() => {
@@ -142,19 +124,20 @@ function App() {
     return (
         <div className="App">
             <Header
-                connect={hashconnect}
+                wallet={wallet}
+                setWallet={setWallet}
+                wallets={wallets}
                 connectionData={connectionData}
                 setConnectionData={setConnectionData}
                 network={network}
                 setNetwork={setNetwork}
                 setSigner={setSigner}
-                initHashconnect={() => initHashconnect}
             />
             <div className="mainWindow">
                 <Routes>
                     <Route path="/" element={<Swap
+                        wallet={wallet}
                         tokens={tokens}
-                        connect={hashconnect}
                         connectionData={connectionData}
                         signer={signer}
                         network={network}
