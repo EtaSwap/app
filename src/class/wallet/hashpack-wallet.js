@@ -1,7 +1,7 @@
 import { HashConnect } from 'hashconnect';
 
 export class HashpackWallet {
-    name = 'Hashpack'
+    name = 'hashpack'
     address = ''
     connectionData = null
     signer = null
@@ -16,9 +16,9 @@ export class HashpackWallet {
         this.setWallet = setWallet;
 
         this.hashconnect.pairingEvent.on((pairingData) => {
-            console.log('in pairing');
             this.connectionData = pairingData;
-            const provider = this.hashconnect.getProvider(this.network, pairingData?.topic, pairingData?.accountIds?.[0]);
+            this.address = this.connectionData?.accountIds?.[0];
+            const provider = this.hashconnect.getProvider(this.network, pairingData?.topic, this.address);
             this.signer = this.hashconnect.getSigner(provider);
             this.refreshWallet();
         });
@@ -49,8 +49,6 @@ export class HashpackWallet {
             await this.hashconnect.clearConnectionsAndData();
             await this.hashconnect.init(this.appMetadata, network, true);
             this.hashconnect.connectToLocalWallet();
-        } else {
-            this.refreshWallet();
         }
     }
 
@@ -59,6 +57,7 @@ export class HashpackWallet {
         await this.hashconnect.clearConnectionsAndData();
         this.connectionData = null;
         this.signer = null;
+        this.address = '';
         this.refreshWallet();
     }
 

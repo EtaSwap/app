@@ -1,7 +1,7 @@
 import { BladeConnector, ConnectorStrategy } from '@bladelabs/blade-web3.js';
 
 export class BladeWallet {
-    name = 'Blade'
+    name = 'blade'
     address = ''
     signer = null
     appMetadata = {
@@ -31,6 +31,7 @@ export class BladeWallet {
                 ConnectorStrategy.AUTO,
                 this.appMetadata,
             );
+            console.log(this.bladeConnector);
         }
         const accountIds = await this.bladeConnector.createSession({ network });
         this.address = accountIds?.[0];
@@ -41,6 +42,7 @@ export class BladeWallet {
     async disconnect() {
         this.signer = null;
         this.address = '';
+        console.log(this.bladeConnector);
         await this.bladeConnector.killSession();
         this.refreshWallet();
     }

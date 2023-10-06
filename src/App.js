@@ -9,27 +9,40 @@ import { ContractId } from '@hashgraph/sdk';
 import { ethers } from 'ethers';
 import HederaLogo from './img/hedera-logo.png';
 import HashpackLogo from './img/hashpack.svg';
+import HashpackIcon from './img/hashpack-icon.png';
 import BladeLogo from './img/blade.svg';
+import BladeIcon from './img/blade-icon.webp';
 import tokenListMainnet from './tokenListMainnet.json';
 import tokenListTestnet from './tokenListTestnet.json';
 import { HashpackWallet } from './class/wallet/hashpack-wallet';
 import { BladeWallet } from './class/wallet/blade-wallet';
+import { NETWORKS } from './constants';
 
 function App() {
-    const [connectionData, setConnectionData] = useState({});
     const [wallet, setWallet] = useState({
         name: '',
         address: '',
         signer: null,
     });
-    const [signer, setSigner] = useState({});
     const [tokens, setTokens] = useState(new Map());
-    const [network, setNetwork] = useState('mainnet');
+    const [network, setNetwork] = useState(NETWORKS.MAINNET);
 
-    const wallets = {
-        hashpack: { name: 'hashpack', title: 'HashPack', instance: new HashpackWallet(setWallet), icon: HashpackLogo },
-        blade: { name: 'blade', title: 'Blade', instance: new BladeWallet(setWallet), icon: BladeLogo },
-    };
+    const [wallets, setWallets] = useState({
+        hashpack: {
+            name: 'hashpack',
+            title: 'HashPack',
+            instance: new HashpackWallet(setWallet),
+            image: HashpackLogo,
+            icon: HashpackIcon,
+        },
+        blade: {
+            name: 'blade',
+            title: 'Blade',
+            instance: new BladeWallet(setWallet),
+            image: BladeLogo,
+            icon: BladeIcon,
+        },
+    });
 
     useEffect(() => {
         wallets.hashpack.instance.connect(network, true);
@@ -42,7 +55,7 @@ function App() {
             axios.get('https://heliswap.infura-ipfs.io/ipfs/Qmf5u6N2ohZnBc1yxepYzS3RYagkMZbU5dwwU4TGxXt9Lf'),
         ];
         let tokenList = new Set(tokenListMainnet);
-        if (network === 'testnet') {
+        if (network === NETWORKS.TESTNET) {
             tokenSources = [
                 axios.get('https://test-api.saucerswap.finance/tokens'),
                 axios.get('https://raw.githubusercontent.com/pangolindex/tokenlists/main/pangolin.tokenlist.json'),
@@ -80,7 +93,7 @@ function App() {
                 }
             });
 
-            pangolinTokens.data.tokens.filter(token => token.chainId === (network === 'mainnet' ? 295 : 296)).map(token => {
+            pangolinTokens.data.tokens.filter(token => token.chainId === (network === NETWORKS.MAINNET ? 295 : 296)).map(token => {
                 const existing = tokenMap.get(token.address.toLowerCase());
                 if (existing) {
                     existing.providers.push('Pangolin');
@@ -125,23 +138,19 @@ function App() {
         <div className="App">
             <Header
                 wallet={wallet}
-                setWallet={setWallet}
                 wallets={wallets}
-                connectionData={connectionData}
-                setConnectionData={setConnectionData}
                 network={network}
                 setNetwork={setNetwork}
-                setSigner={setSigner}
             />
             <div className="mainWindow">
                 <Routes>
-                    <Route path="/" element={<Swap
-                        wallet={wallet}
-                        tokens={tokens}
-                        connectionData={connectionData}
-                        signer={signer}
-                        network={network}
-                    />}/>
+                    <Route path="/" element={
+                        <Swap
+                            wallet={wallet}
+                            tokens={tokens}
+                            network={network}
+                        />
+                    }/>
                     <Route path="/tokens" element={<Tokens tokens={tokens} network={network}/>}/>
                 </Routes>
             </div>

@@ -13,8 +13,8 @@ header {
 }
 
 .logo{
-  width: 40px;
-  height: 40px;
+  width: 36px;
+  height: 36px;
   padding-right: 20px;
 }
 
@@ -78,6 +78,12 @@ header {
   height: 20px;
   margin-left: 4px;
   vertical-align: top;
+}
+
+.walletIcon {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
 }
 
 .mainWindow {

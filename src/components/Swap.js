@@ -11,17 +11,9 @@ import {
     AccountAllowanceApproveTransaction
 } from '@hashgraph/sdk';
 import BasicOracleABI from '../abi/basic-oracle-abi.json';
+import { NETWORKS, GAS_LIMITS } from '../constants';
 
-const GAS_LIMITS = {
-    exactTokenToToken: 900000, //877969    875079
-    exactHBARToToken: 260000, //221207     203366
-    exactTokenToHBAR: 1670000, //1629306   1623679
-    tokenToExactToken: 920000, //894071    891182
-    HBARToExactToken: 260000, //211040     218135
-    tokenToExactHBAR: 1690000, //1645353   1639941
-};
-
-function Swap({ wallet, tokens: tokensMap, connectionData, signer, network }) {
+function Swap({ wallet, tokens: tokensMap, network }) {
     const tokens = [...tokensMap]
         .map(wrap => wrap[1])
         .sort((a, b) =>
@@ -61,7 +53,7 @@ function Swap({ wallet, tokens: tokensMap, connectionData, signer, network }) {
         value: null
     })
 
-    const oracleSettings = () => network === 'mainnet' ? {
+    const oracleSettings = () => network === NETWORKS.MAINNET ? {
         SaucerSwap: { icon: SaucerSwapLogo, aggregatorId: 'SaucerSwap', feePromille: 3, whbar: '0x0000000000000000000000000000000000163b5a' },
         Pangolin: { icon: PangolinLogo, aggregatorId: 'Pangolin', feePromille: 3, whbar: '0x00000000000000000000000000000000001a8837' },
         HeliSwap: { icon: HeliSwapLogo, aggregatorId: 'HeliSwap', feePromille: 5, whbar: '0x00000000000000000000000000000000002cc823' },
@@ -70,7 +62,7 @@ function Swap({ wallet, tokens: tokensMap, connectionData, signer, network }) {
         Pangolin: { icon: PangolinLogo, aggregatorId: 'Pangolin', feePromille: 3, whbar: '0x000000000000000000000000000000000002690a' },
     };
 
-    const oracles = () => network === 'mainnet' ? {
+    const oracles = () => network === NETWORKS.MAINNET ? {
         SaucerSwap: '0xc47037963fad3a5397cca3fef5c1c95839dc6363',
         Pangolin: '0xfa7206b4c9d46af2e2f7f3b1bd4d3aa2aeca6e71',
         HeliSwap: '0x51851a39da39c53f9b564cfdf7e6f55dc8850225',
@@ -79,7 +71,7 @@ function Swap({ wallet, tokens: tokensMap, connectionData, signer, network }) {
         Pangolin: '0x9dAdB3285AC2d65A2cbB1341Aa0c14edc8c2F2b9',
     };
 
-    const exchange = () => network === 'mainnet' ? '0.0.3745835' : '0.0.1173826';
+    const exchange = () => network === NETWORKS.MAINNET ? '0.0.3745835' : '0.0.1173826';
 
     const handleSlippage = (e) => {
         setSlippage(e.target.value)
@@ -254,25 +246,25 @@ function Swap({ wallet, tokens: tokensMap, connectionData, signer, network }) {
         return !Object.values(prices).find(price => !price?.rate?.isZero());
     }
 
-    const getGasPrice = () => {
+    const getGasPrice = (providerName) => {
         if (!tokenOne || !tokenTwo) {
             return 0;
         }
         if (feeOnTransfer) {
             if (tokenOne.solidityAddress === ethers.constants.AddressZero) {
-                return GAS_LIMITS.HBARToExactToken;
+                return GAS_LIMITS[providerName].HBARToExactToken;
             } else if (tokenTwo.solidityAddress === ethers.constants.AddressZero) {
-                return GAS_LIMITS.tokenToExactHBAR;
+                return GAS_LIMITS[providerName].tokenToExactHBAR;
             } else {
-                return GAS_LIMITS.tokenToExactToken;
+                return GAS_LIMITS[providerName].tokenToExactToken;
             }
         } else {
             if (tokenOne.solidityAddress === ethers.constants.AddressZero) {
-                return GAS_LIMITS.exactHBARToToken;
+                return GAS_LIMITS[providerName].exactHBARToToken;
             } else if (tokenTwo.solidityAddress === ethers.constants.AddressZero) {
-                return GAS_LIMITS.exactTokenToHBAR;
+                return GAS_LIMITS[providerName].exactTokenToHBAR;
             } else {
-                return GAS_LIMITS.exactTokenToToken;
+                return GAS_LIMITS[providerName].exactTokenToToken;
             }
         }
     }
@@ -306,7 +298,7 @@ function Swap({ wallet, tokens: tokensMap, connectionData, signer, network }) {
 
         let swapTransaction = await new ContractExecuteTransaction()
             .setContractId(exchange())
-            .setGas(getGasPrice())
+            .setGas(getGasPrice(bestRate.name))
             .setFunction("swap", new ContractFunctionParameters()
                 .addString(oracleSettings()[bestRate.name].aggregatorId)
                 .addAddress(tokenOne.solidityAddress)
@@ -339,7 +331,7 @@ function Swap({ wallet, tokens: tokensMap, connectionData, signer, network }) {
         setTokenOneAmount(0);
         setTokenTwoAmount(0);
         const provider = new ethers.providers.JsonRpcProvider(`https://${network}.hashio.io/api`);
-        setOracleContracts( network === 'mainnet' ? {
+        setOracleContracts( network === NETWORKS.MAINNET ? {
             SaucerSwap: new ethers.Contract(oracles().SaucerSwap, BasicOracleABI, provider),
             Pangolin: new ethers.Contract(oracles().Pangolin, BasicOracleABI, provider),
             HeliSwap: new ethers.Contract(oracles().HeliSwap, BasicOracleABI, provider),
@@ -501,8 +493,8 @@ function Swap({ wallet, tokens: tokensMap, connectionData, signer, network }) {
                 </div>
                 { (tokenOneAmount && tokenTwoAmount)
                     ? feeOnTransfer
-                    ? <div>Max to sell: { ethers.utils.formatUnits(ethers.utils.parseUnits(tokenOneAmount, tokenOne.decimals).mul(1000 + slippage * 10 + oracleSettings()[getBestPriceName()].feePromille).div(1000).toString(), tokenOne.decimals) }</div>
-                    : <div>Min receive: { ethers.utils.formatUnits(ethers.utils.parseUnits(tokenTwoAmount, tokenTwo.decimals).mul(1000 - slippage * 10 - oracleSettings()[getBestPriceName()].feePromille).div(1000).toString(), tokenTwo.decimals) }</div>
+                    ? <div>Max to sell: { ethers.utils.formatUnits(ethers.utils.parseUnits(tokenOneAmount, tokenOne.decimals).mul(1000 + slippage * 10 + oracleSettings()[getBestPriceName()]?.feePromille).div(1000).toString(), tokenOne.decimals) }</div>
+                    : <div>Min receive: { ethers.utils.formatUnits(ethers.utils.parseUnits(tokenTwoAmount, tokenTwo.decimals).mul(1000 - slippage * 10 - oracleSettings()[getBestPriceName()]?.feePromille).div(1000).toString(), tokenTwo.decimals) }</div>
                     : ''
                 }
                 <div className="refreshTicker">
