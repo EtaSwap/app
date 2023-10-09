@@ -5,7 +5,7 @@
   "private": true,
   "dependencies": {
     "@ant-design/icons": "^5.0.0",
-    "@hashgraph/hethers": "^1.2.6",
+    "@bladelabs/blade-web3.js": "^1.1.1",
     "@hashgraph/sdk": "^2.31.0",
     "@testing-library/jest-dom": "^5.16.5",
     "@testing-library/react": "^13.4.0",
