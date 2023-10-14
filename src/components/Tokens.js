@@ -1,11 +1,10 @@
 import React from 'react'
 
-function Tokens(props) {
-  const { tokens, network } = props;
+function Tokens({ tokens }) {
   return (
-    <div style={{width: "100vw", height: "100%"}}>
+    <div className='tokens'>
       <div className=''>
-      <h1 style={{textAlign: "center", mb: "5px"}} >This tokens are available to swap:</h1>
+        <h1 style={{textAlign: "center", mb: "5px"}} >These tokens are available to swap:</h1>
       </div>
       <div style={{display: "flex", flexDirection: "row", flexWrap: "wrap", gap: 20, margin: "0 auto", alignItems: "center", justifyContent: "center"}}>
       {[...tokens]
