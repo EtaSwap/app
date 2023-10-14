@@ -1,7 +1,7 @@
 import "./App.css";
 import React, { useState, useEffect } from 'react';
 import Header from "./components/Header";
-import { Routes, Route } from "react-router-dom";
+import { Routes, Route, Navigate } from "react-router-dom";
 import Swap from "./components/Swap";
 import Tokens from "./components/Tokens";
 import axios from 'axios';
@@ -17,6 +17,8 @@ import tokenListTestnet from './tokenListTestnet.json';
 import { HashpackWallet } from './class/wallet/hashpack-wallet';
 import { BladeWallet } from './class/wallet/blade-wallet';
 import { NETWORKS } from './constants';
+import Social from './components/Social';
+import pkg from '../package.json';
 
 function App() {
     const [wallet, setWallet] = useState({
@@ -151,9 +153,13 @@ function App() {
                             network={network}
                         />
                     }/>
-                    <Route path="/tokens" element={<Tokens tokens={tokens} network={network}/>}/>
+                    <Route path="/tokens" element={<Tokens tokens={tokens}/>}/>
                 </Routes>
             </div>
+            <div className="social">
+                <Social/>
+            </div>
+            <div className="version">v {pkg.version}</div>
         </div>
     )
 }

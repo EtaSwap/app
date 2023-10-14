@@ -36,22 +36,18 @@ function Header({ wallet, wallets, network, setNetwork }) {
   }
 
   return (
-    <header>
-      <div className='leftH'>
-        <img src={Logo} alt='η' className='logo' title='EtaSwap' />
-        <Link to='/' className='link'>
-          <div className='headerItem'>Swap</div>
+    <header className='header'>
+      <nav className='leftH'>
+        <Link to='/'>
+          <img src={Logo} alt='η' className='logo' title='EtaSwap' />
         </Link>
-        <Link to='/tokens' className='link'>
-          <div className='headerItem'>Tokens</div>
-        </Link>
-        <a href='https://docs.etaswap.com/' target='_blank' className='link'>
-          <div className='headerItem'>Docs</div>
-        </a>
-      </div>
+        <Link to='/' className='link'>Swap</Link>
+        <Link to='/tokens' className='link'>Tokens</Link>
+        <a href='https://docs.etaswap.com/' target='_blank' className='link'>Docs</a>
+      </nav>
       <div className='rightH'>
         <div className='headerItem' onClick={() => setNetworkModalOpen(true)}>
-          <img src={HederaLogo} alt={network} className='logo' />
+          <img src={HederaLogo} alt={network} className='networkLogo' />
           Hedera {network}
         </div>
         {!!wallet?.address
@@ -72,7 +68,7 @@ function Header({ wallet, wallets, network, setNetwork }) {
           {Object.values(NETWORKS).map((network, i) => {
             return (
               <div className='networkChoice' key={i} onClick={() => selectNetwork(network)}>
-                <img src={HederaLogo} alt={'Hedera ' + network} className="networkLogo"/>
+                <img src={HederaLogo} alt={'Hedera ' + network} className="networkLogoModal"/>
                 <div className='networkName'>{'Hedera ' + network}</div>
               </div>
             )

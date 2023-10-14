@@ -1,3 +1,7 @@
+* {
+  box-sizing: border-box;
+}
+
 body {
   margin: 0;
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto", "Oxygen",
@@ -116,19 +120,10 @@ code {
   color: #E8FFCE !important;
 }
 
-.social {
-  position: absolute;
-  bottom: 10px;
-  left: 50%;
-  margin-left: -101px;
-}
-.social__link {
-  text-decoration: none;
-  display: inline-block;
-  margin: 0 4px;
-}
-.social__image {
-  width: 40px;
-  height: 40px;
-  vertical-align: top;
+.root {
+  display: flex;
+  align-items: stretch;
+  flex-direction: column;
+  min-height: 100vh;
+  min-height: 100dvh;
 }
