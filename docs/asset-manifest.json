@@ -1,7 +1,7 @@
 {
   "files": {
     "main.css": "/static/css/main.4963f2c8.css",
-    "main.js": "/static/js/main.6bdd766f.js",
+    "main.js": "/static/js/main.12a32baf.js",
     "static/media/pangolin.png": "/static/media/pangolin.536ec485f1c5157a1b53.png",
     "static/media/heliswap.png": "/static/media/heliswap.b9d459943ee7444f0c81.png",
     "static/media/saucerswap.ico": "/static/media/saucerswap.940556ea4a58a5aa76b6.ico",
@@ -13,6 +13,6 @@
   },
   "entrypoints": [
     "static/css/main.4963f2c8.css",
-    "static/js/main.6bdd766f.js"
+    "static/js/main.12a32baf.js"
   ]
 }
