@@ -301,20 +301,6 @@ function Swap({ wallet, tokens: tokensMap, network }) {
     }
 
     const fetchDex = async () => {
-
-        // const provider = new ethers.providers.JsonRpcProvider(`https://${network}.hashio.io/api`);
-        // const exchangeContract = new ethers.Contract('0x000000000000000000000000000000000011e942', ExchangeABI, provider);
-        // console.log(await exchangeContract.adapters('Pangolin'));
-        // console.log(await exchangeContract.adapters('SaucerSwap'));
-        // console.log(await exchangeContract.adapters('SaucerSwapAdapter'));
-        // console.log(await exchangeContract.adapterRemoved('SaucerSwap'));
-        // console.log(await exchangeContract.adapterRemoved('SaucerSwapAdapter'));
-        // return;
-        //
-
-
-
-
         const deadline = Math.floor(Date.now() / 1000) + 1000;
 
         const bestRate = getSortedPrices()?.[0];
