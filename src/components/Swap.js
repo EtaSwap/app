@@ -11,6 +11,7 @@ import {
     AccountAllowanceApproveTransaction
 } from '@hashgraph/sdk';
 import BasicOracleABI from '../abi/basic-oracle-abi.json';
+import ExchangeABI from '../abi/exchange-abi.json';
 import { NETWORKS, GAS_LIMITS } from '../constants';
 
 function Swap({ wallet, tokens: tokensMap, network }) {
@@ -54,12 +55,42 @@ function Swap({ wallet, tokens: tokensMap, network }) {
     })
 
     const oracleSettings = () => network === NETWORKS.MAINNET ? {
-        SaucerSwap: { icon: SaucerSwapLogo, aggregatorId: 'SaucerSwap', feePromille: 3, whbar: '0x0000000000000000000000000000000000163b5a' },
-        Pangolin: { icon: PangolinLogo, aggregatorId: 'Pangolin', feePromille: 3, whbar: '0x00000000000000000000000000000000001a8837' },
-        HeliSwap: { icon: HeliSwapLogo, aggregatorId: 'HeliSwap', feePromille: 5, whbar: '0x00000000000000000000000000000000002cc823' },
+        SaucerSwap: {
+            icon: SaucerSwapLogo,
+            aggregatorId: 'SaucerSwap',
+            feePromille: 3,
+            feeDEXPromille: 3,
+            whbar: '0x0000000000000000000000000000000000163b5a',
+        },
+        Pangolin: {
+            icon: PangolinLogo,
+            aggregatorId: 'Pangolin',
+            feePromille: 3,
+            feeDEXPromille: 3,
+            whbar: '0x00000000000000000000000000000000001a8837',
+        },
+        HeliSwap: {
+            icon: HeliSwapLogo,
+            aggregatorId: 'HeliSwap',
+            feePromille: 5,
+            feeDEXPromille: 3,
+            whbar: '0x00000000000000000000000000000000002cc823',
+        },
     } : {
-        SaucerSwap: { icon: SaucerSwapLogo, aggregatorId: 'SaucerSwap', feePromille: 3, whbar: '0x000000000000000000000000000000000000e6a2' },
-        Pangolin: { icon: PangolinLogo, aggregatorId: 'Pangolin', feePromille: 3, whbar: '0x000000000000000000000000000000000002690a' },
+        SaucerSwap: {
+            icon: SaucerSwapLogo,
+            aggregatorId: 'SaucerSwap',
+            feePromille: 3,
+            feeDEXPromille: 3,
+            whbar: '0x000000000000000000000000000000000000e6a2',
+        },
+        Pangolin: {
+            icon: PangolinLogo,
+            aggregatorId: 'Pangolin',
+            feePromille: 3,
+            feeDEXPromille: 3,
+            whbar: '0x000000000000000000000000000000000002690a',
+        },
     };
 
     const oracles = () => network === NETWORKS.MAINNET ? {
@@ -71,10 +102,10 @@ function Swap({ wallet, tokens: tokensMap, network }) {
         Pangolin: '0x9dAdB3285AC2d65A2cbB1341Aa0c14edc8c2F2b9',
     };
 
-    const exchange = () => network === NETWORKS.MAINNET ? '0.0.3745835' : '0.0.1173826';
+    const exchange = () => network === NETWORKS.MAINNET ? '0.0.3745835' : '0.0.1772118';
 
     const handleSlippage = (e) => {
-        setSlippage(e.target.value)
+        setSlippage(e.target.value);
     }
 
     useEffect(() => {
@@ -197,7 +228,7 @@ function Swap({ wallet, tokens: tokensMap, network }) {
         }
         const pricesRes = [];
         for (let { name, price, weight } of sortedPrices) {
-            if (!price || !tokenOne?.decimals || !tokenTwo?.decimals) {
+            if (!price || !tokenOne?.decimals || !tokenTwo?.decimals || !oracleSettings()[name]) {
                 continue;
             }
 
@@ -208,7 +239,7 @@ function Swap({ wallet, tokens: tokensMap, network }) {
             const Vb = volume.div(Va);
 
             if (feeOnTransfer) {
-                const amountOut = BigNumber.from(ethers.utils.parseUnits(tokenTwoAmount.toString(), tokenTwo.decimals));
+                const amountOut = BigNumber.from(ethers.utils.parseUnits(tokenTwoAmount.toString(), tokenTwo.decimals)).mul(1000 + oracleSettings()[name].feePromille + oracleSettings()[name].feeDEXPromille).div(1000);
                 const VaAfter = amountOut.mul(Va).div(Vb.sub(amountOut)).mul(1000).div(1000 + (oracleSettings()[name]?.feePromille || 0));
                 const priceImpact = amountOut.mul(10000).div(Vb);
                 priceRes.amountOut = VaAfter;
@@ -217,7 +248,7 @@ function Swap({ wallet, tokens: tokensMap, network }) {
                     pricesRes.push(priceRes);
                 }
             } else {
-                const amountIn = BigNumber.from(ethers.utils.parseUnits(tokenOneAmount.toString(), tokenOne.decimals));
+                const amountIn = BigNumber.from(ethers.utils.parseUnits(tokenOneAmount.toString(), tokenOne.decimals)).mul(1000 - oracleSettings()[name].feePromille - oracleSettings()[name].feeDEXPromille).div(1000);
                 const VbAfter = amountIn.mul(Vb).div(Va.add(amountIn)).mul(1000).div(1000 - (oracleSettings()[name]?.feePromille || 0));
                 const priceImpact = VbAfter.mul(10000).div(Vb);
                 priceRes.amountOut = VbAfter;
@@ -270,6 +301,20 @@ function Swap({ wallet, tokens: tokensMap, network }) {
     }
 
     const fetchDex = async () => {
+
+        // const provider = new ethers.providers.JsonRpcProvider(`https://${network}.hashio.io/api`);
+        // const exchangeContract = new ethers.Contract('0x000000000000000000000000000000000011e942', ExchangeABI, provider);
+        // console.log(await exchangeContract.adapters('Pangolin'));
+        // console.log(await exchangeContract.adapters('SaucerSwap'));
+        // console.log(await exchangeContract.adapters('SaucerSwapAdapter'));
+        // console.log(await exchangeContract.adapterRemoved('SaucerSwap'));
+        // console.log(await exchangeContract.adapterRemoved('SaucerSwapAdapter'));
+        // return;
+        //
+
+
+
+
         const deadline = Math.floor(Date.now() / 1000) + 1000;
 
         const bestRate = getSortedPrices()?.[0];
@@ -289,7 +334,7 @@ function Swap({ wallet, tokens: tokensMap, network }) {
                     wallet?.address,
                     exchange(),
                     feeOnTransfer
-                        ? ethers.utils.parseUnits(tokenOneAmount, tokenOne.decimals).mul(1000 + slippage * 10 + oracleSettings()[bestRate.name].feePromille).div(1000).toString()
+                        ? ethers.utils.parseUnits(tokenOneAmount, tokenOne.decimals).mul(1000 + slippage * 10).div(1000).toString()
                         : ethers.utils.parseUnits(tokenOneAmount, tokenOne.decimals).toString(),
                 )
                 .freezeWithSigner(wallet.signer);
@@ -305,26 +350,28 @@ function Swap({ wallet, tokens: tokensMap, network }) {
                 .addAddress(tokenTwo.solidityAddress)
                 .addUint256(
                     feeOnTransfer
-                        ? ethers.utils.parseUnits(tokenOneAmount, tokenOne.decimals).mul(1000 + slippage * 10 + oracleSettings()[bestRate.name].feePromille).div(1000).toString()
+                        ? ethers.utils.parseUnits(tokenOneAmount, tokenOne.decimals).mul(1000 + slippage * 10).div(1000).toString()
                         : ethers.utils.parseUnits(tokenOneAmount, tokenOne.decimals).toString()
                 )
                 .addUint256(
                     feeOnTransfer
                         ? ethers.utils.parseUnits(tokenTwoAmount, tokenTwo.decimals).toString()
-                        : ethers.utils.parseUnits(tokenTwoAmount, tokenTwo.decimals).mul(1000 - slippage * 10 - oracleSettings()[bestRate.name].feePromille).div(1000).toString()
+                        : ethers.utils.parseUnits(tokenTwoAmount, tokenTwo.decimals).mul(1000 - slippage * 10).div(1000).toString()
                 )
                 .addUint256(deadline)
                 .addBool(feeOnTransfer)
             )
             .setPayableAmount(tokenOne.solidityAddress === ethers.constants.AddressZero
                 ? (feeOnTransfer
-                    ? ethers.utils.formatUnits(ethers.utils.parseUnits(tokenOneAmount, 8).mul(1000 + slippage * 10 + oracleSettings()[bestRate.name].feePromille).div(1000), 8)
+                    ? ethers.utils.formatUnits(ethers.utils.parseUnits(tokenOneAmount, 8).mul(1000 + slippage * 10).div(1000), 8)
                     : ethers.utils.formatUnits(ethers.utils.parseUnits(tokenOneAmount, 8), 8)
                 )
                 : 0)
             .freezeWithSigner(wallet.signer);
 
         await swapTransaction.executeWithSigner(wallet.signer);
+
+        feeOnTransfer ? setTokenTwoAmount(0) : setTokenOneAmount(0);
     }
 
     useEffect(() => {
@@ -493,8 +540,8 @@ function Swap({ wallet, tokens: tokensMap, network }) {
                 </div>
                 { (tokenOneAmount && tokenTwoAmount)
                     ? feeOnTransfer
-                    ? <div>Max to sell: { ethers.utils.formatUnits(ethers.utils.parseUnits(tokenOneAmount, tokenOne.decimals).mul(1000 + slippage * 10 + oracleSettings()[getBestPriceName()]?.feePromille).div(1000).toString(), tokenOne.decimals) }</div>
-                    : <div>Min receive: { ethers.utils.formatUnits(ethers.utils.parseUnits(tokenTwoAmount, tokenTwo.decimals).mul(1000 - slippage * 10 - oracleSettings()[getBestPriceName()]?.feePromille).div(1000).toString(), tokenTwo.decimals) }</div>
+                    ? <div>Max to sell: { ethers.utils.formatUnits(ethers.utils.parseUnits(tokenOneAmount, tokenOne.decimals).mul(1000 + slippage * 10).div(1000).toString(), tokenOne.decimals) }</div>
+                    : <div>Min receive: { ethers.utils.formatUnits(ethers.utils.parseUnits(tokenTwoAmount, tokenTwo.decimals).mul(1000 - slippage * 10).div(1000).toString(), tokenTwo.decimals) }</div>
                     : ''
                 }
                 <div className="refreshTicker">
