@@ -11,7 +11,6 @@ import {
     AccountAllowanceApproveTransaction
 } from '@hashgraph/sdk';
 import BasicOracleABI from '../abi/basic-oracle-abi.json';
-import ExchangeABI from '../abi/exchange-abi.json';
 import { NETWORKS, GAS_LIMITS } from '../constants';
 
 function Swap({ wallet, tokens: tokensMap, network }) {
@@ -43,16 +42,13 @@ function Swap({ wallet, tokens: tokensMap, network }) {
     const refreshCount = useRef(0);
     const refreshTimer = useRef(0);
     const [isRefreshAnimationActive, setIsRefreshAnimationActive] = useState(false);
+    const [searchPhrase, setSearchPhrase] = useState('');
+    const [hiddenTokens, setHiddenTokens] = useState([]);
     const [prices, setPrices] = useState({
         SaucerSwap: null,
         Pangolin: null,
         HeliSwap: null,
-    })
-    const [txDetails, setTxDetails] = useState({
-        to: null,
-        data: null,
-        value: null
-    })
+    });
 
     const oracleSettings = () => network === NETWORKS.MAINNET ? {
         SaucerSwap: {
@@ -122,8 +118,8 @@ function Swap({ wallet, tokens: tokensMap, network }) {
     const changeAmountOne = (e) => {
         setFeeOnTransfer(false);
         const input = e.target.value;
-        if (input.match(/^([0-9]{1,})?(\.)?([0-9]{1,})?$/)) {
-            setTokenOneAmount(input || 0);
+        if (input.match(/^[0-9]{0,10}(?:\.[0-9]{0,8})?$/)) {
+            setTokenOneAmount(input ? (['.', '0'].includes(input.charAt(input.length - 1)) ? input : parseFloat(input).toString()) : 0);
         }
     }
 
@@ -141,8 +137,8 @@ function Swap({ wallet, tokens: tokensMap, network }) {
     const changeAmountTwo = (e) => {
         setFeeOnTransfer(true);
         const input = e.target.value;
-        if (input.match(/^([0-9]{1,})?(\.)?([0-9]{1,})?$/)) {
-            setTokenTwoAmount(input || 0);
+        if (input.match(/^[0-9]{0,10}(?:\.[0-9]{0,8})?$/)) {
+            setTokenTwoAmount(input ? (['.', '0'].includes(input.charAt(input.length - 1)) ? input : parseFloat(input).toString()) : 0);
         }
     }
 
@@ -179,7 +175,8 @@ function Swap({ wallet, tokens: tokensMap, network }) {
             setTokenTwo(tokens[i])
             fetchDexSwap(tokenOne.solidityAddress, tokens[i].solidityAddress)
         }
-        setIsOpen(false)
+        setIsOpen(false);
+        setSearchPhrase('');
     }
 
     const fetchDexSwap = async (tokenA, tokenB) => {
@@ -421,6 +418,23 @@ function Swap({ wallet, tokens: tokensMap, network }) {
         refreshTimer.current = setTimeout(refreshRate, 25000 + 1500);
     }, [tokenOne, tokenTwo]);
 
+    useEffect(() => {
+        const lowerCase = searchPhrase.toLowerCase();
+        const hiddenTokens = [];
+        if (lowerCase) {
+            tokens.forEach((token, i) => {
+                if (
+                    !token.symbol.toLowerCase().includes(lowerCase)
+                    && !token.name.toLowerCase().includes(lowerCase)
+                    && !token.address.toLowerCase().includes(lowerCase)
+                ) {
+                    hiddenTokens.push(i);
+                }
+            });
+        }
+        setHiddenTokens(hiddenTokens);
+    }, [searchPhrase]);
+
     const settingsContent = (
         <>
             <div>Slippage Tolerance</div>
@@ -442,31 +456,44 @@ function Swap({ wallet, tokens: tokensMap, network }) {
                 setIsOpen(false)
             }} title="Select a token">
                 <div className='modalContent'>
-                    {tokens?.map((token, index) => {
-                        return (
-                            <div className='tokenChoice' key={index}
-                                 onClick={() => modifyToken(index)}
-                            >
-                                <img src={token.icon} alt={token.symbol} className="tokenLogo"/>
-                                <div className='tokenChoiceNames'>
-                                    <div className='tokenName'>
-                                        {token.name}
+                    <div className="token__search">
+                        <Input
+                            type='search'
+                            className='token__search-field'
+                            placeholder='Search by name, address, symbol'
+                            onChange={(e) => setSearchPhrase(e.target.value)}
+                            value={searchPhrase}
+                        />
+                    </div>
+                    <div className='token__list'>
+                        {tokens?.map((token, index) => {
+                            return (
+                                <div
+                                    className={'tokenChoice' + (hiddenTokens.includes(index) ? ' hidden' : '')}
+                                    key={index}
+                                    onClick={() => modifyToken(index)}
+                                >
+                                    <img src={token.icon} alt={token.symbol} className="tokenLogo"/>
+                                    <div className='tokenChoiceNames'>
+                                        <div className='tokenName'>
+                                            {token.name}
+                                        </div>
+                                        <div className='tokenTicker'>
+                                            {token.symbol} ({token.address})
+                                        </div>
                                     </div>
-                                    <div className='tokenTicker'>
-                                        {token.symbol} ({token.address})
+                                    <div className='tokenChoiceProviders'>
+                                        {token.providers.map(provider => {
+                                            if (oracleSettings()[provider]) {
+                                                return <img src={oracleSettings()[provider].icon} alt={provider}
+                                                            key={provider}/>
+                                            }
+                                        })}
                                     </div>
                                 </div>
-                                <div className='tokenChoiceProviders'>
-                                    {token.providers.map(provider => {
-                                        if (oracleSettings()[provider]) {
-                                            return <img src={oracleSettings()[provider].icon} alt={provider}
-                                                        key={provider}/>
-                                        }
-                                    })}
-                                </div>
-                            </div>
-                        )
-                    })}
+                            )
+                        })}
+                    </div>
                 </div>
             </Modal>
             <div className='tradeBox'>

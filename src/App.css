@@ -537,6 +537,23 @@
   font-size: 0.9em;
 }
 
+.token__search {
+  width: 100%;
+}
+
+.hidden {
+  display: none;
+}
+
+.token__search-field {
+  border-width: 1px;
+  padding: 10px;
+  font-size: 17px;
+  height: auto!important;
+  margin: 10px 10px 0;
+  width: calc(100% - 20px);
+}
+
 @media screen and (max-width: 992px) {
   .logo {
     padding-right: 0;
