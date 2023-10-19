@@ -23,9 +23,9 @@ export const GAS_LIMITS = {
     HeliSwap: {
         exactTokenToToken: 900000,
         exactHBARToToken: 260000,
-        exactTokenToHBAR: 1380000, // Experimental
+        exactTokenToHBAR: 1300000, // Experimental
         tokenToExactToken: 920000,
         HBARToExactToken: 250000,
-        tokenToExactHBAR: 1380000, // Experimental
+        tokenToExactHBAR: 1300000, // Experimental
     },
 };
