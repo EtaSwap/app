@@ -21,6 +21,8 @@ export class BladeWallet {
             name: this.name,
             address: this.address,
             signer: this.signer,
+            auth: this.auth.bind(this),
+            signTransaction: this.signTransaction.bind(this),
         });
     }
 
@@ -31,12 +33,23 @@ export class BladeWallet {
                 ConnectorStrategy.AUTO,
                 this.appMetadata,
             );
-            console.log(this.bladeConnector);
         }
         const accountIds = await this.bladeConnector.createSession({ network });
         this.address = accountIds?.[0];
         this.signer = this.bladeConnector.getSigner();
         this.refreshWallet();
+    }
+
+    async auth({ serverAddress, serverSignature, originalPayload }) {
+        const payload = { serverSignature, originalPayload };
+        const signRes = await this.signer.sign([new Uint8Array(Buffer.from(JSON.stringify(payload)))]);
+
+        return signRes?.[0]?.signature;
+    }
+
+    async signTransaction(transaction) {
+        const res = await this.signer.signTransaction(transaction);
+        return res.toBytes();
     }
 
     async disconnect() {

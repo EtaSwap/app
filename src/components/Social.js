@@ -12,7 +12,7 @@ function Social() {
       <a className="social__link" href="https://www.reddit.com/r/etaswap/" target="_blank" title="Reddit">
         <img className="social__image" src="/icon_reddit.svg" alt="Reddit" />
       </a>
-      <a className="social__link" href="https://discord.gg/gZshGtXW2" target="_blank" title="Discord">
+      <a className="social__link" href="https://discord.gg/8uHPAT4Nhx" target="_blank" title="Discord">
         <img className="social__image" src="/icon_discord.svg" alt="Discord" />
       </a>
       <a className="social__link" href="https://github.com/EtaSwap" target="_blank" title="GitHub">

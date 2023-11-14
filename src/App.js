@@ -5,7 +5,7 @@ import { Routes, Route, Navigate } from "react-router-dom";
 import Swap from "./components/Swap";
 import Tokens from "./components/Tokens";
 import axios from 'axios';
-import { ContractId } from '@hashgraph/sdk';
+import { AccountId, ContractId } from '@hashgraph/sdk';
 import { ethers } from 'ethers';
 import HederaLogo from './img/hedera-logo.png';
 import HashpackLogo from './img/hashpack.svg';
@@ -27,7 +27,8 @@ function App() {
         signer: null,
     });
     const [tokens, setTokens] = useState(new Map());
-    const [network, setNetwork] = useState(NETWORKS.MAINNET);
+    const [network, setNetwork] = useState(NETWORKS.TESTNET);
+    const [hSuitePools, setHSuitePools] = useState({});
 
     const [wallets, setWallets] = useState({
         hashpack: {
@@ -55,12 +56,18 @@ function App() {
             axios.get('https://api.saucerswap.finance/tokens'),
             axios.get('https://raw.githubusercontent.com/pangolindex/tokenlists/main/pangolin.tokenlist.json'),
             axios.get('https://heliswap.infura-ipfs.io/ipfs/Qmf5u6N2ohZnBc1yxepYzS3RYagkMZbU5dwwU4TGxXt9Lf'),
+            //TODO: replace for mainnet
+            axios.get('https://testnet-sn1.hbarsuite.network/tokens/list'),
+            axios.get('https://testnet-sn1.hbarsuite.network/pools/list'),
         ];
         let tokenList = new Set(tokenListMainnet);
         if (network === NETWORKS.TESTNET) {
             tokenSources = [
                 axios.get('https://test-api.saucerswap.finance/tokens'),
                 axios.get('https://raw.githubusercontent.com/pangolindex/tokenlists/main/pangolin.tokenlist.json'),
+                null,
+                axios.get('https://testnet-sn1.hbarsuite.network/tokens/list'),
+                axios.get('https://testnet-sn1.hbarsuite.network/pools/list'),
             ];
             tokenList = new Set(tokenListTestnet);
         }
@@ -68,6 +75,8 @@ function App() {
             saucerSwapTokens,
             pangolinTokens,
             heliswapTokens,
+            hsuiteTokens,
+            hsuitePools,
         ]) => {
             const tokenMap = new Map();
             tokenMap.set(ethers.constants.AddressZero, {
@@ -77,13 +86,13 @@ function App() {
                 address: '',
                 solidityAddress: ethers.constants.AddressZero,
                 icon: HederaLogo,
-                providers: ['SaucerSwap', 'Pangolin', 'HeliSwap'],
+                providers: ['SaucerSwap', 'Pangolin', 'HeliSwap', 'HSuite'],
             });
 
             saucerSwapTokens.data.map(token => {
-                const solidityAddress = `0x${ContractId.fromString(token.id).toSolidityAddress()}`;
+                const solidityAddress = `0x${ContractId.fromString(token.id).toSolidityAddress()}`.toLowerCase();
                 if (tokenList.has(token.id)) {
-                    tokenMap.set(solidityAddress.toLowerCase(), {
+                    tokenMap.set(solidityAddress, {
                         name: token.name,
                         symbol: token.symbol,
                         decimals: token.decimals,
@@ -132,7 +141,43 @@ function App() {
                     }
                 });
             }
+
+            if (hsuiteTokens?.data) {
+                hsuiteTokens.data.map(token => {
+                    if (token.id !== 'HBAR') {
+                        const solidityAddress = `0x${ContractId.fromString(token.id).toSolidityAddress()}`.toLowerCase();
+                        const existing = tokenMap.get(solidityAddress);
+                        if (existing) {
+                            existing.providers.push('HSuite');
+                        } else if (tokenList.has(token.id)) {
+                            tokenMap.set(solidityAddress, {
+                                name: token.name,
+                                symbol: token.symbol,
+                                decimals: token.decimals,
+                                address: token.id,
+                                solidityAddress,
+                                icon: token.image ? decodeURIComponent(token.image) : '',
+                                providers: ['HSuite'],
+                                dueDiligenceComplete: false,
+                            });
+                        }
+                    }
+                });
+            }
+
             setTokens(tokenMap);
+
+            const _hSuitePools = {};
+            hsuitePools?.data?.forEach(pool => {
+                const token1Addr = pool.tokens.base.id !== 'HBAR'
+                    ? `0x${AccountId.fromString(pool.tokens.base.id).toSolidityAddress()}`.toLowerCase()
+                    : ethers.constants.AddressZero;
+                const token2Addr = pool.tokens.swap.id !== 'HBAR'
+                    ? `0x${AccountId.fromString(pool.tokens.swap.id).toSolidityAddress()}`.toLowerCase()
+                    : ethers.constants.AddressZero;
+                _hSuitePools[`${token1Addr}_${token2Addr}`] = pool.walletId;
+            });
+            setHSuitePools(_hSuitePools);
         });
     }, [network]);
 
@@ -151,6 +196,7 @@ function App() {
                             wallet={wallet}
                             tokens={tokens}
                             network={network}
+                            hSuitePools={hSuitePools}
                         />
                     }/>
                     <Route path="/tokens" element={<Tokens tokens={tokens}/>}/>
