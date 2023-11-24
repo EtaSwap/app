@@ -12,7 +12,7 @@ function Tokens({ tokens }) {
       <div className=''>
         <h1 className={'tokensHeader'}>These tokens are available to swap:</h1>
       </div>
-      <div style={{display: "flex", flexDirection: "row", flexWrap: "wrap", gap: 20, margin: "0 auto", alignItems: "center", justifyContent: "center"}}>
+      <div className={'tokensContainer'}>
       {[...tokens]
           .map(token => token[1])
           .sort((a, b) =>
