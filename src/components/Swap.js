@@ -9,7 +9,7 @@ import HSuiteLogo from '../img/hsuite.png';
 import {
     ContractExecuteTransaction,
     ContractFunctionParameters,
-    AccountAllowanceApproveTransaction, Transaction
+    AccountAllowanceApproveTransaction, Transaction, TokenId
 } from '@hashgraph/sdk';
 import axios from 'axios';
 import BasicOracleABI from '../abi/basic-oracle-abi.json';
@@ -289,9 +289,31 @@ function Swap({ wallet, tokens: tokensMap, network, hSuitePools }) {
 
         let hSuitePriceArr = null;
         if (res[network === NETWORKS.MAINNET ? 3 : 2]?.status === 'fulfilled') {
+            const balance = res[network === NETWORKS.MAINNET ? 3 : 2].value.data.balance;
+            let balanceA = 0;
+            let balanceB = 0;
+            if (tokenA === ethers.constants.AddressZero) {
+                balanceA = balance.balance;
+            } else {
+                const idA = TokenId.fromSolidityAddress(tokenA).toString();
+                balanceA = balance.tokens.find(token => token.token_id === idA)?.balance;
+            }
+            if (tokenB === ethers.constants.AddressZero) {
+                balanceB = balance.balance;
+            } else {
+                const idB = TokenId.fromSolidityAddress(tokenB).toString();
+                balanceB = balance.tokens.find(token => token.token_id === idB)?.balance;
+            }
+
             hSuitePriceArr = [];
-            hSuitePriceArr['rate'] = BigNumber.from(res[network === NETWORKS.MAINNET ? 3 : 2].value.data.balance.tokens[0].balance).mul(BigNumber.from('1000000000000000000')).div(BigNumber.from(res[network === NETWORKS.MAINNET ? 3 : 2].value.data.balance.balance));
-            hSuitePriceArr['weight'] = sqrt(BigNumber.from(res[network === NETWORKS.MAINNET ? 3 : 2].value.data.balance.balance).mul(BigNumber.from(res[network === NETWORKS.MAINNET ? 3 : 2].value.data.balance.tokens[0].balance)));
+            hSuitePriceArr['rate'] = BigNumber.from(balanceB)
+                .mul(BigNumber.from('1000000000000000000'))
+                .div(BigNumber.from(balanceA));
+            hSuitePriceArr['weight'] = sqrt(
+                BigNumber
+                    .from(balanceA)
+                    .mul(balanceB)
+            );
         }
 
         setPrices({
@@ -418,8 +440,6 @@ function Swap({ wallet, tokens: tokensMap, network, hSuitePools }) {
             socketConnection.socket.getSocket('gateway').on('swapPoolRequest', async (resPool) => {
                 if (resPool.status == 'success') {
                     let transaction = Transaction.fromBytes(new Uint8Array(resPool.payload.transaction));
-                    console.log(transaction.getSignatures());
-                    console.log(transaction.isFrozen());
                     //TODO: checkTransaction() before sign (make sure summ is correct)
 
                     let signedTransactionBytes = await wallet.signTransaction(transaction);
@@ -447,7 +467,10 @@ function Swap({ wallet, tokens: tokensMap, network, hSuitePools }) {
                         decimals: tokenOne.decimals,
                     },
                     amount: {
-                        value: tokenOneAmount
+                        value: ethers.utils.formatUnits(
+                            ethers.utils.parseUnits(tokenOneAmount, tokenOne.decimals).mul(1000 - oracleSettings()[bestRate.name].feePromille).div(1000),
+                            tokenOne.decimals
+                        )
                     }
                 },
                 swapToken: {
@@ -457,15 +480,15 @@ function Swap({ wallet, tokens: tokensMap, network, hSuitePools }) {
                         decimals: tokenTwo.decimals,
                     },
                     amount: {
-                        value: tokenTwoAmount.substring(0,1)
+                        value: ethers.utils.formatUnits(
+                            ethers.utils.parseUnits(tokenTwoAmount, tokenTwo.decimals).mul(1000 - oracleSettings()[bestRate.name].feePromille).div(1000),
+                            tokenTwo.decimals
+                        )
                     }
                 },
             };
+            console.log(swapObj);
 
-            // listening to the swapPool event, so to know when the swap is ready...
-
-
-            // triggering the swapPool event, so to start the swap request...
             socketConnection.socket.getSocket('gateway').emit('swapPoolRequest', {
                 type: 'swapPoolRequest',
                 senderId: wallet.address,

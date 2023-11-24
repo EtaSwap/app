@@ -24,12 +24,9 @@ export class SmartNodeSocket {
             transports: ['websocket'],
             query: {
                 wallet: this.wallet,
-                signedData: null
-            },
-            extraHeaders: {
-                origin: 'http://localhost:8100',
+                signedData: null,
                 'api-key': this.apiKey,
-            }
+            },
         });
 
         return this.socket;
