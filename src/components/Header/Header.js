@@ -3,8 +3,6 @@ import HederaLogo from '../../assets/img/hedera-logo.png'
 import Logo from '../../logo.svg'
 import {Link} from 'react-router-dom'
 import Disconnect from '../../assets/img/disconnect.png'
-import { Modal } from 'antd';
-import { NETWORKS } from '../../utils/constants';
 import './Header.css'
 import {ConnectWalletModal} from "./components/ConnectWalletModal";
 import {SelectNetworkModal} from "./components/SelectNetworkModal";
