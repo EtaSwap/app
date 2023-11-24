@@ -5,19 +5,6 @@
   flex: 1 1;
 }
 
-.header {
-  height: 100px;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding-left: 50px;
-  padding-right: 50px;
-  flex-wrap: wrap;
-  width: 1300px;
-  max-width: 100%;
-  margin: 0 auto;
-}
-
 .networkLogo,
 .networkLogoModal {
   width: 36px;
@@ -37,37 +24,8 @@
 
 }
 
-.leftH {
-  display: flex;
-  align-items: center;
-  gap: 20px;
-  padding: 10px 0;
-}
-
-.rightH {
-  display: flex;
-  align-items: center;
-  justify-content: flex-end;
-  gap: 20px;
-}
-
-.headerItem {
-  padding: 10px 15px;
-  border-radius: 5px;
-  font-weight: 500;
-  transition: 0.3s;
-  display: flex;
-  align-items: center;
-}
-
-.headerItem:hover {
-  background-color: rgb(34, 42, 58);
-  cursor: pointer;
-  color: #E8FFCE;
-}
-
 .connectButton {
-  background-color: #243056; 
+  background-color: #243056;
   padding: 10px;
   padding-right: 20px;
   padding-left: 20px;
@@ -323,21 +281,16 @@
   color: #969bad;
 }
 
-.pulsating-img-container {
-  position: relative;
-  display: inline-block;
-}
-
 @keyframes pulsate {
   0% {
     transform: scale(0.1, 0.1);
     opacity: 0;
   }
-  
+
   50% {
     opacity: 1;
   }
-  
+
   100% {
     transform: scale(1.2, 1.2);
     opacity: 0;
@@ -406,21 +359,6 @@
   top: 50%;
   margin-top: -18px;
   left: 14px;
-}
-
-.networkChoice {
-  display: flex;
-  justify-content: flex-start;
-  align-items: center;
-  padding: 7px 15px;
-  margin: 0 10px;
-  border-radius: 5px;
-}
-
-.networkChoice:hover {
-  cursor: pointer;
-  background-color: #1f2639;
-  color: #E8FFCE;
 }
 
 .tokenChoice:hover .tokenTicker {
@@ -502,12 +440,6 @@
   padding: 20px;
 }
 
-.social__link {
-  text-decoration: none;
-  display: inline-block;
-  margin: 0 4px;
-}
-
 .social__image {
   width: 40px;
   height: 40px;
@@ -563,29 +495,9 @@
     padding-left: 6px;
     padding-right: 6px;
   }
-
-  .headerItem {
-    padding-left: 6px;
-    padding-right: 6px;
-  }
-
-  .leftH,
-  .rightH {
-    gap: 8px;
-  }
 }
 
 @media screen and (max-width: 767px) {
-  .header {
-    height: auto;
-    padding-left: 10px;
-    padding-right: 10px;
-  }
-
-  .rightH {
-    margin-left: auto;
-  }
-
   .networkLogo {
     margin-right: 8px;
   }

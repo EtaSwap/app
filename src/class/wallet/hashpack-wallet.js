@@ -1,4 +1,5 @@
 import { HashConnect } from 'hashconnect';
+import { Transaction } from '@hashgraph/sdk';
 
 export class HashpackWallet {
     name = 'hashpack'
@@ -29,6 +30,8 @@ export class HashpackWallet {
             name: this.name,
             address: this.address,
             signer: this.signer,
+            auth: this.auth.bind(this),
+            signTransaction: this.signTransaction.bind(this),
         });
     }
 
@@ -50,6 +53,35 @@ export class HashpackWallet {
             await this.hashconnect.init(this.appMetadata, network, true);
             this.hashconnect.connectToLocalWallet();
         }
+    }
+
+    async auth({ serverAddress, serverSignature, originalPayload }) {
+        const authRes = await this.hashconnect.authenticate(
+            this.connectionData?.topic,
+            this.address,
+            serverAddress,
+            serverSignature,
+            originalPayload
+        );
+
+        return authRes?.userSignature;
+    }
+
+    async signTransaction(transaction) {
+        const res = await this.hashconnect.sendTransaction(
+            this.connectionData?.topic,
+            {
+                topic: this.connectionData?.topic,
+                byteArray: new Uint8Array(transaction.toBytes()),
+                metadata: {
+                    accountToSign: this.address,
+                    returnTransaction: true,
+                    hideNft: false,
+                },
+            },
+        );
+
+        return res.signedTransaction;
     }
 
     async disconnect() {

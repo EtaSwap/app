@@ -2,18 +2,21 @@ import { Input, Popover, Radio, Modal, message } from 'antd'
 import { ArrowDownOutlined, SettingOutlined } from '@ant-design/icons'
 import { useState, useEffect, useRef } from 'react'
 import { BigNumber, ethers } from 'ethers';
-import PangolinLogo from '../img/pangolin.png';
-import SaucerSwapLogo from '../img/saucerswap.ico';
-import HeliSwapLogo from '../img/heliswap.png';
+import PangolinLogo from '../../assets/img/pangolin.png';
+import SaucerSwapLogo from '../../assets/img/saucerswap.ico';
+import HeliSwapLogo from '../../assets/img/heliswap.png';
+import HSuiteLogo from '../../assets/img/hsuite.png';
 import {
     ContractExecuteTransaction,
     ContractFunctionParameters,
-    AccountAllowanceApproveTransaction
+    AccountAllowanceApproveTransaction, Transaction, TokenId
 } from '@hashgraph/sdk';
-import BasicOracleABI from '../abi/basic-oracle-abi.json';
-import { NETWORKS, GAS_LIMITS } from '../constants';
+import axios from 'axios';
+import BasicOracleABI from '../../assets/abi/basic-oracle-abi.json';
+import { NETWORKS, GAS_LIMITS, HSUITE_NODES } from '../../utils/constants';
+import { SmartNodeSocket } from '../../class/smart-node-socket';
 
-function Swap({ wallet, tokens: tokensMap, network }) {
+function Swap({ wallet, tokens: tokensMap, network, hSuitePools }) {
     const tokens = [...tokensMap]
         .map(wrap => wrap[1])
         .sort((a, b) =>
@@ -37,7 +40,7 @@ function Swap({ wallet, tokens: tokensMap, network }) {
     const [tokenOne, setTokenOne] = useState(tokens[1])
     const [tokenTwo, setTokenTwo] = useState(tokens[7])
     const [isOpen, setIsOpen] = useState(false)
-    const [checkAllRatesOpen, setCheckAllRatesOpen] = useState(false);
+    const [checkAllRatesOpen, setCheckAllRatesOpen] = useState(true);
     const [changeToken, setChangeToken] = useState(1)
     const refreshCount = useRef(0);
     const refreshTimer = useRef(0);
@@ -48,6 +51,7 @@ function Swap({ wallet, tokens: tokensMap, network }) {
         SaucerSwap: null,
         Pangolin: null,
         HeliSwap: null,
+        HSuite: null,
     });
 
     const oracleSettings = () => network === NETWORKS.MAINNET ? {
@@ -72,6 +76,13 @@ function Swap({ wallet, tokens: tokensMap, network }) {
             feeDEXPromille: 3,
             whbar: '0x00000000000000000000000000000000002cc823',
         },
+        HSuite: {
+            icon: HSuiteLogo,
+            aggregatorId: 'HSuite',
+            feePromille: 3,
+            feeDEXPromille: 3,
+            whbar: '',
+        },
     } : {
         SaucerSwap: {
             icon: SaucerSwapLogo,
@@ -87,6 +98,13 @@ function Swap({ wallet, tokens: tokensMap, network }) {
             feeDEXPromille: 3,
             whbar: '0x000000000000000000000000000000000002690a',
         },
+        HSuite: {
+            icon: HSuiteLogo,
+            aggregatorId: 'HSuite',
+            feePromille: 3,
+            feeDEXPromille: 3,
+            whbar: '',
+        },
     };
 
     const oracles = () => network === NETWORKS.MAINNET ? {
@@ -99,6 +117,71 @@ function Swap({ wallet, tokens: tokensMap, network }) {
     };
 
     const exchange = () => network === NETWORKS.MAINNET ? '0.0.3745835' : '0.0.1772118';
+
+    const feeWallet = () => network === NETWORKS.MAINNET ? '0.0.3745833' : '0.0.1772102';
+
+    const hSuiteApiKey = () => network === NETWORKS.MAINNET ? 'd5db1f4a-8791-4f12-925f-920754547ce7' : '25f54dd3-47a1-4667-b9d8-2863585bc460';
+
+    const smartNodeSocket = async () => {
+        return new Promise(async (resolve, reject) => {
+            if (!wallet?.address) {
+                return null;
+            }
+            try {
+                let randomNode = HSUITE_NODES[network][Math.floor(Math.random() * HSUITE_NODES[network].length)];
+                let nodeSocket = new SmartNodeSocket(randomNode, wallet.address, hSuiteApiKey());
+
+                nodeSocket.getSocket('gateway').on('connect', async () => {
+                    console.log(`account ${wallet.address} connected to node ${nodeSocket.getNode().operator}`);
+                });
+
+                nodeSocket.getSocket('gateway').on('disconnect', async () => {
+                    console.log(`account ${wallet.address} disconnected from node ${nodeSocket.getNode().operator}`);
+                });
+
+                nodeSocket.getSocket('gateway').on('errors', async (event) => {
+                    console.error('error event', event);
+                });
+
+                nodeSocket.getSocket('gateway').on('authenticate', async (event) => {
+                    if (event.isValidSignature) {
+                        resolve({
+                            message: `account ${wallet.address} authenticated to node ${nodeSocket.getNode().operator}, ready to operate with websockets/write operations...`,
+                            socket: nodeSocket
+                        })
+                    } else {
+                        reject(new Error(`account ${wallet.address} can't connect to node ${nodeSocket.getNode().operator}, shit happens...`))
+                    }
+                    console.log(nodeSocket);
+                });
+
+                nodeSocket.getSocket('gateway').on('authentication', async (event) => {
+                    let payload = {
+                        serverSignature: new Uint8Array(event.signedData.signature),
+                        originalPayload: event.payload
+                    };
+
+                    const walletSignature = await wallet.auth({
+                        serverAddress: randomNode.operator,
+                        serverSignature: payload.serverSignature,
+                        originalPayload: payload.originalPayload,
+                    });
+
+                    nodeSocket.getSocket('gateway').emit('authenticate', {
+                        signedData: {
+                            signedPayload: payload,
+                            userSignature: walletSignature,
+                        },
+                        walletId: wallet.address,
+                    });
+                });
+
+                nodeSocket.getSocket('gateway').connect();
+            } catch (error) {
+                reject(error);
+            }
+        });
+    }
 
     const handleSlippage = (e) => {
         setSlippage(e.target.value);
@@ -147,6 +230,7 @@ function Swap({ wallet, tokens: tokensMap, network }) {
             SaucerSwap: null,
             Pangolin: null,
             HeliSwap: null,
+            HSuite: null,
         })
         setTokenOneAmount(0);
         setTokenTwoAmount(0);
@@ -165,6 +249,7 @@ function Swap({ wallet, tokens: tokensMap, network }) {
             SaucerSwap: null,
             Pangolin: null,
             HeliSwap: null,
+            HSuite: null,
         })
         setTokenOneAmount(0)
         setTokenTwoAmount(0)
@@ -180,22 +265,62 @@ function Swap({ wallet, tokens: tokensMap, network }) {
     }
 
     const fetchDexSwap = async (tokenA, tokenB) => {
-        const res = await Promise.allSettled(Object.keys(oracleContracts).map(async i => {
-            let _tokenA = tokenA;
-            let _tokenB = tokenB;
+        const hSuitePool = hSuitePools[`${tokenA}_${tokenB}`] || hSuitePools[`${tokenB}_${tokenA}`] || null;
+
+        const oraclePromises = [
+            ...Object.keys(oracleContracts).map(async i => {
+                let _tokenA = tokenA;
+                let _tokenB = tokenB;
+                if (tokenA === ethers.constants.AddressZero) {
+                    _tokenA = oracleSettings()[i].whbar;
+                }
+                if (tokenB === ethers.constants.AddressZero) {
+                    _tokenB = oracleSettings()[i].whbar;
+                }
+                return oracleContracts[i].getRate(_tokenA, _tokenB);
+            }),
+        ];
+        console.log(hSuitePool);
+        if (hSuitePool) {
+            oraclePromises.push(axios.get(`https://${network}.mirrornode.hedera.com/api/v1/accounts/${hSuitePool}`));
+        }
+
+        const res = await Promise.allSettled(oraclePromises);
+
+        let hSuitePriceArr = null;
+        if (res[network === NETWORKS.MAINNET ? 3 : 2]?.status === 'fulfilled') {
+            const balance = res[network === NETWORKS.MAINNET ? 3 : 2].value.data.balance;
+            let balanceA = 0;
+            let balanceB = 0;
             if (tokenA === ethers.constants.AddressZero) {
-                _tokenA = oracleSettings()[i].whbar;
+                balanceA = balance.balance;
+            } else {
+                const idA = TokenId.fromSolidityAddress(tokenA).toString();
+                balanceA = balance.tokens.find(token => token.token_id === idA)?.balance;
             }
             if (tokenB === ethers.constants.AddressZero) {
-                _tokenB = oracleSettings()[i].whbar;
+                balanceB = balance.balance;
+            } else {
+                const idB = TokenId.fromSolidityAddress(tokenB).toString();
+                balanceB = balance.tokens.find(token => token.token_id === idB)?.balance;
             }
-            return oracleContracts[i].getRate(_tokenA, _tokenB);
-        }));
+
+            hSuitePriceArr = [];
+            hSuitePriceArr['rate'] = BigNumber.from(balanceB)
+                .mul(BigNumber.from('1000000000000000000'))
+                .div(BigNumber.from(balanceA));
+            hSuitePriceArr['weight'] = sqrt(
+                BigNumber
+                    .from(balanceA)
+                    .mul(balanceB)
+            );
+        }
 
         setPrices({
             SaucerSwap: res[0].status === 'fulfilled' ? res[0].value : null,
             Pangolin: res[1].status === 'fulfilled' ? res[1].value : null,
-            HeliSwap: res[2]?.status === 'fulfilled' ? res[2].value : null,
+            HeliSwap: network === NETWORKS.MAINNET ? (res[2]?.status === 'fulfilled' ? res[2].value : null) : null,
+            HSuite: hSuitePriceArr,
         });
     }
 
@@ -237,7 +362,7 @@ function Swap({ wallet, tokens: tokensMap, network }) {
 
             if (feeOnTransfer) {
                 const amountOut = BigNumber.from(ethers.utils.parseUnits(tokenTwoAmount.toString(), tokenTwo.decimals)).mul(1000 + oracleSettings()[name].feePromille + oracleSettings()[name].feeDEXPromille).div(1000);
-                const VaAfter = amountOut.mul(Va).div(Vb.sub(amountOut)).mul(1000).div(1000 + (oracleSettings()[name]?.feePromille || 0));
+                const VaAfter = amountOut.mul(Va).div(Vb.sub(amountOut));
                 const priceImpact = amountOut.mul(10000).div(Vb);
                 priceRes.amountOut = VaAfter;
                 priceRes.priceImpact = priceImpact;
@@ -246,7 +371,7 @@ function Swap({ wallet, tokens: tokensMap, network }) {
                 }
             } else {
                 const amountIn = BigNumber.from(ethers.utils.parseUnits(tokenOneAmount.toString(), tokenOne.decimals)).mul(1000 - oracleSettings()[name].feePromille - oracleSettings()[name].feeDEXPromille).div(1000);
-                const VbAfter = amountIn.mul(Vb).div(Va.add(amountIn)).mul(1000).div(1000 - (oracleSettings()[name]?.feePromille || 0));
+                const VbAfter = amountIn.mul(Vb).div(Va.add(amountIn));
                 const priceImpact = VbAfter.mul(10000).div(Vb);
                 priceRes.amountOut = VbAfter;
                 priceRes.priceImpact = priceImpact;
@@ -271,7 +396,7 @@ function Swap({ wallet, tokens: tokensMap, network }) {
     }
 
     const isAtLeastOnePrice = () => {
-        return !Object.values(prices).find(price => !price?.rate?.isZero());
+        return !Object.values(prices).find(price => price?.rate && !price?.rate?.isZero());
     }
 
     const getGasPrice = (providerName) => {
@@ -310,49 +435,110 @@ function Swap({ wallet, tokens: tokensMap, network }) {
             return null;
         }
 
-        if (tokenOne.solidityAddress !== ethers.constants.AddressZero) {
-            const allowanceTx = await new AccountAllowanceApproveTransaction()
-                .approveTokenAllowance(
-                    tokenOne.address,
-                    wallet?.address,
-                    exchange(),
-                    feeOnTransfer
-                        ? ethers.utils.parseUnits(tokenOneAmount, tokenOne.decimals).mul(1000 + slippage * 10).div(1000).toString()
-                        : ethers.utils.parseUnits(tokenOneAmount, tokenOne.decimals).toString(),
+        if (bestRate.name === 'HSuite') {
+            const socketConnection = await smartNodeSocket();
+            socketConnection.socket.getSocket('gateway').on('swapPoolRequest', async (resPool) => {
+                if (resPool.status == 'success') {
+                    let transaction = Transaction.fromBytes(new Uint8Array(resPool.payload.transaction));
+                    //TODO: checkTransaction() before sign (make sure summ is correct)
+
+                    let signedTransactionBytes = await wallet.signTransaction(transaction);
+
+                    socketConnection.socket.getSocket('gateway').on('swapPoolExecute', responseEvent => {
+                        if (responseEvent.status == 'success') {
+                            console.log(`customer has successfully completed the swap.`);
+                            socketConnection.socket.getSocket('gateway').disconnect();
+                        } else {
+                            console.error(responseEvent);
+                        }
+                    });
+
+                    socketConnection.socket.getSocket('gateway').emit('swapPoolExecute', {
+                        type: 'swapPoolExecute',
+                        transactionBytes: signedTransactionBytes,
+                    });
+                }
+            });
+            let swapObj = {
+                baseToken: {
+                    details: {
+                        id: tokenOne.solidityAddress === ethers.constants.AddressZero ? 'HBAR' : tokenOne.address,
+                        symbol: tokenOne.symbol,
+                        decimals: tokenOne.decimals,
+                    },
+                    amount: {
+                        value: ethers.utils.formatUnits(
+                            ethers.utils.parseUnits(tokenOneAmount, tokenOne.decimals).mul(1000 - oracleSettings()[bestRate.name].feePromille).div(1000),
+                            tokenOne.decimals
+                        )
+                    }
+                },
+                swapToken: {
+                    details: {
+                        id: tokenTwo.solidityAddress === ethers.constants.AddressZero ? 'HBAR' : tokenTwo.address,
+                        symbol: tokenTwo.symbol,
+                        decimals: tokenTwo.decimals,
+                    },
+                    amount: {
+                        value: ethers.utils.formatUnits(
+                            ethers.utils.parseUnits(tokenTwoAmount, tokenTwo.decimals).mul(1000 - oracleSettings()[bestRate.name].feePromille).div(1000),
+                            tokenTwo.decimals
+                        )
+                    }
+                },
+            };
+            console.log(swapObj);
+
+            socketConnection.socket.getSocket('gateway').emit('swapPoolRequest', {
+                type: 'swapPoolRequest',
+                senderId: wallet.address,
+                swap: swapObj
+            });
+        } else {
+            if (tokenOne.solidityAddress !== ethers.constants.AddressZero) {
+                const allowanceTx = await new AccountAllowanceApproveTransaction()
+                    .approveTokenAllowance(
+                        tokenOne.address,
+                        wallet?.address,
+                        exchange(),
+                        feeOnTransfer
+                            ? ethers.utils.parseUnits(tokenOneAmount, tokenOne.decimals).mul(1000 + slippage * 10).div(1000).toString()
+                            : ethers.utils.parseUnits(tokenOneAmount, tokenOne.decimals).toString(),
+                    )
+                    .freezeWithSigner(wallet.signer);
+                await allowanceTx.executeWithSigner(wallet.signer);
+            }
+
+            let swapTransaction = await new ContractExecuteTransaction()
+                .setContractId(exchange())
+                .setGas(getGasPrice(bestRate.name))
+                .setFunction("swap", new ContractFunctionParameters()
+                    .addString(oracleSettings()[bestRate.name].aggregatorId)
+                    .addAddress(tokenOne.solidityAddress)
+                    .addAddress(tokenTwo.solidityAddress)
+                    .addUint256(
+                        feeOnTransfer
+                            ? ethers.utils.parseUnits(tokenOneAmount, tokenOne.decimals).mul(1000 + slippage * 10).div(1000).toString()
+                            : ethers.utils.parseUnits(tokenOneAmount, tokenOne.decimals).toString()
+                    )
+                    .addUint256(
+                        feeOnTransfer
+                            ? ethers.utils.parseUnits(tokenTwoAmount, tokenTwo.decimals).toString()
+                            : ethers.utils.parseUnits(tokenTwoAmount, tokenTwo.decimals).mul(1000 - slippage * 10).div(1000).toString()
+                    )
+                    .addUint256(deadline)
+                    .addBool(feeOnTransfer)
                 )
+                .setPayableAmount(tokenOne.solidityAddress === ethers.constants.AddressZero
+                    ? (feeOnTransfer
+                            ? ethers.utils.formatUnits(ethers.utils.parseUnits(tokenOneAmount, 8).mul(1000 + slippage * 10).div(1000), 8)
+                            : ethers.utils.formatUnits(ethers.utils.parseUnits(tokenOneAmount, 8), 8)
+                    )
+                    : 0)
                 .freezeWithSigner(wallet.signer);
-            await allowanceTx.executeWithSigner(wallet.signer);
+
+            await swapTransaction.executeWithSigner(wallet.signer);
         }
-
-        let swapTransaction = await new ContractExecuteTransaction()
-            .setContractId(exchange())
-            .setGas(getGasPrice(bestRate.name))
-            .setFunction("swap", new ContractFunctionParameters()
-                .addString(oracleSettings()[bestRate.name].aggregatorId)
-                .addAddress(tokenOne.solidityAddress)
-                .addAddress(tokenTwo.solidityAddress)
-                .addUint256(
-                    feeOnTransfer
-                        ? ethers.utils.parseUnits(tokenOneAmount, tokenOne.decimals).mul(1000 + slippage * 10).div(1000).toString()
-                        : ethers.utils.parseUnits(tokenOneAmount, tokenOne.decimals).toString()
-                )
-                .addUint256(
-                    feeOnTransfer
-                        ? ethers.utils.parseUnits(tokenTwoAmount, tokenTwo.decimals).toString()
-                        : ethers.utils.parseUnits(tokenTwoAmount, tokenTwo.decimals).mul(1000 - slippage * 10).div(1000).toString()
-                )
-                .addUint256(deadline)
-                .addBool(feeOnTransfer)
-            )
-            .setPayableAmount(tokenOne.solidityAddress === ethers.constants.AddressZero
-                ? (feeOnTransfer
-                    ? ethers.utils.formatUnits(ethers.utils.parseUnits(tokenOneAmount, 8).mul(1000 + slippage * 10).div(1000), 8)
-                    : ethers.utils.formatUnits(ethers.utils.parseUnits(tokenOneAmount, 8), 8)
-                )
-                : 0)
-            .freezeWithSigner(wallet.signer);
-
-        await swapTransaction.executeWithSigner(wallet.signer);
 
         feeOnTransfer ? setTokenTwoAmount(0) : setTokenOneAmount(0);
     }
@@ -393,9 +579,9 @@ function Swap({ wallet, tokens: tokensMap, network }) {
     }
 
     useEffect(() => {
-        setTokenOne(tokens[2]);
-        setTokenTwo(tokens[3]);
-        fetchDexSwap(tokens[2]?.solidityAddress, tokens[3]?.solidityAddress)
+        setTokenOne(tokens[0]);
+        setTokenTwo(tokens[4]);
+        fetchDexSwap(tokens[0]?.solidityAddress, tokens[4]?.solidityAddress)
     }, [oracleContracts]);
 
     const refreshRate = () => {

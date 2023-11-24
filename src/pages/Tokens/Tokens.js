@@ -1,22 +1,15 @@
 import React from 'react'
+import './Tokens.css'
+import {parseTokens} from "./tokens.utils";
 
 function Tokens({ tokens }) {
   return (
     <div className='tokens'>
       <div className=''>
-        <h1 style={{textAlign: "center", mb: "5px"}} >These tokens are available to swap:</h1>
+        <h1 className={'tokensHeader'}>These tokens are available to swap:</h1>
       </div>
-      <div style={{display: "flex", flexDirection: "row", flexWrap: "wrap", gap: 20, margin: "0 auto", alignItems: "center", justifyContent: "center"}}>
-      {[...tokens]
-          .map(token => token[1])
-          .sort((a, b) =>
-          a.providers.length > b.providers.length
-              ? -1
-              : (a.providers.length === b.providers.length
-                      ? (a.name > b.name ? 1 : -1)
-                      : 1
-              )
-      ).map((token) => {
+      <div className={'tokensContainer'}>
+      {parseTokens([...tokens]).map((token) => {
         return (
           <div className='tokenChoice' key={token.solidityAddress}>
             <div className="pulsating-img-container">
