@@ -1,10 +1,11 @@
 import React, { useState } from 'react'
-import HederaLogo from '../assets/img/hedera-logo.png'
-import Logo from '../logo.svg'
+import HederaLogo from '../../assets/img/hedera-logo.png'
+import Logo from '../../logo.svg'
 import {Link} from 'react-router-dom'
-import Disconnect from '../assets/img/disconnect.png'
+import Disconnect from '../../assets/img/disconnect.png'
 import { Modal } from 'antd';
-import { NETWORKS } from '../utils/constants';
+import { NETWORKS } from '../../utils/constants';
+import './Header.css'
 
 function Header({ wallet, wallets, network, setNetwork }) {
   const [networkModalOpen, setNetworkModalOpen] = useState(false);

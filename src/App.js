@@ -1,6 +1,6 @@
 import "./App.css";
 import React, { useState, useEffect } from 'react';
-import Header from "./components/Header";
+import Header from "./components/Header/Header";
 import { Routes, Route, Navigate } from "react-router-dom";
 import Swap from "./pages/Swap/Swap";
 import Tokens from "./pages/Tokens/Tokens";
@@ -17,7 +17,7 @@ import tokenListTestnet from './tokenListTestnet.json';
 import { HashpackWallet } from './class/wallet/hashpack-wallet';
 import { BladeWallet } from './class/wallet/blade-wallet';
 import { NETWORKS } from './utils/constants';
-import Social from './components/Social';
+import Social from './components/Social/Social';
 import pkg from '../package.json';
 
 function App() {
