@@ -1,12 +1,7 @@
-import React, {useEffect} from 'react'
+import React from 'react'
 import './Tokens.css'
 
 function Tokens({ tokens }) {
-
-    useEffect(() => {
-        console.log('Render');
-    }, []);
-
   return (
     <div className='tokens'>
       <div className=''>
