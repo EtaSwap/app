@@ -361,21 +361,6 @@
   left: 14px;
 }
 
-.networkChoice {
-  display: flex;
-  justify-content: flex-start;
-  align-items: center;
-  padding: 7px 15px;
-  margin: 0 10px;
-  border-radius: 5px;
-}
-
-.networkChoice:hover {
-  cursor: pointer;
-  background-color: #1f2639;
-  color: #E8FFCE;
-}
-
 .tokenChoice:hover .tokenTicker {
   color: #E8FFCE;
 }
