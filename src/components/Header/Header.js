@@ -1,10 +1,11 @@
 import React, { useState } from 'react'
-import HederaLogo from '../img/hedera-logo.png'
-import Logo from '../logo.svg'
+import HederaLogo from '../../assets/img/hedera-logo.png'
+import Logo from '../../logo.svg'
 import {Link} from 'react-router-dom'
-import Disconnect from '../img/disconnect.png'
-import { Modal } from 'antd';
-import { NETWORKS } from '../constants';
+import Disconnect from '../../assets/img/disconnect.png'
+import './Header.css'
+import {ConnectWalletModal} from "./components/ConnectWalletModal";
+import {SelectNetworkModal} from "./components/SelectNetworkModal";
 
 function Header({ wallet, wallets, network, setNetwork }) {
   const [networkModalOpen, setNetworkModalOpen] = useState(false);
@@ -61,33 +62,8 @@ function Header({ wallet, wallets, network, setNetwork }) {
           : <div className='connectButton' onClick={() => setWalletModalOpen(true)}>Connect Wallet</div>
         }
       </div>
-      <Modal open={networkModalOpen} footer={null} onCancel={() => {
-        setNetworkModalOpen(false)
-      }} title="Select network">
-        <div className='modalContent'>
-          {Object.values(NETWORKS).map((network, i) => {
-            return (
-              <div className='networkChoice' key={i} onClick={() => selectNetwork(network)}>
-                <img src={HederaLogo} alt={'Hedera ' + network} className="networkLogoModal"/>
-                <div className='networkName'>{'Hedera ' + network}</div>
-              </div>
-            )
-          })}
-        </div>
-      </Modal>
-      <Modal open={walletModalOpen} footer={null} onCancel={() => {
-        setWalletModalOpen(false)
-      }} title="Select wallet">
-        <div className='modalContent'>
-          {Object.values(wallets).map(({ name, title, image }, i) => {
-            return (
-              <button className='walletChoice' key={i} onClick={() => connectWallet(name)}>
-                <img src={image} alt={title} title={title} className="walletLogo"/>
-              </button>
-            )
-          })}
-        </div>
-      </Modal>
+      <SelectNetworkModal networkModalOpen={networkModalOpen} selectNetwork={selectNetwork} setNetworkModalOpen={setNetworkModalOpen}/>
+      <ConnectWalletModal connectWallet={connectWallet} walletModalOpen={walletModalOpen} wallets={wallets} setWalletModalOpen={setWalletModalOpen} />
     </header>
   )
 }

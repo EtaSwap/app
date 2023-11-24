@@ -1,24 +1,25 @@
 import "./App.css";
-import React, { useState, useEffect } from 'react';
-import Header from "./components/Header";
-import { Routes, Route, Navigate } from "react-router-dom";
-import Swap from "./components/Swap";
-import Tokens from "./components/Tokens";
+import React, {useState, useEffect} from 'react';
+import Header from "./components/Header/Header";
+import {Routes, Route, Navigate} from "react-router-dom";
+import Swap from "./pages/Swap/Swap";
+import Tokens from "./pages/Tokens/Tokens";
 import axios from 'axios';
-import { AccountId, ContractId } from '@hashgraph/sdk';
-import { ethers } from 'ethers';
-import HederaLogo from './img/hedera-logo.png';
-import HashpackLogo from './img/hashpack.svg';
-import HashpackIcon from './img/hashpack-icon.png';
-import BladeLogo from './img/blade.svg';
-import BladeIcon from './img/blade-icon.webp';
+import {AccountId, ContractId} from '@hashgraph/sdk';
+import {ethers} from 'ethers';
+import HederaLogo from './assets/img/hedera-logo.png';
+import HashpackLogo from './assets/img/hashpack.svg';
+import HashpackIcon from './assets/img/hashpack-icon.png';
+import BladeLogo from './assets/img/blade.svg';
+import BladeIcon from './assets/img/blade-icon.webp';
 import tokenListMainnet from './tokenListMainnet.json';
 import tokenListTestnet from './tokenListTestnet.json';
-import { HashpackWallet } from './class/wallet/hashpack-wallet';
-import { BladeWallet } from './class/wallet/blade-wallet';
-import { NETWORKS } from './constants';
-import Social from './components/Social';
+import {HashpackWallet} from './class/wallet/hashpack-wallet';
+import {BladeWallet} from './class/wallet/blade-wallet';
+import {NETWORKS} from './utils/constants';
+import Social from './components/Social/Social';
 import pkg from '../package.json';
+import {LoaderProvider} from "./components/Loader/LoaderContext";
 
 function App() {
     const [wallet, setWallet] = useState({
@@ -72,12 +73,12 @@ function App() {
             tokenList = new Set(tokenListTestnet);
         }
         Promise.all(tokenSources).then(([
-            saucerSwapTokens,
-            pangolinTokens,
-            heliswapTokens,
-            hsuiteTokens,
-            hsuitePools,
-        ]) => {
+                                            saucerSwapTokens,
+                                            pangolinTokens,
+                                            heliswapTokens,
+                                            hsuiteTokens,
+                                            hsuitePools,
+                                        ]) => {
             const tokenMap = new Map();
             tokenMap.set(ethers.constants.AddressZero, {
                 name: 'Hbar',
@@ -183,29 +184,31 @@ function App() {
 
     return (
         <div className="App">
-            <Header
-                wallet={wallet}
-                wallets={wallets}
-                network={network}
-                setNetwork={setNetwork}
-            />
-            <div className="mainWindow">
-                <Routes>
-                    <Route path="/" element={
-                        <Swap
-                            wallet={wallet}
-                            tokens={tokens}
-                            network={network}
-                            hSuitePools={hSuitePools}
-                        />
-                    }/>
-                    <Route path="/tokens" element={<Tokens tokens={tokens}/>}/>
-                </Routes>
-            </div>
-            <div className="social">
-                <Social/>
-            </div>
-            <div className="version">v {pkg.version}</div>
+            <LoaderProvider>
+                <Header
+                    wallet={wallet}
+                    wallets={wallets}
+                    network={network}
+                    setNetwork={setNetwork}
+                />
+                <div className="mainWindow">
+                    <Routes>
+                        <Route path="/" element={
+                            <Swap
+                                wallet={wallet}
+                                tokens={tokens}
+                                network={network}
+                                hSuitePools={hSuitePools}
+                            />
+                        }/>
+                        <Route path="/tokens" element={<Tokens tokens={tokens}/>}/>
+                    </Routes>
+                </div>
+                <div className="social">
+                    <Social/>
+                </div>
+                <div className="version">v {pkg.version}</div>
+            </LoaderProvider>
         </div>
     )
 }

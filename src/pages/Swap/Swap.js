@@ -2,19 +2,19 @@ import { Input, Popover, Radio, Modal, message } from 'antd'
 import { ArrowDownOutlined, SettingOutlined } from '@ant-design/icons'
 import { useState, useEffect, useRef } from 'react'
 import { BigNumber, ethers } from 'ethers';
-import PangolinLogo from '../img/pangolin.png';
-import SaucerSwapLogo from '../img/saucerswap.ico';
-import HeliSwapLogo from '../img/heliswap.png';
-import HSuiteLogo from '../img/hsuite.png';
+import PangolinLogo from '../../assets/img/pangolin.png';
+import SaucerSwapLogo from '../../assets/img/saucerswap.ico';
+import HeliSwapLogo from '../../assets/img/heliswap.png';
+import HSuiteLogo from '../../assets/img/hsuite.png';
 import {
     ContractExecuteTransaction,
     ContractFunctionParameters,
     AccountAllowanceApproveTransaction, Transaction, TokenId
 } from '@hashgraph/sdk';
 import axios from 'axios';
-import BasicOracleABI from '../abi/basic-oracle-abi.json';
-import { NETWORKS, GAS_LIMITS, HSUITE_NODES } from '../constants';
-import { SmartNodeSocket } from '../class/smart-node-socket';
+import BasicOracleABI from '../../assets/abi/basic-oracle-abi.json';
+import { NETWORKS, GAS_LIMITS, HSUITE_NODES } from '../../utils/constants';
+import { SmartNodeSocket } from '../../class/smart-node-socket';
 
 function Swap({ wallet, tokens: tokensMap, network, hSuitePools }) {
     const tokens = [...tokensMap]
