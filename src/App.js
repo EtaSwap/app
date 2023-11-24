@@ -28,7 +28,7 @@ function App() {
         signer: null,
     });
     const [tokens, setTokens] = useState(new Map());
-    const [network, setNetwork] = useState(NETWORKS.TESTNET);
+    const [network, setNetwork] = useState(NETWORKS.MAINNET);
     const [hSuitePools, setHSuitePools] = useState({});
 
     const [wallets, setWallets] = useState({
@@ -58,8 +58,8 @@ function App() {
             axios.get('https://raw.githubusercontent.com/pangolindex/tokenlists/main/pangolin.tokenlist.json'),
             axios.get('https://heliswap.infura-ipfs.io/ipfs/Qmf5u6N2ohZnBc1yxepYzS3RYagkMZbU5dwwU4TGxXt9Lf'),
             //TODO: replace for mainnet
-            axios.get('https://testnet-sn1.hbarsuite.network/tokens/list'),
-            axios.get('https://testnet-sn1.hbarsuite.network/pools/list'),
+            axios.get('https://mainnet-sn1.hbarsuite.network/tokens/list'),
+            axios.get('https://mainnet-sn1.hbarsuite.network/pools/list'),
         ];
         let tokenList = new Set(tokenListMainnet);
         if (network === NETWORKS.TESTNET) {

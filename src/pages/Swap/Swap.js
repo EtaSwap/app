@@ -121,6 +121,7 @@ function Swap({ wallet, tokens: tokensMap, network, hSuitePools }) {
     const feeWallet = () => network === NETWORKS.MAINNET ? '0.0.3745833' : '0.0.1772102';
 
     const hSuiteApiKey = () => network === NETWORKS.MAINNET ? 'd5db1f4a-8791-4f12-925f-920754547ce7' : '25f54dd3-47a1-4667-b9d8-2863585bc460';
+    const hSuiteDecimals = 4;
 
     const smartNodeSocket = async () => {
         return new Promise(async (resolve, reject) => {
@@ -306,14 +307,8 @@ function Swap({ wallet, tokens: tokensMap, network, hSuitePools }) {
             }
 
             hSuitePriceArr = [];
-            hSuitePriceArr['rate'] = BigNumber.from(balanceB)
-                .mul(BigNumber.from('1000000000000000000'))
-                .div(BigNumber.from(balanceA));
-            hSuitePriceArr['weight'] = sqrt(
-                BigNumber
-                    .from(balanceA)
-                    .mul(balanceB)
-            );
+            hSuitePriceArr['rate'] = BigNumber.from(balanceB).mul(BigNumber.from('1000000000000000000')).div(BigNumber.from(balanceA));
+            hSuitePriceArr['weight'] = sqrt(BigNumber.from(balanceA).mul(balanceB));
         }
 
         setPrices({
@@ -459,6 +454,15 @@ function Swap({ wallet, tokens: tokensMap, network, hSuitePools }) {
                     });
                 }
             });
+
+            let amountFromHsuite = ethers.utils.parseUnits(tokenOneAmount, tokenOne.decimals);
+            if (tokenOne.solidityAddress === ethers.constants.AddressZero) {
+                amountFromHsuite = amountFromHsuite.mul(1000 - oracleSettings()[bestRate.name].feePromille).div(1000);
+            } else {
+                const hSuiteFee = Math.max(10000,amountFromHsuite.mul(oracleSettings()[bestRate.name].feeDEXPromille).div(1000).toNumber());
+                amountFromHsuite = amountFromHsuite.sub(hSuiteFee);
+            }
+
             let swapObj = {
                 baseToken: {
                     details: {
@@ -468,7 +472,7 @@ function Swap({ wallet, tokens: tokensMap, network, hSuitePools }) {
                     },
                     amount: {
                         value: ethers.utils.formatUnits(
-                            ethers.utils.parseUnits(tokenOneAmount, tokenOne.decimals).mul(1000 - oracleSettings()[bestRate.name].feePromille).div(1000),
+                            amountFromHsuite,
                             tokenOne.decimals
                         )
                     }
@@ -481,7 +485,7 @@ function Swap({ wallet, tokens: tokensMap, network, hSuitePools }) {
                     },
                     amount: {
                         value: ethers.utils.formatUnits(
-                            ethers.utils.parseUnits(tokenTwoAmount, tokenTwo.decimals).mul(1000 - oracleSettings()[bestRate.name].feePromille).div(1000),
+                            ethers.utils.parseUnits(tokenTwoAmount, tokenTwo.decimals),
                             tokenTwo.decimals
                         )
                     }
@@ -562,10 +566,6 @@ function Swap({ wallet, tokens: tokensMap, network, hSuitePools }) {
         return parseFloat(convertPrice(bestPrice?.price))?.toFixed(6);
     }
 
-    const getBestPriceName = () => {
-        return getSortedPrices()?.[0]?.name;
-    }
-
     const getBestImpactError = () => {
         return (getSortedPrices()?.[0]?.priceImpact || BigNumber.from(0)).gt(2000);
     }
@@ -580,8 +580,8 @@ function Swap({ wallet, tokens: tokensMap, network, hSuitePools }) {
 
     useEffect(() => {
         setTokenOne(tokens[0]);
-        setTokenTwo(tokens[4]);
-        fetchDexSwap(tokens[0]?.solidityAddress, tokens[4]?.solidityAddress)
+        setTokenTwo(tokens[1]);
+        fetchDexSwap(tokens[0]?.solidityAddress, tokens[1]?.solidityAddress)
     }, [oracleContracts]);
 
     const refreshRate = () => {
