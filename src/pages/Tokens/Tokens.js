@@ -1,10 +1,16 @@
-import React from 'react'
+import React, {useEffect} from 'react'
+import './Tokens.css'
 
 function Tokens({ tokens }) {
+
+    useEffect(() => {
+        console.log('Render');
+    }, []);
+
   return (
     <div className='tokens'>
       <div className=''>
-        <h1 style={{textAlign: "center", mb: "5px"}} >These tokens are available to swap:</h1>
+        <h1 className={'tokensHeader'}>These tokens are available to swap:</h1>
       </div>
       <div style={{display: "flex", flexDirection: "row", flexWrap: "wrap", gap: 20, margin: "0 auto", alignItems: "center", justifyContent: "center"}}>
       {[...tokens]
