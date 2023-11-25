@@ -456,7 +456,7 @@ function Swap({ wallet, tokens: tokensMap, network, hSuitePools, rate }) {
             let amountFromHsuite = ethers.utils.parseUnits(tokenOneAmount, tokenOne.decimals);
             if (tokenOne.solidityAddress === ethers.constants.AddressZero) {
                 amountFromHsuite = amountFromHsuite.mul(1000 - oracleSettings()[bestRate.name].feePromille).div(1000);
-            } else {
+            } else if (tokenOne.symbol === 'HSUITE') {
                 const hSuiteFee = Math.max(10000, amountFromHsuite.mul(oracleSettings()[bestRate.name].feeDEXPromille).div(1000).toNumber());
                 amountFromHsuite = amountFromHsuite.sub(hSuiteFee);
             }
@@ -756,7 +756,7 @@ function Swap({ wallet, tokens: tokensMap, network, hSuitePools, rate }) {
                     : <div>Min receive: { ethers.utils.formatUnits(ethers.utils.parseUnits(tokenTwoAmount, tokenTwo.decimals).mul(1000 - slippage * 10).div(1000).toString(), tokenTwo.decimals) }</div>
                     : ''
                 }
-                <div className='networkFee'>Network fee: ≈{getNetworkFee().toFixed(4)} HBAR</div>
+                { network === NETWORKS.TESTNET ? <div className='networkFee'>Network fee: ≈{getNetworkFee().toFixed(4)} HBAR</div>: '' }
                 <div className="refreshTicker">
                     <div className={isRefreshAnimationActive ? 'active' : ''} style={{animationDuration: parseInt((25000 + 30 * refreshCount.current * refreshCount.current)/1000).toString() + 's'}}></div>
                 </div>
