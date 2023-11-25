@@ -28,10 +28,11 @@ function App() {
         signer: null,
     });
     const [tokens, setTokens] = useState(new Map());
-    const [network, setNetwork] = useState(NETWORKS.MAINNET);
+    const [network, setNetwork] = useState(NETWORKS.TESTNET);
     const [hSuitePools, setHSuitePools] = useState({});
+    const [rate, setRate] = useState(null);
 
-    const [wallets, setWallets] = useState({
+    const [wallets] = useState({
         hashpack: {
             name: 'hashpack',
             title: 'HashPack',
@@ -50,6 +51,9 @@ function App() {
 
     useEffect(() => {
         wallets.hashpack.instance.connect(network, true);
+        axios.get('https://mainnet-public.mirrornode.hedera.com/api/v1/network/exchangerate').then(rate => {
+            setRate(rate.data.current_rate.hbar_equivalent / rate.data.current_rate.cent_equivalent * 100);
+        });
     }, []);
 
     useEffect(() => {
@@ -57,7 +61,6 @@ function App() {
             axios.get('https://api.saucerswap.finance/tokens'),
             axios.get('https://raw.githubusercontent.com/pangolindex/tokenlists/main/pangolin.tokenlist.json'),
             axios.get('https://heliswap.infura-ipfs.io/ipfs/Qmf5u6N2ohZnBc1yxepYzS3RYagkMZbU5dwwU4TGxXt9Lf'),
-            //TODO: replace for mainnet
             axios.get('https://mainnet-sn1.hbarsuite.network/tokens/list'),
             axios.get('https://mainnet-sn1.hbarsuite.network/pools/list'),
         ];
@@ -80,6 +83,9 @@ function App() {
                                             hsuitePools,
                                         ]) => {
             const tokenMap = new Map();
+            const providers = network === NETWORKS.MAINNET
+                ? ['SaucerSwap', 'Pangolin', 'HeliSwap']
+                : ['SaucerSwap', 'Pangolin', 'HeliSwap', 'HSuite'];
             tokenMap.set(ethers.constants.AddressZero, {
                 name: 'Hbar',
                 symbol: 'HBAR',
@@ -87,7 +93,7 @@ function App() {
                 address: '',
                 solidityAddress: ethers.constants.AddressZero,
                 icon: HederaLogo,
-                providers: ['SaucerSwap', 'Pangolin', 'HeliSwap', 'HSuite'],
+                providers,
             });
 
             saucerSwapTokens.data.map(token => {
@@ -143,7 +149,7 @@ function App() {
                 });
             }
 
-            if (hsuiteTokens?.data) {
+            if (network === NETWORKS.TESTNET && hsuiteTokens?.data) {
                 hsuiteTokens.data.map(token => {
                     if (token.id !== 'HBAR') {
                         const solidityAddress = `0x${ContractId.fromString(token.id).toSolidityAddress()}`.toLowerCase();
@@ -199,6 +205,7 @@ function App() {
                                 tokens={tokens}
                                 network={network}
                                 hSuitePools={hSuitePools}
+                                rate={rate}
                             />
                         }/>
                         <Route path="/tokens" element={<Tokens tokens={tokens}/>}/>

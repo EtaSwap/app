@@ -9,14 +9,14 @@ import HSuiteLogo from '../../assets/img/hsuite.png';
 import {
     ContractExecuteTransaction,
     ContractFunctionParameters,
-    AccountAllowanceApproveTransaction, Transaction, TokenId
+    AccountAllowanceApproveTransaction, Transaction, TokenId,
 } from '@hashgraph/sdk';
 import axios from 'axios';
 import BasicOracleABI from '../../assets/abi/basic-oracle-abi.json';
 import { NETWORKS, GAS_LIMITS, HSUITE_NODES } from '../../utils/constants';
 import { SmartNodeSocket } from '../../class/smart-node-socket';
 
-function Swap({ wallet, tokens: tokensMap, network, hSuitePools }) {
+function Swap({ wallet, tokens: tokensMap, network, hSuitePools, rate }) {
     const tokens = [...tokensMap]
         .map(wrap => wrap[1])
         .sort((a, b) =>
@@ -76,13 +76,13 @@ function Swap({ wallet, tokens: tokensMap, network, hSuitePools }) {
             feeDEXPromille: 3,
             whbar: '0x00000000000000000000000000000000002cc823',
         },
-        HSuite: {
-            icon: HSuiteLogo,
-            aggregatorId: 'HSuite',
-            feePromille: 3,
-            feeDEXPromille: 3,
-            whbar: '',
-        },
+        // HSuite: {
+        //     icon: HSuiteLogo,
+        //     aggregatorId: 'HSuite',
+        //     feePromille: 3,
+        //     feeDEXPromille: 3,
+        //     whbar: '',
+        // },
     } : {
         SaucerSwap: {
             icon: SaucerSwapLogo,
@@ -121,7 +121,6 @@ function Swap({ wallet, tokens: tokensMap, network, hSuitePools }) {
     const feeWallet = () => network === NETWORKS.MAINNET ? '0.0.3745833' : '0.0.1772102';
 
     const hSuiteApiKey = () => network === NETWORKS.MAINNET ? 'd5db1f4a-8791-4f12-925f-920754547ce7' : '25f54dd3-47a1-4667-b9d8-2863585bc460';
-    const hSuiteDecimals = 4;
 
     const smartNodeSocket = async () => {
         return new Promise(async (resolve, reject) => {
@@ -281,7 +280,6 @@ function Swap({ wallet, tokens: tokensMap, network, hSuitePools }) {
                 return oracleContracts[i].getRate(_tokenA, _tokenB);
             }),
         ];
-        console.log(hSuitePool);
         if (hSuitePool) {
             oraclePromises.push(axios.get(`https://${network}.mirrornode.hedera.com/api/v1/accounts/${hSuitePool}`));
         }
@@ -459,7 +457,7 @@ function Swap({ wallet, tokens: tokensMap, network, hSuitePools }) {
             if (tokenOne.solidityAddress === ethers.constants.AddressZero) {
                 amountFromHsuite = amountFromHsuite.mul(1000 - oracleSettings()[bestRate.name].feePromille).div(1000);
             } else {
-                const hSuiteFee = Math.max(10000,amountFromHsuite.mul(oracleSettings()[bestRate.name].feeDEXPromille).div(1000).toNumber());
+                const hSuiteFee = Math.max(10000, amountFromHsuite.mul(oracleSettings()[bestRate.name].feeDEXPromille).div(1000).toNumber());
                 amountFromHsuite = amountFromHsuite.sub(hSuiteFee);
             }
 
@@ -491,7 +489,6 @@ function Swap({ wallet, tokens: tokensMap, network, hSuitePools }) {
                     }
                 },
             };
-            console.log(swapObj);
 
             socketConnection.socket.getSocket('gateway').emit('swapPoolRequest', {
                 type: 'swapPoolRequest',
@@ -576,6 +573,22 @@ function Swap({ wallet, tokens: tokensMap, network, hSuitePools }) {
             || !wallet?.address
             || !bestPrice?.price
             || bestPrice?.priceImpact?.gt(2000);
+    }
+
+    const getNetworkFee = () => {
+        const bestPrice = getSortedPrices()?.[0];
+        if (!rate || !tokenOne || !tokenTwo || !bestPrice?.name) {
+            return 0;
+        }
+        if (bestPrice.name === 'HSuite') {
+            return rate * 0.0016;
+        }
+        const gasPrice = getGasPrice(bestPrice.name);
+        if (gasPrice === 0) {
+            return 0;
+        }
+        const approxCost1Gas = 0.000000082;
+        return rate * gasPrice * approxCost1Gas;
     }
 
     useEffect(() => {
@@ -743,6 +756,7 @@ function Swap({ wallet, tokens: tokensMap, network, hSuitePools }) {
                     : <div>Min receive: { ethers.utils.formatUnits(ethers.utils.parseUnits(tokenTwoAmount, tokenTwo.decimals).mul(1000 - slippage * 10).div(1000).toString(), tokenTwo.decimals) }</div>
                     : ''
                 }
+                <div className='networkFee'>Network fee: ≈{getNetworkFee().toFixed(4)} HBAR</div>
                 <div className="refreshTicker">
                     <div className={isRefreshAnimationActive ? 'active' : ''} style={{animationDuration: parseInt((25000 + 30 * refreshCount.current * refreshCount.current)/1000).toString() + 's'}}></div>
                 </div>
