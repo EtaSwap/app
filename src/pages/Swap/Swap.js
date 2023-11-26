@@ -538,7 +538,17 @@ function Swap({ wallet, tokens: tokensMap, network, hSuitePools, rate }) {
                     : 0)
                 .freezeWithSigner(wallet.signer);
 
-            await swapTransaction.executeWithSigner(wallet.signer);
+            const signedTransaction = await swapTransaction.executeWithSigner(wallet.signer);
+            console.log(signedTransaction);
+            if(signedTransaction && signedTransaction.transactionId){
+                const idTransaction = `${signedTransaction.transactionId.substr(0, 4)}${signedTransaction.transactionId.substr(4).replace(/@/, '-').replace('.', '-')}`;
+
+                await axios.get(`https://${network}.mirrornode.hedera.com/api/v1/transactions/${idTransaction}`).then(res => {
+                    console.log(res);
+                });
+            }
+
+            console.log(signedTransaction, 'F1!');
         }
 
         feeOnTransfer ? setTokenTwoAmount(0) : setTokenOneAmount(0);
