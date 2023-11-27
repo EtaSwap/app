@@ -14,10 +14,6 @@ export const LoaderProvider = ({ children }) => {
         setLoading(false);
     };
 
-    useEffect(() => {
-        console.log(loading);
-    }, [loading]);
-
 
     return (
         <LoaderContext.Provider value={{ loading, showLoader, hideLoader }}>

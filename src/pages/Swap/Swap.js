@@ -15,6 +15,8 @@ import axios from 'axios';
 import BasicOracleABI from '../../assets/abi/basic-oracle-abi.json';
 import { NETWORKS, GAS_LIMITS, HSUITE_NODES } from '../../utils/constants';
 import { SmartNodeSocket } from '../../class/smart-node-socket';
+import {useLoader} from "../../components/Loader/LoaderContext";
+import {useToaster} from "../../components/Toaster/ToasterContext";
 
 function Swap({ wallet, tokens: tokensMap, network, hSuitePools, rate }) {
     const tokens = [...tokensMap]
@@ -32,6 +34,9 @@ function Swap({ wallet, tokens: tokensMap, network, hSuitePools, rate }) {
         Pangolin: null,
         HeliSwap: null,
     });
+
+    const { loading, showLoader, hideLoader } = useLoader();
+    const { showToast } = useToaster();
     const [slippage, setSlippage] = useState(1);
     const [feeOnTransfer, setFeeOnTransfer] = useState(false);
     const [messageApi, contextHolder] = message.useMessage()
@@ -542,10 +547,18 @@ function Swap({ wallet, tokens: tokensMap, network, hSuitePools, rate }) {
             console.log(signedTransaction);
             if(signedTransaction && signedTransaction.transactionId){
                 const idTransaction = `${signedTransaction.transactionId.substr(0, 4)}${signedTransaction.transactionId.substr(4).replace(/@/, '-').replace('.', '-')}`;
-
-                await axios.get(`https://${network}.mirrornode.hedera.com/api/v1/transactions/${idTransaction}`).then(res => {
-                    console.log(res);
-                });
+                showLoader();
+                setTimeout(() => {
+                    axios.get(`https://${network}.mirrornode.hedera.com/api/v1/transactions/${idTransaction}`).then(res => {
+                        if(res && res.data && res.data.transactions && res.data.transactions.result){
+                            showToast('Transaction', 'success', 'success');
+                        } else {
+                            showToast('Transaction', 'error', 'error');
+                        }
+                    }).finally(() => {
+                        hideLoader();
+                    });
+                }, 5000);
             }
 
             console.log(signedTransaction, 'F1!');

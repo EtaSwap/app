@@ -55,7 +55,6 @@ export class BladeWallet {
     async disconnect() {
         this.signer = null;
         this.address = '';
-        console.log(this.bladeConnector);
         await this.bladeConnector.killSession();
         this.refreshWallet();
     }

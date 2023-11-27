@@ -20,6 +20,8 @@ import {NETWORKS} from './utils/constants';
 import Social from './components/Social/Social';
 import pkg from '../package.json';
 import {LoaderProvider} from "./components/Loader/LoaderContext";
+import {ToasterProvider} from "./components/Toaster/ToasterContext";
+import {ToastContainer} from "react-toastify";
 
 function App() {
     const [wallet, setWallet] = useState({
@@ -191,30 +193,34 @@ function App() {
     return (
         <div className="App">
             <LoaderProvider>
-                <Header
-                    wallet={wallet}
-                    wallets={wallets}
-                    network={network}
-                    setNetwork={setNetwork}
-                />
-                <div className="mainWindow">
-                    <Routes>
-                        <Route path="/" element={
-                            <Swap
-                                wallet={wallet}
-                                tokens={tokens}
-                                network={network}
-                                hSuitePools={hSuitePools}
-                                rate={rate}
-                            />
-                        }/>
-                        <Route path="/tokens" element={<Tokens tokens={tokens}/>}/>
-                    </Routes>
-                </div>
-                <div className="social">
-                    <Social/>
-                </div>
-                <div className="version">v {pkg.version}</div>
+                <ToasterProvider>
+                    <Header
+                        wallet={wallet}
+                        wallets={wallets}
+                        network={network}
+                        setNetwork={setNetwork}
+                    />
+                    <div className="mainWindow">
+                        <Routes>
+                            <Route path="/" element={
+                                <Swap
+                                    wallet={wallet}
+                                    tokens={tokens}
+                                    network={network}
+                                    hSuitePools={hSuitePools}
+                                    rate={rate}
+                                />
+                            }/>
+                            <Route path="/tokens" element={<Tokens tokens={tokens}/>}/>
+                        </Routes>
+                    </div>
+                    <div className="social">
+                        <Social/>
+                    </div>
+                    <div className="version">v {pkg.version}</div>
+
+                    <ToastContainer />
+                </ToasterProvider>
             </LoaderProvider>
         </div>
     )
