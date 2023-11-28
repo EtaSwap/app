@@ -179,10 +179,15 @@ function Swap({wallet, tokens: tokensMap, network, hSuitePools, rate}) {
         setSearchPhrase('');
     }
 
-    const fetchDexSwap = async (tokenA, tokenB) => {
-        showLoader();
+    const fetchDexSwap = async (tokenA, tokenB, isLoader = true) => {
+        if(isLoader){
+            showLoader();
+        }
         const result = await swapTokens(tokenA, tokenB, hSuitePools, network, oracleContracts);
-        hideLoader();
+
+        if(isLoader) {
+            hideLoader();
+        }
         setPrices(result);
     }
 
@@ -473,7 +478,7 @@ function Swap({wallet, tokens: tokensMap, network, hSuitePools, rate}) {
         setIsRefreshAnimationActive(false);
         refreshCount.current = refreshCount.current + 2;
         if (tokenOne?.solidityAddress && tokenTwo?.solidityAddress) {
-            fetchDexSwap(tokenOne.solidityAddress, tokenTwo.solidityAddress);
+            fetchDexSwap(tokenOne.solidityAddress, tokenTwo.solidityAddress, false);
         }
         setTimeout(() => setIsRefreshAnimationActive(true), 0);
         refreshTimer.current = setTimeout(refreshRate, (25000 + 30 * refreshCount.current * refreshCount.current));
