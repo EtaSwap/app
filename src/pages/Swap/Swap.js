@@ -24,7 +24,7 @@ import {
     exchange,
     hSuiteApiKey,
     oracles,
-    oracleSettings
+    oracleSettings, swapTokens
 } from "./swap.utils";
 import {SlippageTolerance} from "./Components/SlippageTolerance/SlippageTolerance";
 import {TokensModal} from "./Components/TokensModal/TokensModal";
@@ -180,56 +180,10 @@ function Swap({wallet, tokens: tokensMap, network, hSuitePools, rate}) {
     }
 
     const fetchDexSwap = async (tokenA, tokenB) => {
-        const hSuitePool = hSuitePools[`${tokenA}_${tokenB}`] || hSuitePools[`${tokenB}_${tokenA}`] || null;
-
-        const oraclePromises = [
-            ...Object.keys(oracleContracts).map(async i => {
-                let _tokenA = tokenA;
-                let _tokenB = tokenB;
-                if (tokenA === ethers.constants.AddressZero) {
-                    _tokenA = oracleSettings(network)[i].whbar;
-                }
-                if (tokenB === ethers.constants.AddressZero) {
-                    _tokenB = oracleSettings(network)[i].whbar;
-                }
-                return oracleContracts[i].getRate(_tokenA, _tokenB);
-            }),
-        ];
-        if (hSuitePool) {
-            oraclePromises.push(axios.get(`https://${network}.mirrornode.hedera.com/api/v1/accounts/${hSuitePool}`));
-        }
-
-        const res = await Promise.allSettled(oraclePromises);
-
-        let hSuitePriceArr = null;
-        if (res[network === NETWORKS.MAINNET ? 3 : 2]?.status === 'fulfilled') {
-            const balance = res[network === NETWORKS.MAINNET ? 3 : 2].value.data.balance;
-            let balanceA = 0;
-            let balanceB = 0;
-            if (tokenA === ethers.constants.AddressZero) {
-                balanceA = balance.balance;
-            } else {
-                const idA = TokenId.fromSolidityAddress(tokenA).toString();
-                balanceA = balance.tokens.find(token => token.token_id === idA)?.balance;
-            }
-            if (tokenB === ethers.constants.AddressZero) {
-                balanceB = balance.balance;
-            } else {
-                const idB = TokenId.fromSolidityAddress(tokenB).toString();
-                balanceB = balance.tokens.find(token => token.token_id === idB)?.balance;
-            }
-
-            hSuitePriceArr = [];
-            hSuitePriceArr['rate'] = BigNumber.from(balanceB).mul(BigNumber.from('1000000000000000000')).div(BigNumber.from(balanceA));
-            hSuitePriceArr['weight'] = sqrt(BigNumber.from(balanceA).mul(balanceB));
-        }
-
-        setPrices({
-            SaucerSwap: res[0].status === 'fulfilled' ? res[0].value : null,
-            Pangolin: res[1].status === 'fulfilled' ? res[1].value : null,
-            HeliSwap: network === NETWORKS.MAINNET ? (res[2]?.status === 'fulfilled' ? res[2].value : null) : null,
-            HSuite: hSuitePriceArr,
-        });
+        showLoader();
+        const result = await swapTokens(tokenA, tokenB, hSuitePools, network, oracleContracts);
+        hideLoader();
+        setPrices(result);
     }
 
 
