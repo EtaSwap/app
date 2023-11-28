@@ -32,6 +32,7 @@ export class HashpackWallet {
             signer: this.signer,
             auth: this.auth.bind(this),
             signTransaction: this.signTransaction.bind(this),
+            executeTransaction: this.executeTransaction.bind(this),
         });
     }
 
@@ -82,6 +83,25 @@ export class HashpackWallet {
         );
 
         return res.signedTransaction;
+    }
+
+    async executeTransaction(transaction) {
+        const res = await this.hashconnect.sendTransaction(
+            this.connectionData?.topic,
+            {
+                topic: this.connectionData?.topic,
+                byteArray: new Uint8Array(transaction.toBytes()),
+                metadata: {
+                    accountToSign: this.address,
+                    hideNft: false,
+                },
+            },
+        );
+
+        return {
+            error: res.success ? null : (res.error?.message || res.error.toString()),
+            res: res.response,
+        }
     }
 
     async disconnect() {

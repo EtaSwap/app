@@ -10,8 +10,6 @@ export const Loader = ({isShow, children}) => {
             radius="9"
             color="#4acb9b"
             ariaLabel="loading"
-            wrapperStyle
-            wrapperClass
         /></div>}
         {children}
     </div>);

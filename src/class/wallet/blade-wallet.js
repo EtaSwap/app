@@ -23,6 +23,7 @@ export class BladeWallet {
             signer: this.signer,
             auth: this.auth.bind(this),
             signTransaction: this.signTransaction.bind(this),
+            executeTransaction: this.executeTransaction.bind(this),
         });
     }
 
@@ -50,6 +51,16 @@ export class BladeWallet {
     async signTransaction(transaction) {
         const res = await this.signer.signTransaction(transaction);
         return res.toBytes();
+    }
+
+    async executeTransaction(transaction) {
+        const res =  await transaction.executeWithSigner(this.signer);
+
+        console.log(res);
+        return {
+            error: res.success ? null : res.error,
+            res: res.response,
+        }
     }
 
     async disconnect() {

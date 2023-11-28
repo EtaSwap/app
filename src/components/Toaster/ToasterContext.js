@@ -1,4 +1,4 @@
-import React, {createContext, useContext, useEffect, useState} from 'react';
+import React, {createContext, useContext} from 'react';
 import {toast} from "react-toastify";
 import './Toaster.css';
 import 'react-toastify/dist/ReactToastify.css';
@@ -12,6 +12,7 @@ export const ToasterProvider = ({children}) => {
         position: toast.POSITION.TOP_RIGHT,
         autoClose: 6000,
         closeButton: false,
+        className: 'toast-wrapper'
     };
     const copyToClipboard = async (text) => {
         try {

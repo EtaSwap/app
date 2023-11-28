@@ -30,7 +30,7 @@ function App() {
         signer: null,
     });
     const [tokens, setTokens] = useState(new Map());
-    const [network, setNetwork] = useState(NETWORKS.MAINNET);
+    const [network, setNetwork] = useState(NETWORKS.TESTNET);
     const [hSuitePools, setHSuitePools] = useState({});
     const [rate, setRate] = useState(null);
 

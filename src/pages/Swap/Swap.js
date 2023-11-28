@@ -80,7 +80,6 @@ function Swap({wallet, tokens: tokensMap, network, hSuitePools, rate}) {
                     } else {
                         reject(new Error(`account ${wallet.address} can't connect to node ${nodeSocket.getNode().operator}, shit happens...`))
                     }
-                    console.log(nodeSocket);
                 });
 
                 nodeSocket.getSocket('gateway').on('authentication', async (event) => {
@@ -243,19 +242,19 @@ function Swap({wallet, tokens: tokensMap, network, hSuitePools, rate}) {
             const socketConnection = await smartNodeSocket();
             socketConnection.socket.getSocket('gateway').on('swapPoolRequest', async (resPool) => {
                 try {
-                    if (resPool.status == 'success') {
-                        console.log();
+                    if (resPool.status === 'success') {
                         let transaction = Transaction.fromBytes(new Uint8Array(resPool.payload.transaction));
                         //TODO: checkTransaction() before sign (make sure summ is correct)
 
                         let signedTransactionBytes = await wallet.signTransaction(transaction);
 
                         socketConnection.socket.getSocket('gateway').on('swapPoolExecute', responseEvent => {
-                            if (responseEvent.status == 'success') {
-                                showToast('Transaction', 'Successfully completed the swap', 'success');
+                            if (responseEvent.status === 'success') {
+                                showToast('Transaction', `The transaction was successfully processed. Transaction ID: ${responseEvent.payload?.transaction?.transactionId}`, 'success');
                                 socketConnection.socket.getSocket('gateway').disconnect();
                             } else {
-                                showToast('Transaction', 'error', 'error');
+                                console.error(responseEvent);
+                                showToast('Transaction', 'Unexpected error', 'error');
                             }
                         });
 
@@ -264,17 +263,17 @@ function Swap({wallet, tokens: tokensMap, network, hSuitePools, rate}) {
                             transactionBytes: signedTransactionBytes,
                         }, (error) => {
                             if (error) {
-                                console.log(error, 'Error');
-                                showToast('Transaction', 'error', 'error');
-                            } else {
-                                showToast('Transaction', 'The transaction was successfully processed', 'success');
+                                console.error(error);
+                                showToast('Transaction', 'Unexpected error', 'error');
                             }
                         });
                     } else {
+                        console.error(resPool.error);
                         showToast('Transaction', resPool.error, 'error');
                     }
                 } catch (e) {
-                    showToast('Transaction', 'An error occurred', 'error');
+                    console.error(e);
+                    showToast('Transaction', 'Unexpected error', 'error');
                 }
             });
 
@@ -333,9 +332,22 @@ function Swap({wallet, tokens: tokensMap, network, hSuitePools, rate}) {
                             : ethers.utils.parseUnits(tokenOneAmount, tokenOne.decimals).toString(),
                     )
                     .freezeWithSigner(wallet.signer);
-                await allowanceTx.executeWithSigner(wallet.signer);
+
+                try {
+                    const approveTransaction = await wallet.executeTransaction(allowanceTx);
+                    if (approveTransaction.error) {
+                        showToast('Transaction', approveTransaction.error, 'error');
+                        throw approveTransaction.error;
+                    }
+                } catch (e) {
+                    hideLoader();
+                    throw e;
+                }
 
             }
+
+            //prevent double-firing approval event on HashPack
+            await new Promise(resolve => setTimeout(resolve, 500));
 
             let swapTransaction = await new ContractExecuteTransaction()
                 .setContractId(exchange())
@@ -365,25 +377,34 @@ function Swap({wallet, tokens: tokensMap, network, hSuitePools, rate}) {
                     : 0)
                 .freezeWithSigner(wallet.signer);
 
-            const signedTransaction = await swapTransaction.executeWithSigner(wallet.signer);
+            let execTransaction = null;
+            try {
+                execTransaction = await wallet.executeTransaction(swapTransaction);
+                if (execTransaction.error) {
+                    showToast('Transaction', execTransaction.error, 'error');
+                    throw execTransaction.error;
+                }
+            } catch (e) {
+                hideLoader();
+                throw e;
+            }
 
-
-            if (signedTransaction && signedTransaction.transactionId) {
-                const idTransaction = `${signedTransaction.transactionId.substr(0, 4)}${signedTransaction.transactionId.substr(4).replace(/@/, '-').replace('.', '-')}`;
+            if (execTransaction.res?.transactionId) {
+                const idTransaction = `${execTransaction.res.transactionId.substr(0, 4)}${execTransaction.res.transactionId.substr(4).replace(/@/, '-').replace('.', '-')}`;
                 setTimeout(() => {
                     axios.get(`https://${network}.mirrornode.hedera.com/api/v1/transactions/${idTransaction}`).then(res => {
-                        console.log(res.data, 'R!');
-                        if (res && res.data && res.data.transactions && res.data.transactions[0].result) {
-                            showToast('Transaction', 'The transaction was successfully processed', 'success');
+                        if (res?.data?.transactions?.[0]?.result) {
+                            showToast('Transaction', `The transaction was successfully processed. Transaction ID: ${execTransaction.res.transactionId}`, 'success');
                         } else {
-                            showToast('Transaction', 'error', 'error');
+                            showToast('Transaction', 'Error on processing transaction', 'error');
                         }
                     }).finally(() => {
                         hideLoader();
                     });
                 }, 6000);
             } else {
-                showToast('Transaction', 'got some error', 'error');
+                console.error('Empty/incorrect transaction response');
+                showToast('Transaction', 'Unexpected error', 'error');
             }
         }
 
