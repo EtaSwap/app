@@ -1,4 +1,15 @@
 .custom-toast {
+    position: relative;
+}
+.custom-toast--clipboard{
+    display: none;
+    position: absolute;
+    right: 0;
+    top: 50%;
+    transform: translate(0, -50%);
+}
+.custom-toast:hover .custom-toast--clipboard{
+    display: block;
 }
 
 .toast-body {

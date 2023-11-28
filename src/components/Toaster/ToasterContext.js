@@ -2,6 +2,7 @@ import React, {createContext, useContext, useEffect, useState} from 'react';
 import {toast} from "react-toastify";
 import './Toaster.css';
 import 'react-toastify/dist/ReactToastify.css';
+import {CopyOutlined} from "@ant-design/icons";
 
 const ToasterContext = createContext();
 
@@ -27,7 +28,10 @@ export const ToasterProvider = ({children}) => {
                             <strong className="mr-auto">{title}</strong>
                         </div>
                         <div className="toast-body">{message}</div>
-                    </div>, {
+                    <div className={'custom-toast--clipboard'}>
+                        <CopyOutlined />
+                    </div>
+                </div>, {
                     ...toastOptions,
                     onClose: () => {
                         copyToClipboard(`${title}.${message}`);
@@ -40,6 +44,9 @@ export const ToasterProvider = ({children}) => {
                             <strong className="mr-auto">{title}</strong>
                         </div>
                         <div className="toast-body">{message}</div>
+                    <div className={'custom-toast--clipboard'}>
+                        <CopyOutlined />
+                    </div>
                     </div>, {
                     ...toastOptions,
                     onClose: () => {
@@ -53,6 +60,9 @@ export const ToasterProvider = ({children}) => {
                             <strong className="mr-auto">{title}</strong>
                         </div>
                         <div className="toast-body">{message}</div>
+                    <div className={'custom-toast--clipboard'}>
+                        <CopyOutlined />
+                    </div>
                     </div>, {
                     ...toastOptions,
                     onClose: () => {
@@ -66,6 +76,9 @@ export const ToasterProvider = ({children}) => {
                             <strong className="mr-auto">{title}</strong>
                         </div>
                         <div className="toast-body">{message}</div>
+                    <div className={'custom-toast--clipboard'}>
+                    <CopyOutlined />
+                </div>
                     </div>, {
                     ...toastOptions,
                     onClose: () => {

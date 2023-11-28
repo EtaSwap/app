@@ -1,7 +1,7 @@
-import { Input, Popover, Radio, Modal, message } from 'antd'
-import { ArrowDownOutlined, SettingOutlined } from '@ant-design/icons'
-import { useState, useEffect, useRef } from 'react'
-import { BigNumber, ethers } from 'ethers';
+import {Input, Popover, Radio, Modal, message} from 'antd'
+import {ArrowDownOutlined, SettingOutlined} from '@ant-design/icons'
+import {useState, useEffect, useRef} from 'react'
+import {BigNumber, ethers} from 'ethers';
 import PangolinLogo from '../../assets/img/pangolin.png';
 import SaucerSwapLogo from '../../assets/img/saucerswap.ico';
 import HeliSwapLogo from '../../assets/img/heliswap.png';
@@ -13,20 +13,20 @@ import {
 } from '@hashgraph/sdk';
 import axios from 'axios';
 import BasicOracleABI from '../../assets/abi/basic-oracle-abi.json';
-import { NETWORKS, GAS_LIMITS, HSUITE_NODES } from '../../utils/constants';
-import { SmartNodeSocket } from '../../class/smart-node-socket';
+import {NETWORKS, GAS_LIMITS, HSUITE_NODES} from '../../utils/constants';
+import {SmartNodeSocket} from '../../class/smart-node-socket';
 import {useLoader} from "../../components/Loader/LoaderContext";
 import {useToaster} from "../../components/Toaster/ToasterContext";
 
-function Swap({ wallet, tokens: tokensMap, network, hSuitePools, rate }) {
+function Swap({wallet, tokens: tokensMap, network, hSuitePools, rate}) {
     const tokens = [...tokensMap]
         .map(wrap => wrap[1])
         .sort((a, b) =>
             a.providers.length > b.providers.length
                 ? -1
                 : (a.providers.length === b.providers.length
-                    ? (a.name > b.name ? 1 : -1)
-                    : 1
+                        ? (a.name > b.name ? 1 : -1)
+                        : 1
                 )
         );
     const [oracleContracts, setOracleContracts] = useState({
@@ -35,8 +35,9 @@ function Swap({ wallet, tokens: tokensMap, network, hSuitePools, rate }) {
         HeliSwap: null,
     });
 
-    const { loading, showLoader, hideLoader } = useLoader();
-    const { showToast } = useToaster();
+    const {loading, showLoader, hideLoader} = useLoader();
+    const {showToast} = useToaster();
+
     const [slippage, setSlippage] = useState(1);
     const [feeOnTransfer, setFeeOnTransfer] = useState(false);
     const [messageApi, contextHolder] = message.useMessage()
@@ -133,6 +134,7 @@ function Swap({ wallet, tokens: tokensMap, network, hSuitePools, rate }) {
                 return null;
             }
             try {
+                showLoader();
                 let randomNode = HSUITE_NODES[network][Math.floor(Math.random() * HSUITE_NODES[network].length)];
                 let nodeSocket = new SmartNodeSocket(randomNode, wallet.address, hSuiteApiKey());
 
@@ -181,8 +183,10 @@ function Swap({ wallet, tokens: tokensMap, network, hSuitePools, rate }) {
                     });
                 });
 
+                hideLoader();
                 nodeSocket.getSocket('gateway').connect();
             } catch (error) {
+                hideLoader();
                 reject(error);
             }
         });
@@ -340,19 +344,19 @@ function Swap({ wallet, tokens: tokensMap, network, hSuitePools, rate }) {
         const sortedPrices = Object.keys(prices)
             .filter(name => prices[name]?.rate && !prices[name]?.rate?.eq(0))
             .sort((a, b) => prices[b].rate.sub(prices[a].rate))
-            .map(name => ({ name, price: prices[name].rate, weight: prices[name].weight }));
+            .map(name => ({name, price: prices[name].rate, weight: prices[name].weight}));
 
         const bestPrice = sortedPrices?.[0]?.price;
         if (parseFloat(bestPrice) === 0) {
             return [];
         }
         const pricesRes = [];
-        for (let { name, price, weight } of sortedPrices) {
+        for (let {name, price, weight} of sortedPrices) {
             if (!price || !tokenOne?.decimals || !tokenTwo?.decimals || !oracleSettings()[name]) {
                 continue;
             }
 
-            const priceRes = { price, weight, name };
+            const priceRes = {price, weight, name};
 
             const volume = weight.pow(2);
             const Va = sqrt(volume.mul(BigNumber.from(10).pow(18)).div(price));
@@ -434,27 +438,42 @@ function Swap({ wallet, tokens: tokensMap, network, hSuitePools, rate }) {
         }
 
         if (bestRate.name === 'HSuite') {
+            showLoader();
             const socketConnection = await smartNodeSocket();
             socketConnection.socket.getSocket('gateway').on('swapPoolRequest', async (resPool) => {
-                if (resPool.status == 'success') {
-                    let transaction = Transaction.fromBytes(new Uint8Array(resPool.payload.transaction));
-                    //TODO: checkTransaction() before sign (make sure summ is correct)
+                try {
+                    if (resPool.status == 'success') {
+                        console.log();
+                        let transaction = Transaction.fromBytes(new Uint8Array(resPool.payload.transaction));
+                        //TODO: checkTransaction() before sign (make sure summ is correct)
 
-                    let signedTransactionBytes = await wallet.signTransaction(transaction);
+                        let signedTransactionBytes = await wallet.signTransaction(transaction);
 
-                    socketConnection.socket.getSocket('gateway').on('swapPoolExecute', responseEvent => {
-                        if (responseEvent.status == 'success') {
-                            console.log(`customer has successfully completed the swap.`);
-                            socketConnection.socket.getSocket('gateway').disconnect();
-                        } else {
-                            console.error(responseEvent);
-                        }
-                    });
+                        socketConnection.socket.getSocket('gateway').on('swapPoolExecute', responseEvent => {
+                            if (responseEvent.status == 'success') {
+                                showToast('Transaction', 'Successfully completed the swap', 'success');
+                                socketConnection.socket.getSocket('gateway').disconnect();
+                            } else {
+                                showToast('Transaction', 'error', 'error');
+                            }
+                        });
 
-                    socketConnection.socket.getSocket('gateway').emit('swapPoolExecute', {
-                        type: 'swapPoolExecute',
-                        transactionBytes: signedTransactionBytes,
-                    });
+                        socketConnection.socket.getSocket('gateway').emit('swapPoolExecute', {
+                            type: 'swapPoolExecute',
+                            transactionBytes: signedTransactionBytes,
+                        }, (error) => {
+                            if (error) {
+                                console.log(error, 'Error');
+                                showToast('Transaction', 'error', 'error');
+                            } else {
+                                showToast('Transaction', 'The transaction was successfully processed', 'success');
+                            }
+                        });
+                    } else {
+                        showToast('Transaction', resPool.error, 'error');
+                    }
+                } catch (e) {
+                    showToast('Transaction', 'An error occurred', 'error');
                 }
             });
 
@@ -501,6 +520,7 @@ function Swap({ wallet, tokens: tokensMap, network, hSuitePools, rate }) {
                 swap: swapObj
             });
         } else {
+            showLoader();
             if (tokenOne.solidityAddress !== ethers.constants.AddressZero) {
                 const allowanceTx = await new AccountAllowanceApproveTransaction()
                     .approveTokenAllowance(
@@ -512,7 +532,8 @@ function Swap({ wallet, tokens: tokensMap, network, hSuitePools, rate }) {
                             : ethers.utils.parseUnits(tokenOneAmount, tokenOne.decimals).toString(),
                     )
                     .freezeWithSigner(wallet.signer);
-                await allowanceTx.executeWithSigner(wallet.signer);
+                const test = await allowanceTx.executeWithSigner(wallet.signer);
+
             }
 
             let swapTransaction = await new ContractExecuteTransaction()
@@ -544,24 +565,25 @@ function Swap({ wallet, tokens: tokensMap, network, hSuitePools, rate }) {
                 .freezeWithSigner(wallet.signer);
 
             const signedTransaction = await swapTransaction.executeWithSigner(wallet.signer);
-            console.log(signedTransaction);
-            if(signedTransaction && signedTransaction.transactionId){
+
+
+            if (signedTransaction && signedTransaction.transactionId) {
                 const idTransaction = `${signedTransaction.transactionId.substr(0, 4)}${signedTransaction.transactionId.substr(4).replace(/@/, '-').replace('.', '-')}`;
-                showLoader();
                 setTimeout(() => {
                     axios.get(`https://${network}.mirrornode.hedera.com/api/v1/transactions/${idTransaction}`).then(res => {
-                        if(res && res.data && res.data.transactions && res.data.transactions.result){
-                            showToast('Transaction', 'success', 'success');
+                        console.log(res.data, 'R!');
+                        if (res && res.data && res.data.transactions && res.data.transactions[0].result) {
+                            showToast('Transaction', 'The transaction was successfully processed', 'success');
                         } else {
                             showToast('Transaction', 'error', 'error');
                         }
                     }).finally(() => {
                         hideLoader();
                     });
-                }, 5000);
+                }, 6000);
+            } else {
+                showToast('Transaction', 'got some error', 'error');
             }
-
-            console.log(signedTransaction, 'F1!');
         }
 
         feeOnTransfer ? setTokenTwoAmount(0) : setTokenOneAmount(0);
@@ -571,7 +593,7 @@ function Swap({ wallet, tokens: tokensMap, network, hSuitePools, rate }) {
         setTokenOneAmount(0);
         setTokenTwoAmount(0);
         const provider = new ethers.providers.JsonRpcProvider(`https://${network}.hashio.io/api`);
-        setOracleContracts( network === NETWORKS.MAINNET ? {
+        setOracleContracts(network === NETWORKS.MAINNET ? {
             SaucerSwap: new ethers.Contract(oracles().SaucerSwap, BasicOracleABI, provider),
             Pangolin: new ethers.Contract(oracles().Pangolin, BasicOracleABI, provider),
             HeliSwap: new ethers.Contract(oracles().HeliSwap, BasicOracleABI, provider),
@@ -766,22 +788,27 @@ function Swap({ wallet, tokens: tokensMap, network, hSuitePools, rate }) {
                                 onClick={() => switchAllRates()}>{checkAllRatesOpen ? 'Hide all rates' : 'Show all rates'}</button>
                     </div>
                     {checkAllRatesOpen
-                        ? getSortedPrices().map(({ name, price, lowVolume, amountOut, priceImpact }) => <div className='ratesLogo' key={name}>
+                        ? getSortedPrices().map(({name, price, lowVolume, amountOut, priceImpact}) => <div
+                            className='ratesLogo' key={name}>
                             <img className='ratesLogoIcon' title={name} src={oracleSettings()?.[name]?.icon}
-                                 alt={name}/> {ethers.utils.formatUnits(amountOut, feeOnTransfer ? tokenOne?.decimals : tokenTwo.decimals)}  (impact: {ethers.utils.formatUnits(priceImpact.toString(), 2)}%)
+                                 alt={name}/> {ethers.utils.formatUnits(amountOut, feeOnTransfer ? tokenOne?.decimals : tokenTwo.decimals)} (impact: {ethers.utils.formatUnits(priceImpact.toString(), 2)}%)
                         </div>)
                         : ''
                     }
                 </div>
-                { (tokenOneAmount && tokenTwoAmount)
+                {(tokenOneAmount && tokenTwoAmount)
                     ? feeOnTransfer
-                    ? <div>Max to sell: { ethers.utils.formatUnits(ethers.utils.parseUnits(tokenOneAmount, tokenOne.decimals).mul(1000 + slippage * 10).div(1000).toString(), tokenOne.decimals) }</div>
-                    : <div>Min receive: { ethers.utils.formatUnits(ethers.utils.parseUnits(tokenTwoAmount, tokenTwo.decimals).mul(1000 - slippage * 10).div(1000).toString(), tokenTwo.decimals) }</div>
+                        ? <div>Max to
+                            sell: {ethers.utils.formatUnits(ethers.utils.parseUnits(tokenOneAmount, tokenOne.decimals).mul(1000 + slippage * 10).div(1000).toString(), tokenOne.decimals)}</div>
+                        : <div>Min
+                            receive: {ethers.utils.formatUnits(ethers.utils.parseUnits(tokenTwoAmount, tokenTwo.decimals).mul(1000 - slippage * 10).div(1000).toString(), tokenTwo.decimals)}</div>
                     : ''
                 }
-                { network === NETWORKS.TESTNET ? <div className='networkFee'>Network fee: ≈{getNetworkFee().toFixed(4)} HBAR</div>: '' }
+                {network === NETWORKS.TESTNET ?
+                    <div className='networkFee'>Network fee: ≈{getNetworkFee().toFixed(4)} HBAR</div> : ''}
                 <div className="refreshTicker">
-                    <div className={isRefreshAnimationActive ? 'active' : ''} style={{animationDuration: parseInt((25000 + 30 * refreshCount.current * refreshCount.current)/1000).toString() + 's'}}></div>
+                    <div className={isRefreshAnimationActive ? 'active' : ''}
+                         style={{animationDuration: parseInt((25000 + 30 * refreshCount.current * refreshCount.current) / 1000).toString() + 's'}}></div>
                 </div>
                 <div className='assocWarning'>&#9432; Make sure selected tokens are associated to your account.</div>
                 {getBestImpactError()
