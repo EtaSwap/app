@@ -1,11 +1,7 @@
-import {Input, Popover, Radio, Modal, message} from 'antd'
-import {ArrowDownOutlined, SettingOutlined} from '@ant-design/icons'
+import {Input, Popover, message} from 'antd'
+import {ArrowDownOutlined} from '@ant-design/icons'
 import {useState, useEffect, useRef} from 'react'
 import {BigNumber, ethers} from 'ethers';
-import PangolinLogo from '../../assets/img/pangolin.png';
-import SaucerSwapLogo from '../../assets/img/saucerswap.ico';
-import HeliSwapLogo from '../../assets/img/heliswap.png';
-import HSuiteLogo from '../../assets/img/hsuite.png';
 import {
     ContractExecuteTransaction,
     ContractFunctionParameters,
@@ -21,14 +17,13 @@ import {
     defaultOracleContracts,
     defaultPrices,
     defaultTokens,
-    exchange,
+    exchange, getSortedPrices,
     hSuiteApiKey,
     oracles,
     oracleSettings, swapTokens
 } from "./swap.utils";
 import {SlippageTolerance} from "./Components/SlippageTolerance/SlippageTolerance";
 import {TokensModal} from "./Components/TokensModal/TokensModal";
-import {sqrt} from "../../utils/utils";
 
 function Swap({wallet, tokens: tokensMap, network, hSuitePools, rate}) {
     const {loading, showLoader, hideLoader} = useLoader();
@@ -191,52 +186,6 @@ function Swap({wallet, tokens: tokensMap, network, hSuitePools, rate}) {
         setPrices(result);
     }
 
-
-    const getSortedPrices = () => {
-        const sortedPrices = Object.keys(prices)
-            .filter(name => prices[name]?.rate && !prices[name]?.rate?.eq(0))
-            .sort((a, b) => prices[b].rate.sub(prices[a].rate))
-            .map(name => ({name, price: prices[name].rate, weight: prices[name].weight}));
-
-        const bestPrice = sortedPrices?.[0]?.price;
-        if (parseFloat(bestPrice) === 0) {
-            return [];
-        }
-        const pricesRes = [];
-        for (let {name, price, weight} of sortedPrices) {
-            if (!price || !tokenOne?.decimals || !tokenTwo?.decimals || !oracleSettings(network)[name]) {
-                continue;
-            }
-
-            const priceRes = {price, weight, name};
-
-            const volume = weight.pow(2);
-            const Va = sqrt(volume.mul(BigNumber.from(10).pow(18)).div(price));
-            const Vb = volume.div(Va);
-
-            if (feeOnTransfer) {
-                const amountOut = BigNumber.from(ethers.utils.parseUnits(tokenTwoAmount.toString(), tokenTwo.decimals)).mul(1000 + oracleSettings(network)[name].feePromille + oracleSettings(network)[name].feeDEXPromille).div(1000);
-                const VaAfter = amountOut.mul(Va).div(Vb.sub(amountOut));
-                const priceImpact = amountOut.mul(10000).div(Vb);
-                priceRes.amountOut = VaAfter;
-                priceRes.priceImpact = priceImpact;
-                if (VaAfter.gt(0)) {
-                    pricesRes.push(priceRes);
-                }
-            } else {
-                const amountIn = BigNumber.from(ethers.utils.parseUnits(tokenOneAmount.toString(), tokenOne.decimals)).mul(1000 - oracleSettings(network)[name].feePromille - oracleSettings(network)[name].feeDEXPromille).div(1000);
-                const VbAfter = amountIn.mul(Vb).div(Va.add(amountIn));
-                const priceImpact = VbAfter.mul(10000).div(Vb);
-                priceRes.amountOut = VbAfter;
-                priceRes.priceImpact = priceImpact;
-                pricesRes.push(priceRes);
-            }
-
-        }
-
-        return pricesRes.sort((a, b) => feeOnTransfer ? a.amountOut.sub(b.amountOut) : b.amountOut.sub(a.amountOut));
-    }
-
     const convertPrice = (price) => {
         if (!price || !tokenOne || !tokenTwo) {
             return '0';
@@ -279,7 +228,7 @@ function Swap({wallet, tokens: tokensMap, network, hSuitePools, rate}) {
     const fetchDex = async () => {
         const deadline = Math.floor(Date.now() / 1000) + 1000;
 
-        const bestRate = getSortedPrices()?.[0];
+        const bestRate = getSortedPrices(prices, tokenOne, tokenTwo, tokenTwoAmount, tokenOneAmount, feeOnTransfer, network)?.[0];
         if (!bestRate?.price || bestRate.price.eq(0)) {
             messageApi.open({
                 type: 'error',
@@ -442,16 +391,16 @@ function Swap({wallet, tokens: tokensMap, network, hSuitePools, rate}) {
     }
 
     const getBestPriceDescr = () => {
-        const bestPrice = getSortedPrices()?.[0];
+        const bestPrice = getSortedPrices(prices, tokenOne, tokenTwo, tokenTwoAmount, tokenOneAmount, feeOnTransfer, network)?.[0];
         return parseFloat(convertPrice(bestPrice?.price))?.toFixed(6);
     }
 
     const getBestImpactError = () => {
-        return (getSortedPrices()?.[0]?.priceImpact || BigNumber.from(0)).gt(2000);
+        return (getSortedPrices(prices, tokenOne, tokenTwo, tokenTwoAmount, tokenOneAmount, feeOnTransfer, network)?.[0]?.priceImpact || BigNumber.from(0)).gt(2000);
     }
 
     const swapDisabled = () => {
-        const bestPrice = getSortedPrices()?.[0];
+        const bestPrice = getSortedPrices(prices, tokenOne, tokenTwo, tokenTwoAmount, tokenOneAmount, feeOnTransfer, network)?.[0];
         return !tokenOneAmount
             || !wallet?.address
             || !bestPrice?.price
@@ -459,7 +408,7 @@ function Swap({wallet, tokens: tokensMap, network, hSuitePools, rate}) {
     }
 
     const getNetworkFee = () => {
-        const bestPrice = getSortedPrices()?.[0];
+        const bestPrice = getSortedPrices(prices, tokenOne, tokenTwo, tokenTwoAmount, tokenOneAmount, feeOnTransfer, network)?.[0];
         if (!rate || !tokenOne || !tokenTwo || !bestPrice?.name) {
             return 0;
         }
@@ -486,7 +435,7 @@ function Swap({wallet, tokens: tokensMap, network, hSuitePools, rate}) {
 
     useEffect(() => {
         if (!feeOnTransfer) {
-            const bestReceive = getSortedPrices()?.[0]?.amountOut?.toString();
+            const bestReceive = getSortedPrices(prices, tokenOne, tokenTwo, tokenTwoAmount, tokenOneAmount, feeOnTransfer, network)?.[0]?.amountOut?.toString();
             if (tokenOneAmount && bestReceive && parseFloat(bestReceive) !== 0) {
                 setTokenTwoAmount(ethers.utils.formatUnits(bestReceive, tokenTwo?.decimals));
             } else {
@@ -497,7 +446,7 @@ function Swap({wallet, tokens: tokensMap, network, hSuitePools, rate}) {
 
     useEffect(() => {
         if (feeOnTransfer) {
-            const bestSpend = getSortedPrices()?.[0]?.amountOut?.toString();
+            const bestSpend = getSortedPrices(prices, tokenOne, tokenTwo, tokenTwoAmount, tokenOneAmount, feeOnTransfer, network)?.[0]?.amountOut?.toString();
             if (tokenTwoAmount && bestSpend && parseFloat(bestSpend) !== 0) {
                 setTokenOneAmount(ethers.utils.formatUnits(bestSpend, tokenOne?.decimals));
             } else {
@@ -589,7 +538,7 @@ function Swap({wallet, tokens: tokensMap, network, hSuitePools, rate}) {
                                 onClick={() => switchAllRates()}>{checkAllRatesOpen ? 'Hide all rates' : 'Show all rates'}</button>
                     </div>
                     {checkAllRatesOpen
-                        ? getSortedPrices().map(({name, price, lowVolume, amountOut, priceImpact}) => <div
+                        ? getSortedPrices(prices, tokenOne, tokenTwo, tokenTwoAmount, tokenOneAmount, feeOnTransfer, network).map(({name, price, lowVolume, amountOut, priceImpact}) => <div
                             className='ratesLogo' key={name}>
                             <img className='ratesLogoIcon' title={name} src={oracleSettings(network)?.[name]?.icon}
                                  alt={name}/> {ethers.utils.formatUnits(amountOut, feeOnTransfer ? tokenOne?.decimals : tokenTwo.decimals)} (impact: {ethers.utils.formatUnits(priceImpact.toString(), 2)}%)

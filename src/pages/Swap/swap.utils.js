@@ -49,6 +49,52 @@ export const defaultTokens = (tokensMap) => ([...tokensMap]
     )
 );
 
+export const getSortedPrices = (prices, tokenOne, tokenTwo, tokenTwoAmount, tokenOneAmount, feeOnTransfer, network) => {
+    const sortedPrices = Object.keys(prices)
+        .filter(name => prices[name]?.rate && !prices[name]?.rate?.eq(0))
+        .sort((a, b) => prices[b].rate.sub(prices[a].rate))
+        .map(name => ({name, price: prices[name].rate, weight: prices[name].weight}));
+
+    const bestPrice = sortedPrices?.[0]?.price;
+    if (parseFloat(bestPrice) === 0) {
+        return [];
+    }
+    const pricesRes = [];
+    for (let {name, price, weight} of sortedPrices) {
+        if (!price || !tokenOne?.decimals || !tokenTwo?.decimals || !oracleSettings(network)[name]) {
+            continue;
+        }
+
+        const priceRes = {price, weight, name};
+
+        const volume = weight.pow(2);
+        const Va = sqrt(volume.mul(BigNumber.from(10).pow(18)).div(price));
+        const Vb = volume.div(Va);
+
+        if (feeOnTransfer) {
+            const amountOut = BigNumber.from(ethers.utils.parseUnits(tokenTwoAmount.toString(), tokenTwo.decimals)).mul(1000 + oracleSettings(network)[name].feePromille + oracleSettings(network)[name].feeDEXPromille).div(1000);
+            const VaAfter = amountOut.mul(Va).div(Vb.sub(amountOut));
+            const priceImpact = amountOut.mul(10000).div(Vb);
+            priceRes.amountOut = VaAfter;
+            priceRes.priceImpact = priceImpact;
+            if (VaAfter.gt(0)) {
+                pricesRes.push(priceRes);
+            }
+        } else {
+            const amountIn = BigNumber.from(ethers.utils.parseUnits(tokenOneAmount.toString(), tokenOne.decimals)).mul(1000 - oracleSettings(network)[name].feePromille - oracleSettings(network)[name].feeDEXPromille).div(1000);
+            const VbAfter = amountIn.mul(Vb).div(Va.add(amountIn));
+            const priceImpact = VbAfter.mul(10000).div(Vb);
+            priceRes.amountOut = VbAfter;
+            priceRes.priceImpact = priceImpact;
+            pricesRes.push(priceRes);
+        }
+
+    }
+
+    return pricesRes.sort((a, b) => feeOnTransfer ? a.amountOut.sub(b.amountOut) : b.amountOut.sub(a.amountOut));
+}
+
+
 export const swapTokens = async (tokenA, tokenB, hSuitePools, network, oracleContracts) => {
     const hSuitePool = hSuitePools[`${tokenA}_${tokenB}`] || hSuitePools[`${tokenB}_${tokenA}`] || null;
 
