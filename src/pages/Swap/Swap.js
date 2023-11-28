@@ -532,7 +532,7 @@ function Swap({wallet, tokens: tokensMap, network, hSuitePools, rate}) {
                             : ethers.utils.parseUnits(tokenOneAmount, tokenOne.decimals).toString(),
                     )
                     .freezeWithSigner(wallet.signer);
-                const test = await allowanceTx.executeWithSigner(wallet.signer);
+                await allowanceTx.executeWithSigner(wallet.signer);
 
             }
 
