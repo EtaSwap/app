@@ -13,6 +13,19 @@ export const oracles = (network) => network === NETWORKS.MAINNET ? {
     Pangolin: '0x9dAdB3285AC2d65A2cbB1341Aa0c14edc8c2F2b9',
 };
 
+export const defaultOracleContracts = {
+    SaucerSwap: null,
+    Pangolin: null,
+    HeliSwap: null,
+};
+
+export const defaultPrices = {
+    SaucerSwap: null,
+    Pangolin: null,
+    HeliSwap: null,
+    HSuite: null,
+};
+
 export const exchange = (network) => network === NETWORKS.MAINNET ? '0.0.3745835' : '0.0.1772118';
 
 export const feeWallet = (network) => network === NETWORKS.MAINNET ? '0.0.3745833' : '0.0.1772102';
@@ -29,7 +42,8 @@ export const defaultTokens = (tokensMap) => ([...tokensMap]
                     ? (a.name > b.name ? 1 : -1)
                     : 1
             )
-    ));
+    )
+);
 
 export const oracleSettings = (network) => network === NETWORKS.MAINNET ? {
     SaucerSwap: {

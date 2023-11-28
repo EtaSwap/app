@@ -17,26 +17,33 @@ import {NETWORKS, GAS_LIMITS, HSUITE_NODES} from '../../utils/constants';
 import {SmartNodeSocket} from '../../class/smart-node-socket';
 import {useLoader} from "../../components/Loader/LoaderContext";
 import {useToaster} from "../../components/Toaster/ToasterContext";
-import {defaultTokens, exchange, hSuiteApiKey, oracles, oracleSettings} from "./swap.utils";
+import {
+    defaultOracleContracts,
+    defaultPrices,
+    defaultTokens,
+    exchange,
+    hSuiteApiKey,
+    oracles,
+    oracleSettings
+} from "./swap.utils";
+import {SlippageTolerance} from "./Components/SlippageTolerance/SlippageTolerance";
+import {TokensModal} from "./Components/TokensModal/TokensModal";
+import {sqrt} from "../../utils/utils";
 
 function Swap({wallet, tokens: tokensMap, network, hSuitePools, rate}) {
-    const tokens = defaultTokens(tokensMap);
-    const [oracleContracts, setOracleContracts] = useState({
-        SaucerSwap: null,
-        Pangolin: null,
-        HeliSwap: null,
-    });
-
     const {loading, showLoader, hideLoader} = useLoader();
     const {showToast} = useToaster();
 
+    const tokens = defaultTokens(tokensMap);
+    const [tokenOneAmount, setTokenOneAmount] = useState(0)
+    const [tokenTwoAmount, setTokenTwoAmount] = useState(0)
+    const [tokenTwo, setTokenTwo] = useState(tokens[7])
+    const [tokenOne, setTokenOne] = useState(tokens[1])
+
+    const [oracleContracts, setOracleContracts] = useState(defaultOracleContracts);
     const [slippage, setSlippage] = useState(1);
     const [feeOnTransfer, setFeeOnTransfer] = useState(false);
     const [messageApi, contextHolder] = message.useMessage()
-    const [tokenOneAmount, setTokenOneAmount] = useState(0)
-    const [tokenTwoAmount, setTokenTwoAmount] = useState(0)
-    const [tokenOne, setTokenOne] = useState(tokens[1])
-    const [tokenTwo, setTokenTwo] = useState(tokens[7])
     const [isOpen, setIsOpen] = useState(false)
     const [checkAllRatesOpen, setCheckAllRatesOpen] = useState(true);
     const [changeToken, setChangeToken] = useState(1)
@@ -45,12 +52,7 @@ function Swap({wallet, tokens: tokensMap, network, hSuitePools, rate}) {
     const [isRefreshAnimationActive, setIsRefreshAnimationActive] = useState(false);
     const [searchPhrase, setSearchPhrase] = useState('');
     const [hiddenTokens, setHiddenTokens] = useState([]);
-    const [prices, setPrices] = useState({
-        SaucerSwap: null,
-        Pangolin: null,
-        HeliSwap: null,
-        HSuite: null,
-    });
+    const [prices, setPrices] = useState(defaultPrices);
 
     const smartNodeSocket = async () => {
         return new Promise(async (resolve, reject) => {
@@ -120,16 +122,6 @@ function Swap({wallet, tokens: tokensMap, network, hSuitePools, rate}) {
         setSlippage(e.target.value);
     }
 
-    useEffect(() => {
-        if (!feeOnTransfer) {
-            const bestReceive = getSortedPrices()?.[0]?.amountOut?.toString();
-            if (tokenOneAmount && bestReceive && parseFloat(bestReceive) !== 0) {
-                setTokenTwoAmount(ethers.utils.formatUnits(bestReceive, tokenTwo?.decimals));
-            } else {
-                setTokenTwoAmount(0);
-            }
-        }
-    }, [tokenOneAmount]);
 
     const changeAmountOne = (e) => {
         setFeeOnTransfer(false);
@@ -139,16 +131,6 @@ function Swap({wallet, tokens: tokensMap, network, hSuitePools, rate}) {
         }
     }
 
-    useEffect(() => {
-        if (feeOnTransfer) {
-            const bestSpend = getSortedPrices()?.[0]?.amountOut?.toString();
-            if (tokenTwoAmount && bestSpend && parseFloat(bestSpend) !== 0) {
-                setTokenOneAmount(ethers.utils.formatUnits(bestSpend, tokenOne?.decimals));
-            } else {
-                setTokenOneAmount(0);
-            }
-        }
-    }, [tokenTwoAmount]);
 
     const changeAmountTwo = (e) => {
         setFeeOnTransfer(true);
@@ -250,19 +232,6 @@ function Swap({wallet, tokens: tokensMap, network, hSuitePools, rate}) {
         });
     }
 
-    function sqrt(value) {
-        const ONE = ethers.BigNumber.from(1);
-        const TWO = ethers.BigNumber.from(2);
-
-        const x = ethers.BigNumber.from(value);
-        let z = x.add(ONE).div(TWO);
-        let y = x;
-        while (z.sub(y).isNegative()) {
-            y = z;
-            z = x.div(z).add(z).div(TWO);
-        }
-        return y;
-    }
 
     const getSortedPrices = () => {
         const sortedPrices = Object.keys(prices)
@@ -513,20 +482,6 @@ function Swap({wallet, tokens: tokensMap, network, hSuitePools, rate}) {
         feeOnTransfer ? setTokenTwoAmount(0) : setTokenOneAmount(0);
     }
 
-    useEffect(() => {
-        setTokenOneAmount(0);
-        setTokenTwoAmount(0);
-        const provider = new ethers.providers.JsonRpcProvider(`https://${network}.hashio.io/api`);
-        setOracleContracts(network === NETWORKS.MAINNET ? {
-            SaucerSwap: new ethers.Contract(oracles(network).SaucerSwap, BasicOracleABI, provider),
-            Pangolin: new ethers.Contract(oracles(network).Pangolin, BasicOracleABI, provider),
-            HeliSwap: new ethers.Contract(oracles(network).HeliSwap, BasicOracleABI, provider),
-        } : {
-            SaucerSwap: new ethers.Contract(oracles(network).SaucerSwap, BasicOracleABI, provider),
-            Pangolin: new ethers.Contract(oracles(network).Pangolin, BasicOracleABI, provider),
-        });
-    }, [wallet, tokensMap]);
-
     const getBestPriceDescr = () => {
         const bestPrice = getSortedPrices()?.[0];
         return parseFloat(convertPrice(bestPrice?.price))?.toFixed(6);
@@ -560,12 +515,6 @@ function Swap({wallet, tokens: tokensMap, network, hSuitePools, rate}) {
         return rate * gasPrice * approxCost1Gas;
     }
 
-    useEffect(() => {
-        setTokenOne(tokens[0]);
-        setTokenTwo(tokens[1]);
-        fetchDexSwap(tokens[0]?.solidityAddress, tokens[1]?.solidityAddress)
-    }, [oracleContracts]);
-
     const refreshRate = () => {
         setIsRefreshAnimationActive(false);
         refreshCount.current = refreshCount.current + 2;
@@ -577,6 +526,48 @@ function Swap({wallet, tokens: tokensMap, network, hSuitePools, rate}) {
     };
 
     useEffect(() => {
+        if (!feeOnTransfer) {
+            const bestReceive = getSortedPrices()?.[0]?.amountOut?.toString();
+            if (tokenOneAmount && bestReceive && parseFloat(bestReceive) !== 0) {
+                setTokenTwoAmount(ethers.utils.formatUnits(bestReceive, tokenTwo?.decimals));
+            } else {
+                setTokenTwoAmount(0);
+            }
+        }
+    }, [tokenOneAmount]);
+
+    useEffect(() => {
+        if (feeOnTransfer) {
+            const bestSpend = getSortedPrices()?.[0]?.amountOut?.toString();
+            if (tokenTwoAmount && bestSpend && parseFloat(bestSpend) !== 0) {
+                setTokenOneAmount(ethers.utils.formatUnits(bestSpend, tokenOne?.decimals));
+            } else {
+                setTokenOneAmount(0);
+            }
+        }
+    }, [tokenTwoAmount]);
+
+    useEffect(() => {
+        setTokenOne(tokens[0]);
+        setTokenTwo(tokens[1]);
+        fetchDexSwap(tokens[0]?.solidityAddress, tokens[1]?.solidityAddress)
+    }, [oracleContracts]);
+
+    useEffect(() => {
+        setTokenOneAmount(0);
+        setTokenTwoAmount(0);
+        const provider = new ethers.providers.JsonRpcProvider(`https://${network}.hashio.io/api`);
+        setOracleContracts(network === NETWORKS.MAINNET ? {
+            SaucerSwap: new ethers.Contract(oracles(network).SaucerSwap, BasicOracleABI, provider),
+            Pangolin: new ethers.Contract(oracles(network).Pangolin, BasicOracleABI, provider),
+            HeliSwap: new ethers.Contract(oracles(network).HeliSwap, BasicOracleABI, provider),
+        } : {
+            SaucerSwap: new ethers.Contract(oracles(network).SaucerSwap, BasicOracleABI, provider),
+            Pangolin: new ethers.Contract(oracles(network).Pangolin, BasicOracleABI, provider),
+        });
+    }, [wallet, tokensMap]);
+
+    useEffect(() => {
         setIsRefreshAnimationActive(false);
         clearTimeout(refreshTimer.current);
         refreshCount.current = 0;
@@ -586,95 +577,22 @@ function Swap({wallet, tokens: tokensMap, network, hSuitePools, rate}) {
         refreshTimer.current = setTimeout(refreshRate, 25000 + 1500);
     }, [tokenOne, tokenTwo]);
 
-    useEffect(() => {
-        const lowerCase = searchPhrase.toLowerCase();
-        const hiddenTokens = [];
-        if (lowerCase) {
-            tokens.forEach((token, i) => {
-                if (
-                    !token.symbol.toLowerCase().includes(lowerCase)
-                    && !token.name.toLowerCase().includes(lowerCase)
-                    && !token.address.toLowerCase().includes(lowerCase)
-                ) {
-                    hiddenTokens.push(i);
-                }
-            });
-        }
-        setHiddenTokens(hiddenTokens);
-    }, [searchPhrase]);
-
-    const settingsContent = (
-        <>
-            <div>Slippage Tolerance</div>
-            <div>
-                <Radio.Group onChange={handleSlippage} value={slippage}>
-                    <Radio.Button value={0.5}>0.5%</Radio.Button>
-                    <Radio.Button value={1}>1%</Radio.Button>
-                    <Radio.Button value={1.5}>1.5%</Radio.Button>
-                    <Radio.Button value={2}>2%</Radio.Button>
-                </Radio.Group>
-            </div>
-        </>
-    )
-
     return (
         <>
             {contextHolder}
-            <Modal open={isOpen} footer={null} onCancel={() => {
-                setIsOpen(false)
-            }} title="Select a token">
-                <div className='modalContent'>
-                    <div className="token__search">
-                        <Input
-                            type='search'
-                            className='token__search-field'
-                            placeholder='Search by name, address, symbol'
-                            onChange={(e) => setSearchPhrase(e.target.value)}
-                            value={searchPhrase}
-                        />
-                    </div>
-                    <div className='token__list'>
-                        {tokens?.map((token, index) => {
-                            return (
-                                <div
-                                    className={'tokenChoice' + (hiddenTokens.includes(index) ? ' hidden' : '')}
-                                    key={index}
-                                    onClick={() => modifyToken(index)}
-                                >
-                                    <img src={token.icon} alt={token.symbol} className="tokenLogo"/>
-                                    <div className='tokenChoiceNames'>
-                                        <div className='tokenName'>
-                                            {token.name}
-                                        </div>
-                                        <div className='tokenTicker'>
-                                            {token.symbol} ({token.address})
-                                        </div>
-                                    </div>
-                                    <div className='tokenChoiceProviders'>
-                                        {token.providers.map(provider => {
-                                            if (oracleSettings(network)[provider]) {
-                                                return <img src={oracleSettings(network)[provider].icon} alt={provider}
-                                                            key={provider}/>
-                                            }
-                                        })}
-                                    </div>
-                                </div>
-                            )
-                        })}
-                    </div>
-                </div>
-            </Modal>
+            <TokensModal hiddenTokens={hiddenTokens}
+                         modifyToken={modifyToken}
+                         tokens={tokens}
+                         isOpen={isOpen}
+                         setIsOpen={setIsOpen}
+                         searchPhrase={searchPhrase}
+                         setSearchPhrase={setSearchPhrase}
+                         setHiddenTokens={setHiddenTokens}
+                         network={network}/>
             <div className='tradeBox'>
                 <div className='tradeBoxHeader'>
                     <h4>Swap</h4>
-                    <Popover
-                        title='Settings'
-                        trigger='click'
-                        placement='bottomRight'
-                        content={settingsContent}
-                    >
-                        <SettingOutlined className='cog'/>
-                    </Popover>
+                    <SlippageTolerance handleSlippage={handleSlippage} slippage={slippage} />
                 </div>
                 <div className='inputs'>
                     <div className={feeOnTransfer ? 'approx' : ''}>
