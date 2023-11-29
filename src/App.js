@@ -30,7 +30,7 @@ function App() {
         signer: null,
     });
     const [tokens, setTokens] = useState(new Map());
-    const [network, setNetwork] = useState(NETWORKS.TESTNET);
+    const [network, setNetwork] = useState(NETWORKS.MAINNET);
     const [hSuitePools, setHSuitePools] = useState({});
     const [rate, setRate] = useState(null);
 
@@ -85,9 +85,7 @@ function App() {
                                             hsuitePools,
                                         ]) => {
             const tokenMap = new Map();
-            const providers = network === NETWORKS.MAINNET
-                ? ['SaucerSwap', 'Pangolin', 'HeliSwap']
-                : ['SaucerSwap', 'Pangolin', 'HeliSwap', 'HSuite'];
+            const providers = ['SaucerSwap', 'Pangolin', 'HeliSwap', 'HSuite'];
             tokenMap.set(ethers.constants.AddressZero, {
                 name: 'Hbar',
                 symbol: 'HBAR',
@@ -151,7 +149,7 @@ function App() {
                 });
             }
 
-            if (network === NETWORKS.TESTNET && hsuiteTokens?.data) {
+            if (hsuiteTokens?.data) {
                 hsuiteTokens.data.map(token => {
                     if (token.id !== 'HBAR') {
                         const solidityAddress = `0x${ContractId.fromString(token.id).toSolidityAddress()}`.toLowerCase();

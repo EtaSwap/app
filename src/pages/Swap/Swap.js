@@ -575,8 +575,7 @@ function Swap({wallet, tokens: tokensMap, network, hSuitePools, rate}) {
                             receive: {ethers.utils.formatUnits(ethers.utils.parseUnits(tokenTwoAmount, tokenTwo.decimals).mul(1000 - slippage * 10).div(1000).toString(), tokenTwo.decimals)}</div>
                     : ''
                 }
-                {network === NETWORKS.TESTNET ?
-                    <div className='networkFee'>Network fee: ≈{getNetworkFee().toFixed(4)} HBAR</div> : ''}
+                <div className='networkFee'>Network fee: ≈{getNetworkFee().toFixed(4)} HBAR</div>
                 <div className="refreshTicker">
                     <div className={isRefreshAnimationActive ? 'active' : ''}
                          style={{animationDuration: parseInt((25000 + 30 * refreshCount.current * refreshCount.current) / 1000).toString() + 's'}}></div>

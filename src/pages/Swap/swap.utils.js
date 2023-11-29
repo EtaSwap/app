@@ -171,13 +171,13 @@ export const oracleSettings = (network) => network === NETWORKS.MAINNET ? {
         feeDEXPromille: 3,
         whbar: '0x00000000000000000000000000000000002cc823',
     },
-    // HSuite: {
-    //     icon: HSuiteLogo,
-    //     aggregatorId: 'HSuite',
-    //     feePromille: 3,
-    //     feeDEXPromille: 3,
-    //     whbar: '',
-    // },
+    HSuite: {
+        icon: HSuiteLogo,
+        aggregatorId: 'HSuite',
+        feePromille: 3,
+        feeDEXPromille: 3,
+        whbar: '',
+    },
 } : {
     SaucerSwap: {
         icon: SaucerSwapLogo,
