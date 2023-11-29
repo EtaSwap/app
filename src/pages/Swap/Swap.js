@@ -350,7 +350,7 @@ function Swap({wallet, tokens: tokensMap, network, hSuitePools, rate}) {
             await new Promise(resolve => setTimeout(resolve, 500));
 
             let swapTransaction = await new ContractExecuteTransaction()
-                .setContractId(exchange())
+                .setContractId(exchange(network))
                 .setGas(getGasPrice(bestRate.name))
                 .setFunction("swap", new ContractFunctionParameters()
                     .addString(oracleSettings(network)[bestRate.name].aggregatorId)
