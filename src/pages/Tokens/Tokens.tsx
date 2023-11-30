@@ -1,6 +1,7 @@
 import React from 'react'
 import './Tokens.css'
 import {parseTokens} from "./tokens.utils";
+import {IToken} from "../../Models";
 
 function Tokens({ tokens }: any) {
   return (
@@ -9,7 +10,7 @@ function Tokens({ tokens }: any) {
         <h1 className={'tokensHeader'}>These tokens are available to swap:</h1>
       </div>
       <div className={'tokensContainer'}>
-      {parseTokens([...tokens]).map((token: any) => {
+      {parseTokens([...tokens]).map((token: IToken) => {
         return (
           <div className='tokenChoice' key={token.solidityAddress}>
             <div className="pulsating-img-container">

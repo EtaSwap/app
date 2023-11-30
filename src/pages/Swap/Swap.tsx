@@ -41,7 +41,7 @@ function Swap({wallet, tokens: tokensMap, network, hSuitePools, rate}: any) {
     const [messageApi, contextHolder] = message.useMessage()
     const [isOpen, setIsOpen] = useState(false)
     const [checkAllRatesOpen, setCheckAllRatesOpen] = useState(true);
-    const [changeToken, setChangeToken] = useState(1)
+    const [changeToken, setChangeToken] = useState<any>(1)
     const refreshCount = useRef(0);
     const refreshTimer = useRef<any>(0);
     const [isRefreshAnimationActive, setIsRefreshAnimationActive] = useState(false);
@@ -148,7 +148,7 @@ function Swap({wallet, tokens: tokensMap, network, hSuitePools, rate}: any) {
         fetchDexSwap(tokenTwo.solidityAddress, tokenOne.solidityAddress)
     }
 
-    const openModal = (token: any) => {
+    const openModal = (token: number) => {
         setChangeToken(token);
         setIsOpen(true);
     }

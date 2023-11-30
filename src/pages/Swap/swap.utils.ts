@@ -11,6 +11,7 @@ import {BigNumber, ethers} from "ethers";
 import axios from "axios";
 import {TokenId} from "@hashgraph/sdk";
 import {sqrt} from "../../utils/utils";
+import {IToken} from "../../Models";
 
 export const oracles = (network: any): any => network === NETWORKS.MAINNET ? {
     SaucerSwap: '0xc47037963fad3a5397cca3fef5c1c95839dc6363',
@@ -130,13 +131,13 @@ export const swapTokens = async (tokenA: any, tokenB: any, hSuitePools: any, net
             balanceA = balance.balance;
         } else {
             const idA = TokenId.fromSolidityAddress(tokenA).toString();
-            balanceA = balance.tokens.find((token: any) => token.token_id === idA)?.balance;
+            balanceA = balance.tokens.find((token: IToken) => token.token_id === idA)?.balance;
         }
         if (tokenB === ethers.constants.AddressZero) {
             balanceB = balance.balance;
         } else {
             const idB = TokenId.fromSolidityAddress(tokenB).toString();
-            balanceB = balance.tokens.find((token: any) => token.token_id === idB)?.balance;
+            balanceB = balance.tokens.find((token: IToken) => token.token_id === idB)?.balance;
         }
 
         hSuitePriceArr = [];

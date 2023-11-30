@@ -27,6 +27,7 @@ import pkg from '../package.json';
 import {LoaderProvider} from "./components/Loader/LoaderContext";
 import {ToasterProvider} from "./components/Toaster/ToasterContext";
 import {ToastContainer} from "react-toastify";
+import {IToken} from "./Models";
 
 function App() {
     const [wallet, setWallet] = useState({
@@ -101,7 +102,7 @@ function App() {
                 providers,
             });
 
-            saucerSwapTokens.data.map((token: any) => {
+            saucerSwapTokens.data.map((token: IToken) => {
                 const solidityAddress = `0x${ContractId.fromString(token.id).toSolidityAddress()}`.toLowerCase();
                 if (tokenList.has(token.id)) {
                     tokenMap.set(solidityAddress, {
@@ -116,7 +117,7 @@ function App() {
                 }
             });
 
-            pangolinTokens.data.tokens.filter((token: any) => token.chainId === (network === NETWORKS.MAINNET ? 295 : 296)).map((token: any) => {
+            pangolinTokens.data.tokens.filter((token: IToken) => token.chainId === (network === NETWORKS.MAINNET ? 295 : 296)).map((token: IToken) => {
                 const existing = tokenMap.get(token.address.toLowerCase());
                 if (existing) {
                     existing.providers.push('Pangolin');
@@ -135,7 +136,7 @@ function App() {
             });
 
             if (heliswapTokens?.data?.tokens) {
-                heliswapTokens.data.tokens.map((token: any) => {
+                heliswapTokens.data.tokens.map((token: IToken) => {
                     const existing = tokenMap.get(token.address.toLowerCase());
                     if (existing) {
                         existing.providers.push('HeliSwap');
@@ -155,7 +156,7 @@ function App() {
             }
 
             if (hsuiteTokens?.data) {
-                hsuiteTokens.data.map((token: any) => {
+                hsuiteTokens.data.map((token: IToken) => {
                     if (token.id !== 'HBAR') {
                         const solidityAddress = `0x${ContractId.fromString(token.id).toSolidityAddress()}`.toLowerCase();
                         const existing = tokenMap.get(solidityAddress);

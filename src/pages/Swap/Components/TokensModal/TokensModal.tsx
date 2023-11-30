@@ -1,6 +1,7 @@
 import {Input, Modal} from "antd";
 import {oracleSettings} from "../../swap.utils";
 import {useEffect} from "react";
+import {IToken} from "../../../../Models";
 
 export function TokensModal ({isOpen,
                                  setSearchPhrase,
@@ -16,7 +17,7 @@ export function TokensModal ({isOpen,
         const lowerCase = searchPhrase.toLowerCase();
         const hiddenTokens: any = [];
         if (lowerCase) {
-            tokens.forEach((token: any, i: any) => {
+            tokens.forEach((token: IToken, i: any) => {
                 if (
                     !token.symbol.toLowerCase().includes(lowerCase)
                     && !token.name.toLowerCase().includes(lowerCase)
@@ -44,7 +45,7 @@ export function TokensModal ({isOpen,
                 />
             </div>
             <div className='token__list'>
-                {tokens?.map((token: any, index: any) => {
+                {tokens?.map((token: IToken, index: any) => {
                     return (
                         <div
                             className={'tokenChoice' + (hiddenTokens.includes(index) ? ' hidden' : '')}
@@ -61,7 +62,7 @@ export function TokensModal ({isOpen,
                                 </div>
                             </div>
                             <div className='tokenChoiceProviders'>
-                                {token.providers.map((provider: any) => {
+                                {token.providers.map((provider: string) => {
                                     if (oracleSettings(network)[provider]) {
                                         return <img src={oracleSettings(network)[provider].icon} alt={provider}
                                                     key={provider}/>

@@ -1,4 +1,4 @@
-export const parseTokens = (tokens: any) => tokens.map((token: any) => token[1])
+export const parseTokens = (tokens: any) => tokens.map((token: number[]) => token[1])
     .sort((a: any, b: any) =>
         a.providers.length > b.providers.length
             ? -1
