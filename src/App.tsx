@@ -27,10 +27,10 @@ import pkg from '../package.json';
 import {LoaderProvider} from "./components/Loader/LoaderContext";
 import {ToasterProvider} from "./components/Toaster/ToasterContext";
 import {ToastContainer} from "react-toastify";
-import {IHSuitePool, IToken, typeWallet} from "./Models";
+import {IHSuitePool, IToken, IWallet, IWallets, typeWallet} from "./Models";
 
 function App() {
-    const [wallet, setWallet] = useState({
+    const [wallet, setWallet] = useState<IWallet>({
         name: '',
         address: '',
         signer: null,
@@ -40,7 +40,7 @@ function App() {
     const [hSuitePools, setHSuitePools] = useState({});
     const [rate, setRate] = useState<number | null>(null);
 
-    const [wallets] = useState({
+    const [wallets] = useState<IWallets>({
         hashpack: {
             name: 'hashpack',
             title: 'HashPack',

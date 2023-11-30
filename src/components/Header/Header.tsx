@@ -9,16 +9,24 @@ import Disconnect from '../../assets/img/disconnect.png'
 import './Header.css'
 import {ConnectWalletModal} from "./components/ConnectWalletModal";
 import {SelectNetworkModal} from "./components/SelectNetworkModal";
+import {IWallet, IWallets} from "../../Models";
 
-function Header({ wallet, wallets, network, setNetwork }: any) {
+export interface IHeaderProps {
+    wallet: IWallet;
+    wallets: IWallets;
+    network: string;
+    setNetwork: (name: string) => void;
+}
+
+function Header({ wallet, wallets, network, setNetwork }: IHeaderProps) {
   const [networkModalOpen, setNetworkModalOpen] = useState(false);
   const [walletModalOpen, setWalletModalOpen] = useState(false);
 
-  const disconnectWallet = (name: any) => {
+  const disconnectWallet = (name: string) => {
       wallets[name].instance.disconnect();
   }
 
-  const connectWallet = (name: any) => {
+  const connectWallet = (name: string) => {
     if (wallet.address) {
         if (wallet.name === name) {
             return null;
@@ -29,7 +37,7 @@ function Header({ wallet, wallets, network, setNetwork }: any) {
     setWalletModalOpen(false);
   }
 
-  const selectNetwork = (name: any) => {
+  const selectNetwork = (name: string) => {
       if (network !== name) {
           setNetwork(name);
           if (wallet.name) {

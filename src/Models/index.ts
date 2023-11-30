@@ -33,6 +33,23 @@ export interface IGASLIMITS {
     };
 }
 
+export interface IWallet {
+    name: string;
+    address: string;
+    signer: any
+}
+
+export interface IWallets {
+    [key: string]: {
+        name: string,
+        title: string,
+        instance: any,
+        image: string,
+        icon: string,
+    }
+}
+
+
 export enum typeWallet {
     HBAR = "HBAR",
     HSuite = "HSuite"

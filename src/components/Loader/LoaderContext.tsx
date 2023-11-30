@@ -1,9 +1,19 @@
-import React, {createContext, useContext, useEffect, useState} from 'react';
-import {Loader} from "./Loader";
+import React, { createContext, ReactNode, useContext, useState } from 'react';
+import { Loader } from "./Loader";
 
-const LoaderContext = createContext({});
+interface LoaderContextProps {
+    loading: boolean;
+    showLoader: () => void;
+    hideLoader: () => void;
+}
 
-export const LoaderProvider = ({ children }: any) => {
+const LoaderContext = createContext<LoaderContextProps | undefined>(undefined);
+
+export interface ILoaderProviderProps {
+    children: ReactNode;
+}
+
+export const LoaderProvider = ({ children }: ILoaderProviderProps) => {
     const [loading, setLoading] = useState(false);
 
     const showLoader = () => {
@@ -13,7 +23,6 @@ export const LoaderProvider = ({ children }: any) => {
     const hideLoader = () => {
         setLoading(false);
     };
-
 
     return (
         <LoaderContext.Provider value={{ loading, showLoader, hideLoader }}>
@@ -25,5 +34,9 @@ export const LoaderProvider = ({ children }: any) => {
 };
 
 export const useLoader = (): any => {
-    return useContext(LoaderContext);
+    const context = useContext(LoaderContext);
+    if (!context) {
+        throw new Error('useLoader must be used within a LoaderProvider');
+    }
+    return context;
 };
