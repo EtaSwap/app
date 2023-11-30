@@ -24,6 +24,7 @@ import {
 } from "./swap.utils";
 import {SlippageTolerance} from "./Components/SlippageTolerance/SlippageTolerance";
 import {TokensModal} from "./Components/TokensModal/TokensModal";
+import {toastTypes} from "../../Models/Toast";
 
 function Swap({wallet, tokens: tokensMap, network, hSuitePools, rate}: any) {
     const {loading, showLoader, hideLoader} = useLoader();
@@ -250,11 +251,11 @@ function Swap({wallet, tokens: tokensMap, network, hSuitePools, rate}: any) {
 
                         socketConnection.socket.getSocket('gateway').on('swapPoolExecute', (responseEvent: any) => {
                             if (responseEvent.status === 'success') {
-                                showToast('Transaction', `The transaction was successfully processed. Transaction ID: ${responseEvent.payload?.transaction?.transactionId}`, 'success');
+                                showToast('Transaction', `The transaction was successfully processed. Transaction ID: ${responseEvent.payload?.transaction?.transactionId}`, toastTypes.success);
                                 socketConnection.socket.getSocket('gateway').disconnect();
                             } else {
                                 console.error(responseEvent);
-                                showToast('Transaction', 'Unexpected error', 'error');
+                                showToast('Transaction', 'Unexpected error', toastTypes.error);
                             }
                         });
 
@@ -264,16 +265,16 @@ function Swap({wallet, tokens: tokensMap, network, hSuitePools, rate}: any) {
                         }, (error: any) => {
                             if (error) {
                                 console.error(error);
-                                showToast('Transaction', 'Unexpected error', 'error');
+                                showToast('Transaction', 'Unexpected error', toastTypes.error);
                             }
                         });
                     } else {
                         console.error(resPool.error);
-                        showToast('Transaction', resPool.error, 'error');
+                        showToast('Transaction', resPool.error, toastTypes.error);
                     }
                 } catch (e) {
                     console.error(e);
-                    showToast('Transaction', 'Unexpected error', 'error');
+                    showToast('Transaction', 'Unexpected error', toastTypes.error);
                 }
             });
 
@@ -337,7 +338,7 @@ function Swap({wallet, tokens: tokensMap, network, hSuitePools, rate}: any) {
                 try {
                     const approveTransaction = await wallet.executeTransaction(allowanceTx);
                     if (approveTransaction.error) {
-                        showToast('Transaction', approveTransaction.error, 'error');
+                        showToast('Transaction', approveTransaction.error, toastTypes.error);
                         throw approveTransaction.error;
                     }
                 } catch (e) {
@@ -384,7 +385,7 @@ function Swap({wallet, tokens: tokensMap, network, hSuitePools, rate}: any) {
             try {
                 execTransaction = await wallet.executeTransaction(swapTransaction);
                 if (execTransaction.error) {
-                    showToast('Transaction', execTransaction.error, 'error');
+                    showToast('Transaction', execTransaction.error, toastTypes.error);
                     throw execTransaction.error;
                 }
             } catch (e) {
@@ -397,9 +398,9 @@ function Swap({wallet, tokens: tokensMap, network, hSuitePools, rate}: any) {
                 setTimeout(() => {
                     axios.get(`https://${network}.mirrornode.hedera.com/api/v1/transactions/${idTransaction}`).then(res => {
                         if (res?.data?.transactions?.[0]?.result) {
-                            showToast('Transaction', `The transaction was successfully processed. Transaction ID: ${execTransaction.res.transactionId}`, 'success');
+                            showToast('Transaction', `The transaction was successfully processed. Transaction ID: ${execTransaction.res.transactionId}`, toastTypes.success);
                         } else {
-                            showToast('Transaction', 'Error on processing transaction', 'error');
+                            showToast('Transaction', 'Error on processing transaction', toastTypes.error);
                         }
                     }).finally(() => {
                         hideLoader();
@@ -407,7 +408,7 @@ function Swap({wallet, tokens: tokensMap, network, hSuitePools, rate}: any) {
                 }, 6000);
             } else {
                 console.error('Empty/incorrect transaction response');
-                showToast('Transaction', 'Unexpected error', 'error');
+                showToast('Transaction', 'Unexpected error', toastTypes.error);
             }
         }
 

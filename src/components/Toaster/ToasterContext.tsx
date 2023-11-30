@@ -1,12 +1,22 @@
-import React, {createContext, useContext} from 'react';
+import React, {createContext, ReactNode, useContext} from 'react';
 import {toast} from "react-toastify";
 import './Toaster.css';
 import 'react-toastify/dist/ReactToastify.css';
 import {CopyOutlined} from "@ant-design/icons";
+import {toastTypes} from "../../Models/Toast";
 
-const ToasterContext = createContext({});
 
-export const ToasterProvider = ({children}: any) => {
+interface ToasterContextProps {
+    showToast: (title: string, message: string, type: toastTypes) => void;
+}
+
+const ToasterContext = createContext<ToasterContextProps | undefined>(undefined);
+
+export interface IToasterProviderProps {
+    children: ReactNode;
+}
+
+export const ToasterProvider = ({children}: IToasterProviderProps) => {
 
     const toastOptions = {
         position: toast.POSITION.TOP_RIGHT,
@@ -14,16 +24,16 @@ export const ToasterProvider = ({children}: any) => {
         closeButton: false,
         className: 'toast-wrapper'
     };
-    const copyToClipboard = async (text: any) => {
+    const copyToClipboard = async (text: string) => {
         try {
             await navigator.clipboard.writeText(text);
         } catch (err) {
             console.error('Some error with clipboard', err);
         }
     };
-    const showToast = (title: any, message: any, type: any) => {
+    const showToast = (title: string, message: string, type: toastTypes) => {
         switch (type) {
-            case 'success':
+            case toastTypes.success:
                 toast.success(<div className={'custom-toast toast-success'}>
                         <div className="toast-header">
                             <strong className="mr-auto">{title}</strong>
@@ -39,7 +49,7 @@ export const ToasterProvider = ({children}: any) => {
                     },
                 });
                 break;
-            case 'error':
+            case toastTypes.error:
                 toast.error(<div className={'custom-toast toast-error'}>
                         <div className="toast-header">
                             <strong className="mr-auto">{title}</strong>
@@ -55,7 +65,7 @@ export const ToasterProvider = ({children}: any) => {
                     },
                 });
                 break;
-            case 'info':
+            case toastTypes.info:
                 toast.info(<div className={'custom-toast toast-info'}>
                         <div className="toast-header">
                             <strong className="mr-auto">{title}</strong>
@@ -71,7 +81,7 @@ export const ToasterProvider = ({children}: any) => {
                     },
                 });
                 break;
-            case 'warning':
+            case toastTypes.warning:
                 toast.warning(<div className={'custom-toast toast-warning'}>
                         <div className="toast-header">
                             <strong className="mr-auto">{title}</strong>
@@ -99,6 +109,10 @@ export const ToasterProvider = ({children}: any) => {
     );
 };
 
-export const useToaster = (): any => {
-    return useContext(ToasterContext);
+export const useToaster = (): ToasterContextProps => {
+    const context = useContext(ToasterContext);
+    if (!context) {
+        throw new Error('useToaster must be used within a ToasterProvider');
+    }
+    return context;
 };
