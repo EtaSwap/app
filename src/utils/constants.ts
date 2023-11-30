@@ -1,9 +1,11 @@
+import {IGASLIMITS} from "../Models";
+
 export const NETWORKS = {
     MAINNET: 'mainnet',
     TESTNET: 'testnet',
 };
 
-export const GAS_LIMITS: any = {
+export const GAS_LIMITS: IGASLIMITS = {
     SaucerSwap: {
         exactTokenToToken: 900000, //877969    875079
         exactHBARToToken: 260000, //221207     203366

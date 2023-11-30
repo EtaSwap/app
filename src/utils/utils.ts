@@ -1,6 +1,6 @@
-import {ethers} from "ethers";
+import {BigNumber, ethers} from "ethers";
 
-export function sqrt(value: any) {
+export function sqrt(value: number| BigNumber) {
     const ONE = ethers.BigNumber.from(1);
     const TWO = ethers.BigNumber.from(2);
 

@@ -35,7 +35,7 @@ function App() {
         address: '',
         signer: null,
     });
-    const [tokens, setTokens] = useState(new Map());
+    const [tokens, setTokens] = useState<Map<string, IToken>>(new Map());
     const [network, setNetwork] = useState(NETWORKS.MAINNET);
     const [hSuitePools, setHSuitePools] = useState({});
     const [rate, setRate] = useState<number | null>(null);

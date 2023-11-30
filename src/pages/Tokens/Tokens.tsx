@@ -3,14 +3,20 @@ import './Tokens.css'
 import {parseTokens} from "./tokens.utils";
 import {IToken} from "../../Models";
 
-function Tokens({ tokens }: any) {
-  return (
+export interface ITokensProps {
+    tokens: Map<string, IToken>;
+}
+
+function Tokens({ tokens }: ITokensProps) {
+    return (
     <div className='tokens'>
       <div className=''>
         <h1 className={'tokensHeader'}>These tokens are available to swap:</h1>
       </div>
       <div className={'tokensContainer'}>
-      {parseTokens([...tokens]).map((token: IToken) => {
+      {
+          // @ts-ignore
+          parseTokens([...tokens]).map((token: IToken) => {
         return (
           <div className='tokenChoice' key={token.solidityAddress}>
             <div className="pulsating-img-container">

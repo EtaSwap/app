@@ -1,3 +1,5 @@
+import {GAS_LIMITS} from "../utils/constants";
+
 export interface IToken {
     id: string;
     name: string;
@@ -18,6 +20,17 @@ export interface IHSuitePool{
         base: {id: string};
         swap: {id: string};
     }
+}
+
+export interface IGASLIMITS {
+    [key: string]: {
+        exactTokenToToken: number;
+        exactHBARToToken: number;
+        exactTokenToHBAR: number;
+        tokenToExactToken: number;
+        HBARToExactToken: number;
+        tokenToExactHBAR: number;
+    };
 }
 
 export enum typeWallet {
