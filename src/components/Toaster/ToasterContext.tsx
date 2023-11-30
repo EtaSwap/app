@@ -4,9 +4,9 @@ import './Toaster.css';
 import 'react-toastify/dist/ReactToastify.css';
 import {CopyOutlined} from "@ant-design/icons";
 
-const ToasterContext = createContext();
+const ToasterContext = createContext({});
 
-export const ToasterProvider = ({children}) => {
+export const ToasterProvider = ({children}: any) => {
 
     const toastOptions = {
         position: toast.POSITION.TOP_RIGHT,
@@ -14,14 +14,14 @@ export const ToasterProvider = ({children}) => {
         closeButton: false,
         className: 'toast-wrapper'
     };
-    const copyToClipboard = async (text) => {
+    const copyToClipboard = async (text: any) => {
         try {
             await navigator.clipboard.writeText(text);
         } catch (err) {
             console.error('Some error with clipboard', err);
         }
     };
-    const showToast = (title, message, type) => {
+    const showToast = (title: any, message: any, type: any) => {
         switch (type) {
             case 'success':
                 toast.success(<div className={'custom-toast toast-success'}>
@@ -99,6 +99,6 @@ export const ToasterProvider = ({children}) => {
     );
 };
 
-export const useToaster = () => {
+export const useToaster = (): any => {
     return useContext(ToasterContext);
 };

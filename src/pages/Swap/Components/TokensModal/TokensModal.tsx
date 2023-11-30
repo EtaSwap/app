@@ -10,13 +10,13 @@ export function TokensModal ({isOpen,
                                  hiddenTokens,
                                  tokens,
                                  network,
-                                 setHiddenTokens}) {
+                                 setHiddenTokens}: any) {
 
     useEffect(() => {
         const lowerCase = searchPhrase.toLowerCase();
-        const hiddenTokens = [];
+        const hiddenTokens: any = [];
         if (lowerCase) {
-            tokens.forEach((token, i) => {
+            tokens.forEach((token: any, i: any) => {
                 if (
                     !token.symbol.toLowerCase().includes(lowerCase)
                     && !token.name.toLowerCase().includes(lowerCase)
@@ -44,7 +44,7 @@ export function TokensModal ({isOpen,
                 />
             </div>
             <div className='token__list'>
-                {tokens?.map((token, index) => {
+                {tokens?.map((token: any, index: any) => {
                     return (
                         <div
                             className={'tokenChoice' + (hiddenTokens.includes(index) ? ' hidden' : '')}
@@ -61,7 +61,7 @@ export function TokensModal ({isOpen,
                                 </div>
                             </div>
                             <div className='tokenChoiceProviders'>
-                                {token.providers.map(provider => {
+                                {token.providers.map((provider: any) => {
                                     if (oracleSettings(network)[provider]) {
                                         return <img src={oracleSettings(network)[provider].icon} alt={provider}
                                                     key={provider}/>

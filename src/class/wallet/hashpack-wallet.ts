@@ -2,21 +2,24 @@ import { HashConnect } from 'hashconnect';
 import { Transaction } from '@hashgraph/sdk';
 
 export class HashpackWallet {
-    name = 'hashpack'
-    address = ''
-    connectionData = null
-    signer = null
+    name = 'hashpack';
+    address = '';
+    connectionData: any = null;
+    signer: any = null;
     appMetadata = {
         name: "EtaSwap",
         description: "DEX aggregator",
         icon: "https://etaswap.com/logo-bg.svg",
     };
+    hashconnect: any;
+    setWallet: any;
+    network: any;
 
-    constructor(setWallet) {
+    constructor(setWallet: any) {
         this.hashconnect = new HashConnect();
         this.setWallet = setWallet;
 
-        this.hashconnect.pairingEvent.on((pairingData) => {
+        this.hashconnect.pairingEvent.on((pairingData: any) => {
             this.connectionData = pairingData;
             this.address = this.connectionData?.accountIds?.[0];
             const provider = this.hashconnect.getProvider(this.network, pairingData?.topic, this.address);
@@ -36,7 +39,7 @@ export class HashpackWallet {
         });
     }
 
-    async connect(network, onLoad = false) {
+    async connect(network: any, onLoad = false) {
         const initData = await this.hashconnect.init(this.appMetadata, network, true);
         if (initData?.savedPairings?.[0]?.network === network) {
             //reload page
@@ -56,7 +59,7 @@ export class HashpackWallet {
         }
     }
 
-    async auth({ serverAddress, serverSignature, originalPayload }) {
+    async auth({ serverAddress, serverSignature, originalPayload }: any) {
         const authRes = await this.hashconnect.authenticate(
             this.connectionData?.topic,
             this.address,
@@ -68,7 +71,7 @@ export class HashpackWallet {
         return authRes?.userSignature;
     }
 
-    async signTransaction(transaction) {
+    async signTransaction(transaction: any) {
         const res = await this.hashconnect.sendTransaction(
             this.connectionData?.topic,
             {
@@ -85,7 +88,7 @@ export class HashpackWallet {
         return res.signedTransaction;
     }
 
-    async executeTransaction(transaction) {
+    async executeTransaction(transaction: any) {
         const res = await this.hashconnect.sendTransaction(
             this.connectionData?.topic,
             {

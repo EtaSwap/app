@@ -1,5 +1,5 @@
-export const parseTokens = (tokens) => tokens.map(token => token[1])
-    .sort((a, b) =>
+export const parseTokens = (tokens: any) => tokens.map((token: any) => token[1])
+    .sort((a: any, b: any) =>
         a.providers.length > b.providers.length
             ? -1
             : (a.providers.length === b.providers.length

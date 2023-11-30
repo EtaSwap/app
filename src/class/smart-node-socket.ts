@@ -1,12 +1,12 @@
 import { io } from 'socket.io-client';
 
 export class SmartNodeSocket {
-    node = null;
+    node: any = null;
     wallet = null;
-    socket = null;
+    socket: any = null;
     apiKey = null;
 
-    constructor(node, wallet, apiKey) {
+    constructor(node: any, wallet: any, apiKey: any) {
         this.node = node;
         this.wallet = wallet;
         this.apiKey = apiKey;

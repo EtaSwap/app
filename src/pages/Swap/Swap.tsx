@@ -25,25 +25,25 @@ import {
 import {SlippageTolerance} from "./Components/SlippageTolerance/SlippageTolerance";
 import {TokensModal} from "./Components/TokensModal/TokensModal";
 
-function Swap({wallet, tokens: tokensMap, network, hSuitePools, rate}) {
+function Swap({wallet, tokens: tokensMap, network, hSuitePools, rate}: any) {
     const {loading, showLoader, hideLoader} = useLoader();
     const {showToast} = useToaster();
 
     const tokens = defaultTokens(tokensMap);
-    const [tokenOneAmount, setTokenOneAmount] = useState(0)
-    const [tokenTwoAmount, setTokenTwoAmount] = useState(0)
+    const [tokenOneAmount, setTokenOneAmount] = useState<any>(0)
+    const [tokenTwoAmount, setTokenTwoAmount] = useState<any>(0)
     const [tokenTwo, setTokenTwo] = useState(tokens[7])
     const [tokenOne, setTokenOne] = useState(tokens[1])
 
-    const [oracleContracts, setOracleContracts] = useState(defaultOracleContracts);
+    const [oracleContracts, setOracleContracts] = useState<any>(defaultOracleContracts);
     const [slippage, setSlippage] = useState(1);
-    const [feeOnTransfer, setFeeOnTransfer] = useState(false);
+    const [feeOnTransfer, setFeeOnTransfer] = useState<any>(false);
     const [messageApi, contextHolder] = message.useMessage()
     const [isOpen, setIsOpen] = useState(false)
     const [checkAllRatesOpen, setCheckAllRatesOpen] = useState(true);
     const [changeToken, setChangeToken] = useState(1)
     const refreshCount = useRef(0);
-    const refreshTimer = useRef(0);
+    const refreshTimer = useRef<any>(0);
     const [isRefreshAnimationActive, setIsRefreshAnimationActive] = useState(false);
     const [searchPhrase, setSearchPhrase] = useState('');
     const [hiddenTokens, setHiddenTokens] = useState([]);
@@ -57,7 +57,7 @@ function Swap({wallet, tokens: tokensMap, network, hSuitePools, rate}) {
             try {
                 showLoader();
                 let randomNode = HSUITE_NODES[network][Math.floor(Math.random() * HSUITE_NODES[network].length)];
-                let nodeSocket = new SmartNodeSocket(randomNode, wallet.address, hSuiteApiKey(network));
+                let nodeSocket: any = new SmartNodeSocket(randomNode, wallet.address, hSuiteApiKey(network));
 
                 nodeSocket.getSocket('gateway').on('connect', async () => {
                     console.log(`account ${wallet.address} connected to node ${nodeSocket.getNode().operator}`);
@@ -67,11 +67,11 @@ function Swap({wallet, tokens: tokensMap, network, hSuitePools, rate}) {
                     console.log(`account ${wallet.address} disconnected from node ${nodeSocket.getNode().operator}`);
                 });
 
-                nodeSocket.getSocket('gateway').on('errors', async (event) => {
+                nodeSocket.getSocket('gateway').on('errors', async (event: any) => {
                     console.error('error event', event);
                 });
 
-                nodeSocket.getSocket('gateway').on('authenticate', async (event) => {
+                nodeSocket.getSocket('gateway').on('authenticate', async (event: any) => {
                     if (event.isValidSignature) {
                         resolve({
                             message: `account ${wallet.address} authenticated to node ${nodeSocket.getNode().operator}, ready to operate with websockets/write operations...`,
@@ -82,7 +82,7 @@ function Swap({wallet, tokens: tokensMap, network, hSuitePools, rate}) {
                     }
                 });
 
-                nodeSocket.getSocket('gateway').on('authentication', async (event) => {
+                nodeSocket.getSocket('gateway').on('authentication', async (event: any) => {
                     let payload = {
                         serverSignature: new Uint8Array(event.signedData.signature),
                         originalPayload: event.payload
@@ -112,12 +112,12 @@ function Swap({wallet, tokens: tokensMap, network, hSuitePools, rate}) {
         });
     }
 
-    const handleSlippage = (e) => {
+    const handleSlippage = (e: any) => {
         setSlippage(e.target.value);
     }
 
 
-    const changeAmountOne = (e) => {
+    const changeAmountOne = (e: any) => {
         setFeeOnTransfer(false);
         const input = e.target.value;
         if (input.match(/^[0-9]{0,10}(?:\.[0-9]{0,8})?$/)) {
@@ -126,7 +126,7 @@ function Swap({wallet, tokens: tokensMap, network, hSuitePools, rate}) {
     }
 
 
-    const changeAmountTwo = (e) => {
+    const changeAmountTwo = (e: any) => {
         setFeeOnTransfer(true);
         const input = e.target.value;
         if (input.match(/^[0-9]{0,10}(?:\.[0-9]{0,8})?$/)) {
@@ -148,12 +148,12 @@ function Swap({wallet, tokens: tokensMap, network, hSuitePools, rate}) {
         fetchDexSwap(tokenTwo.solidityAddress, tokenOne.solidityAddress)
     }
 
-    const openModal = (token) => {
+    const openModal = (token: any) => {
         setChangeToken(token);
         setIsOpen(true);
     }
 
-    const modifyToken = (i) => {
+    const modifyToken = (i: any) => {
         setPrices({
             SaucerSwap: null,
             Pangolin: null,
@@ -173,7 +173,7 @@ function Swap({wallet, tokens: tokensMap, network, hSuitePools, rate}) {
         setSearchPhrase('');
     }
 
-    const fetchDexSwap = async (tokenA, tokenB, isLoader = true) => {
+    const fetchDexSwap = async (tokenA: any, tokenB: any, isLoader = true) => {
         if(isLoader){
             showLoader();
         }
@@ -185,7 +185,7 @@ function Swap({wallet, tokens: tokensMap, network, hSuitePools, rate}) {
         setPrices(result);
     }
 
-    const convertPrice = (price) => {
+    const convertPrice = (price: any) => {
         if (!price || !tokenOne || !tokenTwo) {
             return '0';
         }
@@ -198,10 +198,10 @@ function Swap({wallet, tokens: tokensMap, network, hSuitePools, rate}) {
     }
 
     const isAtLeastOnePrice = () => {
-        return !Object.values(prices).find(price => price?.rate && !price?.rate?.isZero());
+        return !Object.values(prices).find((price: any) => price?.rate && !price?.rate?.isZero());
     }
 
-    const getGasPrice = (providerName) => {
+    const getGasPrice = (providerName: any) => {
         if (!tokenOne || !tokenTwo) {
             return 0;
         }
@@ -239,8 +239,8 @@ function Swap({wallet, tokens: tokensMap, network, hSuitePools, rate}) {
 
         if (bestRate.name === 'HSuite') {
             showLoader();
-            const socketConnection = await smartNodeSocket();
-            socketConnection.socket.getSocket('gateway').on('swapPoolRequest', async (resPool) => {
+            const socketConnection: any = await smartNodeSocket();
+            socketConnection.socket.getSocket('gateway').on('swapPoolRequest', async (resPool: any) => {
                 try {
                     if (resPool.status === 'success') {
                         let transaction = Transaction.fromBytes(new Uint8Array(resPool.payload.transaction));
@@ -248,7 +248,7 @@ function Swap({wallet, tokens: tokensMap, network, hSuitePools, rate}) {
 
                         let signedTransactionBytes = await wallet.signTransaction(transaction);
 
-                        socketConnection.socket.getSocket('gateway').on('swapPoolExecute', responseEvent => {
+                        socketConnection.socket.getSocket('gateway').on('swapPoolExecute', (responseEvent: any) => {
                             if (responseEvent.status === 'success') {
                                 showToast('Transaction', `The transaction was successfully processed. Transaction ID: ${responseEvent.payload?.transaction?.transactionId}`, 'success');
                                 socketConnection.socket.getSocket('gateway').disconnect();
@@ -261,7 +261,7 @@ function Swap({wallet, tokens: tokensMap, network, hSuitePools, rate}) {
                         socketConnection.socket.getSocket('gateway').emit('swapPoolExecute', {
                             type: 'swapPoolExecute',
                             transactionBytes: signedTransactionBytes,
-                        }, (error) => {
+                        }, (error: any) => {
                             if (error) {
                                 console.error(error);
                                 showToast('Transaction', 'Unexpected error', 'error');
@@ -327,6 +327,7 @@ function Swap({wallet, tokens: tokensMap, network, hSuitePools, rate}) {
                         tokenOne.address,
                         wallet?.address,
                         exchange(network),
+                        // @ts-ignore
                         feeOnTransfer
                             ? ethers.utils.parseUnits(tokenOneAmount, tokenOne.decimals).mul(1000 + slippage * 10).div(1000).toString()
                             : ethers.utils.parseUnits(tokenOneAmount, tokenOne.decimals).toString(),
@@ -357,11 +358,13 @@ function Swap({wallet, tokens: tokensMap, network, hSuitePools, rate}) {
                     .addAddress(tokenOne.solidityAddress)
                     .addAddress(tokenTwo.solidityAddress)
                     .addUint256(
+                        // @ts-ignore
                         feeOnTransfer
                             ? ethers.utils.parseUnits(tokenOneAmount, tokenOne.decimals).mul(1000 + slippage * 10).div(1000).toString()
                             : ethers.utils.parseUnits(tokenOneAmount, tokenOne.decimals).toString()
                     )
                     .addUint256(
+                        // @ts-ignore
                         feeOnTransfer
                             ? ethers.utils.parseUnits(tokenTwoAmount, tokenTwo.decimals).toString()
                             : ethers.utils.parseUnits(tokenTwoAmount, tokenTwo.decimals).mul(1000 - slippage * 10).div(1000).toString()
@@ -377,7 +380,7 @@ function Swap({wallet, tokens: tokensMap, network, hSuitePools, rate}) {
                     : 0)
                 .freezeWithSigner(wallet.signer);
 
-            let execTransaction = null;
+            let execTransaction: any = null;
             try {
                 execTransaction = await wallet.executeTransaction(swapTransaction);
                 if (execTransaction.error) {
@@ -578,7 +581,7 @@ function Swap({wallet, tokens: tokensMap, network, hSuitePools, rate}) {
                 <div className='networkFee'>Network fee: ≈{getNetworkFee().toFixed(4)} HBAR</div>
                 <div className="refreshTicker">
                     <div className={isRefreshAnimationActive ? 'active' : ''}
-                         style={{animationDuration: parseInt((25000 + 30 * refreshCount.current * refreshCount.current) / 1000).toString() + 's'}}></div>
+                         style={{animationDuration: parseInt(String((25000 + 30 * refreshCount.current * refreshCount.current) / 1000)) + 's'}}></div>
                 </div>
                 <div className='assocWarning'>&#9432; Make sure selected tokens are associated to your account.</div>
                 {getBestImpactError()

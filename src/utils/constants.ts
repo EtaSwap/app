@@ -3,7 +3,7 @@ export const NETWORKS = {
     TESTNET: 'testnet',
 };
 
-export const GAS_LIMITS = {
+export const GAS_LIMITS: any = {
     SaucerSwap: {
         exactTokenToToken: 900000, //877969    875079
         exactHBARToToken: 260000, //221207     203366

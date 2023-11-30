@@ -2,7 +2,7 @@ import {SettingOutlined} from "@ant-design/icons";
 import {Popover, Radio} from "antd";
 
 
-export function SlippageTolerance ({handleSlippage, slippage}) {
+export function SlippageTolerance ({handleSlippage, slippage}: any) {
     const settingsContent = (
         <>
             <div>Slippage Tolerance</div>

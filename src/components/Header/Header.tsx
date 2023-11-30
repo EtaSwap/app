@@ -1,21 +1,24 @@
 import React, { useState } from 'react'
+// @ts-ignore
 import HederaLogo from '../../assets/img/hedera-logo.png'
+// @ts-ignore
 import Logo from '../../logo.svg'
 import {Link} from 'react-router-dom'
+// @ts-ignore
 import Disconnect from '../../assets/img/disconnect.png'
 import './Header.css'
 import {ConnectWalletModal} from "./components/ConnectWalletModal";
 import {SelectNetworkModal} from "./components/SelectNetworkModal";
 
-function Header({ wallet, wallets, network, setNetwork }) {
+function Header({ wallet, wallets, network, setNetwork }: any) {
   const [networkModalOpen, setNetworkModalOpen] = useState(false);
   const [walletModalOpen, setWalletModalOpen] = useState(false);
 
-  const disconnectWallet = (name) => {
+  const disconnectWallet = (name: any) => {
       wallets[name].instance.disconnect();
   }
 
-  const connectWallet = (name) => {
+  const connectWallet = (name: any) => {
     if (wallet.address) {
         if (wallet.name === name) {
             return null;
@@ -26,7 +29,7 @@ function Header({ wallet, wallets, network, setNetwork }) {
     setWalletModalOpen(false);
   }
 
-  const selectNetwork = (name) => {
+  const selectNetwork = (name: any) => {
       if (network !== name) {
           setNetwork(name);
           if (wallet.name) {
