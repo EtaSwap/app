@@ -12,3 +12,16 @@ export interface IToken {
     token_id: string;
     providers: string[];
 }
+
+export interface IHSuitePool{
+    tokens: {
+        base: {id: string};
+        swap: {id: string};
+    }
+}
+
+export enum typeWallet {
+    HBAR = "HBAR",
+    HSuite = "HSuite"
+}
+
