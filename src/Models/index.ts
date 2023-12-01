@@ -40,14 +40,17 @@ export interface IWallet {
 }
 
 export interface IWallets {
-    [key: string]: {
-        name: string,
-        title: string,
-        instance: any,
-        image: string,
-        icon: string,
-    }
+    [key: string]: IWalletsInfo
 }
+
+export interface IWalletsInfo {
+    name: string,
+    title: string,
+    instance: any,
+    image: string,
+    icon: string,
+}
+
 
 
 export enum typeWallet {
