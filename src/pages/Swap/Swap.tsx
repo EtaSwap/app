@@ -25,8 +25,17 @@ import {
 import {SlippageTolerance} from "./Components/SlippageTolerance/SlippageTolerance";
 import {TokensModal} from "./Components/TokensModal/TokensModal";
 import {toastTypes} from "../../Models/Toast";
+import {IToken} from "../../Models";
 
-function Swap({wallet, tokens: tokensMap, network, hSuitePools, rate}: any) {
+export interface ISwapProps {
+    wallet: any;
+    tokens: Map<string, IToken>;
+    network: string;
+    hSuitePools: {};
+    rate: number | null;
+}
+
+function Swap({wallet, tokens: tokensMap, network, hSuitePools, rate}: ISwapProps) {
     const {loading, showLoader, hideLoader} = useLoader();
     const {showToast} = useToaster();
 
@@ -175,12 +184,12 @@ function Swap({wallet, tokens: tokensMap, network, hSuitePools, rate}: any) {
     }
 
     const fetchDexSwap = async (tokenA: any, tokenB: any, isLoader = true) => {
-        if(isLoader){
+        if (isLoader) {
             showLoader();
         }
         const result = await swapTokens(tokenA, tokenB, hSuitePools, network, oracleContracts);
 
-        if(isLoader) {
+        if (isLoader) {
             hideLoader();
         }
         setPrices(result);
@@ -525,7 +534,7 @@ function Swap({wallet, tokens: tokensMap, network, hSuitePools, rate}: any) {
             <div className='tradeBox'>
                 <div className='tradeBoxHeader'>
                     <h4>Swap</h4>
-                    <SlippageTolerance handleSlippage={handleSlippage} slippage={slippage} />
+                    <SlippageTolerance handleSlippage={handleSlippage} slippage={slippage}/>
                 </div>
                 <div className='inputs'>
                     <div className={feeOnTransfer ? 'approx' : ''}>
@@ -563,11 +572,18 @@ function Swap({wallet, tokens: tokensMap, network, hSuitePools, rate}: any) {
                                 onClick={() => switchAllRates()}>{checkAllRatesOpen ? 'Hide all rates' : 'Show all rates'}</button>
                     </div>
                     {checkAllRatesOpen
-                        ? getSortedPrices(prices, tokenOne, tokenTwo, tokenTwoAmount, tokenOneAmount, feeOnTransfer, network).map(({name, price, lowVolume, amountOut, priceImpact}) => <div
-                            className='ratesLogo' key={name}>
-                            <img className='ratesLogoIcon' title={name} src={oracleSettings(network)?.[name]?.icon}
-                                 alt={name}/> {ethers.utils.formatUnits(amountOut, feeOnTransfer ? tokenOne?.decimals : tokenTwo.decimals)} (impact: {ethers.utils.formatUnits(priceImpact.toString(), 2)}%)
-                        </div>)
+                        ? getSortedPrices(prices, tokenOne, tokenTwo, tokenTwoAmount, tokenOneAmount, feeOnTransfer, network).map(({
+                                                                                                                                       name,
+                                                                                                                                       price,
+                                                                                                                                       lowVolume,
+                                                                                                                                       amountOut,
+                                                                                                                                       priceImpact
+                                                                                                                                   }) =>
+                            <div
+                                className='ratesLogo' key={name}>
+                                <img className='ratesLogoIcon' title={name} src={oracleSettings(network)?.[name]?.icon}
+                                     alt={name}/> {ethers.utils.formatUnits(amountOut, feeOnTransfer ? tokenOne?.decimals : tokenTwo.decimals)} (impact: {ethers.utils.formatUnits(priceImpact.toString(), 2)}%)
+                            </div>)
                         : ''
                     }
                 </div>

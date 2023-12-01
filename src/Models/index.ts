@@ -44,11 +44,11 @@ export interface IWallets {
 }
 
 export interface IWalletsInfo {
-    name: string,
-    title: string,
-    instance: any,
-    image: string,
-    icon: string,
+    name: string;
+    title: string;
+    instance: any;
+    image: string;
+    icon: string;
 }
 
 

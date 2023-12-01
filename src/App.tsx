@@ -28,6 +28,7 @@ import {LoaderProvider} from "./components/Loader/LoaderContext";
 import {ToasterProvider} from "./components/Toaster/ToasterContext";
 import {ToastContainer} from "react-toastify";
 import {IHSuitePool, IToken, IWallet, IWallets, typeWallet} from "./Models";
+import AppRouter from "./router";
 
 function App() {
     const [wallet, setWallet] = useState<IWallet>({
@@ -210,18 +211,12 @@ function App() {
                         setNetwork={setNetwork}
                     />
                     <div className="mainWindow">
-                        <Routes>
-                            <Route path="/" element={
-                                <Swap
-                                    wallet={wallet}
-                                    tokens={tokens}
-                                    network={network}
-                                    hSuitePools={hSuitePools}
-                                    rate={rate}
-                                />
-                            }/>
-                            <Route path="/tokens" element={<Tokens tokens={tokens}/>}/>
-                        </Routes>
+                        <AppRouter
+                            wallet={wallet}
+                            tokens={tokens}
+                            network={network}
+                            hSuitePools={hSuitePools}
+                            rate={rate} />
                     </div>
                     <div className="social">
                         <Social/>
