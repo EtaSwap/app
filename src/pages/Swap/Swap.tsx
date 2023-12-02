@@ -26,10 +26,11 @@ import {SlippageTolerance} from "./Components/SlippageTolerance/SlippageToleranc
 import {TokensModal} from "./Components/TokensModal/TokensModal";
 import {toastTypes} from "../../Models/Toast";
 import {IToken} from "../../Models";
+import { Token } from '../../types/token';
 
 export interface ISwapProps {
     wallet: any;
-    tokens: Map<string, IToken>;
+    tokens: Map<string, Token>;
     network: string;
     hSuitePools: {};
     rate: number | null;

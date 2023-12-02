@@ -2,9 +2,10 @@ import React from 'react'
 import './Tokens.css'
 import {parseTokens} from "./tokens.utils";
 import {IToken} from "../../Models";
+import { Token } from '../../types/token';
 
 export interface ITokensProps {
-    tokens: Map<string, IToken>;
+    tokens: Map<string, Token>;
 }
 
 function Tokens({ tokens }: ITokensProps) {

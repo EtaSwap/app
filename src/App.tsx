@@ -1,11 +1,8 @@
 import "./App.css";
 import React, {useState, useEffect} from 'react';
 import Header from "./components/Header/Header";
-import {Routes, Route, Navigate} from "react-router-dom";
-import Swap from "./pages/Swap/Swap";
-import Tokens from "./pages/Tokens/Tokens";
 import axios, {AxiosResponse} from 'axios';
-import {AccountId, ContractId} from '@hashgraph/sdk';
+import { AccountId, ContractId } from '@hashgraph/sdk';
 import {ethers} from 'ethers';
 // @ts-ignore
 import HederaLogo from './assets/img/hedera-logo.png';
@@ -29,6 +26,12 @@ import {ToasterProvider} from "./components/Toaster/ToasterContext";
 import {ToastContainer} from "react-toastify";
 import {IHSuitePool, IToken, IWallet, IWallets, typeWallet} from "./Models";
 import AppRouter from "./router";
+import { SaucerSwap } from './class/providers/saucer-swap';
+import { Pangolin } from './class/providers/pangolin';
+import { HeliSwap } from './class/providers/heli-swap';
+import { HSuite } from './class/providers/h-suite';
+import { Token } from './types/token';
+import { HeliSwapGetToken, HSuiteGetToken, PangolinGetToken, SaucerSwapGetToken } from './class/providers/types/tokens';
 
 function App() {
     const [wallet, setWallet] = useState<IWallet>({
@@ -36,7 +39,7 @@ function App() {
         address: '',
         signer: null,
     });
-    const [tokens, setTokens] = useState<Map<string, IToken>>(new Map());
+    const [tokens, setTokens] = useState<Map<string, Token>>(new Map());
     const [network, setNetwork] = useState(NETWORKS.MAINNET);
     const [hSuitePools, setHSuitePools] = useState({});
     const [rate, setRate] = useState<number | null>(null);
@@ -57,6 +60,40 @@ function App() {
             icon: BladeIcon,
         },
     });
+    const [providers] = useState({
+        SaucerSwap: new SaucerSwap({
+            mainnet: {
+                getTokensUrl: 'https://api.saucerswap.finance/tokens',
+            },
+            testnet: {
+                getTokensUrl: 'https://test-api.saucerswap.finance/tokens',
+            }
+        }),
+        Pangolin: new Pangolin({
+            mainnet: {
+                getTokensUrl: 'https://raw.githubusercontent.com/pangolindex/tokenlists/main/pangolin.tokenlist.json',
+            },
+            testnet: {
+                getTokensUrl: 'https://raw.githubusercontent.com/pangolindex/tokenlists/main/pangolin.tokenlist.json',
+            }
+        }),
+        HeliSwap: new HeliSwap({
+            mainnet: {
+                getTokensUrl: 'https://heliswap.infura-ipfs.io/ipfs/Qmf5u6N2ohZnBc1yxepYzS3RYagkMZbU5dwwU4TGxXt9Lf',
+            },
+            testnet: {
+                getTokensUrl: null,
+            }
+        }),
+        HSuite: new HSuite({
+            mainnet: {
+                getTokensUrl: 'https://mainnet-sn1.hbarsuite.network/tokens/list',
+            },
+            testnet: {
+                getTokensUrl: 'https://testnet-sn1.hbarsuite.network/tokens/list',
+            }
+        }),
+    });
 
     useEffect(() => {
         wallets.hashpack.instance.connect(network, true);
@@ -66,33 +103,23 @@ function App() {
     }, []);
 
     useEffect(() => {
-        let tokenSources: (Promise<AxiosResponse> | null)[] = [
-            axios.get('https://api.saucerswap.finance/tokens'),
-            axios.get('https://raw.githubusercontent.com/pangolindex/tokenlists/main/pangolin.tokenlist.json'),
-            axios.get('https://heliswap.infura-ipfs.io/ipfs/Qmf5u6N2ohZnBc1yxepYzS3RYagkMZbU5dwwU4TGxXt9Lf'),
-            axios.get('https://mainnet-sn1.hbarsuite.network/tokens/list'),
-            axios.get('https://mainnet-sn1.hbarsuite.network/pools/list'),
-        ];
-        let tokenList = new Set(tokenListMainnet);
-        if (network === NETWORKS.TESTNET) {
-            tokenSources = [
-                axios.get('https://test-api.saucerswap.finance/tokens'),
-                axios.get('https://raw.githubusercontent.com/pangolindex/tokenlists/main/pangolin.tokenlist.json'),
-                null,
-                axios.get('https://testnet-sn1.hbarsuite.network/tokens/list'),
-                axios.get('https://testnet-sn1.hbarsuite.network/pools/list'),
-            ];
-            tokenList = new Set(tokenListTestnet);
-        }
-        Promise.all(tokenSources).then(([
-                                            saucerSwapTokens,
-                                            pangolinTokens,
-                                            heliswapTokens,
-                                            hsuiteTokens,
-                                            hsuitePools,
-                                        ]: (AxiosResponse | null)[]) => {
-            const tokenMap = new Map();
-            const providers = ['SaucerSwap', 'Pangolin', 'HeliSwap', 'HSuite'];
+        const tokenPromises = Object.values(providers).map(provider => provider.getTokens(network));
+        const tokenList = new Set(network === NETWORKS.TESTNET ? tokenListTestnet : tokenListMainnet);
+        tokenPromises.push(
+            network === NETWORKS.TESTNET
+            ? axios.get('https://testnet-sn1.hbarsuite.network/pools/list')
+            : axios.get('https://mainnet-sn1.hbarsuite.network/pools/list'),
+        );
+
+        Promise.all(tokenPromises).then(([
+            saucerSwapTokens,
+            pangolinTokens,
+            heliswapTokens,
+            hsuiteTokens,
+            hsuitePools,
+        ]: (AxiosResponse | null)[]) => {
+            const tokenMap: Map<string, Token> = new Map();
+            const providerNames: string[] = Object.values(providers).map(provider => provider.constructor.name);
             tokenMap.set(ethers.constants.AddressZero, {
                 name: 'Hbar',
                 symbol: 'HBAR',
@@ -100,84 +127,51 @@ function App() {
                 address: '',
                 solidityAddress: ethers.constants.AddressZero,
                 icon: HederaLogo,
-                providers,
+                providers: providerNames,
             });
 
             if(saucerSwapTokens){
-                saucerSwapTokens.data.map((token: IToken) => {
+                saucerSwapTokens.data.map((token: SaucerSwapGetToken) => {
                     const solidityAddress = `0x${ContractId.fromString(token.id).toSolidityAddress()}`.toLowerCase();
                     if (tokenList.has(token.id)) {
-                        tokenMap.set(solidityAddress, {
-                            name: token.name,
-                            symbol: token.symbol,
-                            decimals: token.decimals,
-                            address: token.id,
-                            solidityAddress,
-                            icon: token.icon ? `https://www.saucerswap.finance/${token.icon?.replace(/^\//, '')}` : '',
-                            providers: ['SaucerSwap'],
-                        });
+                        tokenMap.set(solidityAddress, providers.SaucerSwap.mapProviderTokenToToken(token));
                     }
                 });
             }
 
             if(pangolinTokens){
-                pangolinTokens.data.tokens.filter((token: IToken) => token.chainId === (network === NETWORKS.MAINNET ? 295 : 296)).map((token: IToken) => {
+                pangolinTokens.data.tokens
+                    .filter((token: PangolinGetToken) => token.chainId === (network === NETWORKS.MAINNET ? 295 : 296))
+                    .map((token: PangolinGetToken) => {
                     const existing = tokenMap.get(token.address.toLowerCase());
                     if (existing) {
-                        existing.providers.push('Pangolin');
+                        existing.providers.push(providers.Pangolin.constructor.name);
                     } else if (tokenList.has(ContractId.fromSolidityAddress(token.address).toString())) {
-                        tokenMap.set(token.address.toLowerCase(), {
-                            name: token.name,
-                            symbol: token.symbol,
-                            decimals: token.decimals,
-                            address: ContractId.fromSolidityAddress(token.address).toString(),
-                            solidityAddress: token.address,
-                            icon: token.logoURI || '',
-                            providers: ['Pangolin'],
-                            dueDiligenceComplete: false,
-                        });
+                        tokenMap.set(token.address.toLowerCase(), providers.Pangolin.mapProviderTokenToToken(token));
                     }
                 });
             }
 
             if (heliswapTokens?.data?.tokens) {
-                heliswapTokens.data.tokens.map((token: IToken) => {
+                heliswapTokens.data.tokens.map((token: HeliSwapGetToken) => {
                     const existing = tokenMap.get(token.address.toLowerCase());
                     if (existing) {
-                        existing.providers.push('HeliSwap');
+                        existing.providers.push(providers.HeliSwap.constructor.name);
                     } else if (tokenList.has(ContractId.fromSolidityAddress(token.address).toString())) {
-                        tokenMap.set(token.address.toLowerCase(), {
-                            name: token.name,
-                            symbol: token.symbol,
-                            decimals: token.decimals,
-                            address: ContractId.fromSolidityAddress(token.address).toString(),
-                            solidityAddress: token.address,
-                            icon: token.logoURI || '',
-                            providers: ['HeliSwap'],
-                            dueDiligenceComplete: false,
-                        });
+                        tokenMap.set(token.address.toLowerCase(), providers.HeliSwap.mapProviderTokenToToken(token));
                     }
                 });
             }
 
             if (hsuiteTokens?.data) {
-                hsuiteTokens.data.map((token: IToken) => {
+                hsuiteTokens.data.map((token: HSuiteGetToken) => {
                     if (token.id !== typeWallet.HBAR) {
                         const solidityAddress = `0x${ContractId.fromString(token.id).toSolidityAddress()}`.toLowerCase();
                         const existing = tokenMap.get(solidityAddress);
                         if (existing) {
-                            existing.providers.push('HSuite');
+                            existing.providers.push(providers.HSuite.constructor.name);
                         } else if (tokenList.has(token.id)) {
-                            tokenMap.set(solidityAddress, {
-                                name: token.name,
-                                symbol: token.symbol,
-                                decimals: token.decimals,
-                                address: token.id,
-                                solidityAddress,
-                                icon: token.image ? decodeURIComponent(token.image) : '',
-                                providers: ['HSuite'],
-                                dueDiligenceComplete: false,
-                            });
+                            tokenMap.set(solidityAddress, providers.HSuite.mapProviderTokenToToken(token));
                         }
                     }
                 });
