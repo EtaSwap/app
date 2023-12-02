@@ -3,8 +3,15 @@ import { Props } from './types/props';
 import { SaucerSwapGetToken } from './types/tokens';
 import { Token } from '../../types/token';
 import { ContractId } from '@hashgraph/sdk';
+// @ts-ignore
+import SaucerSwapLogo from '../../assets/img/saucerswap.ico';
 
 export class SaucerSwap extends Provider {
+    public icon = SaucerSwapLogo;
+    public aggregatorId = this.constructor.name;
+    public feePromille = 3;
+    public feeDEXPromille = 3;
+
     constructor(props: Props) {
         super(props);
     }
@@ -18,7 +25,7 @@ export class SaucerSwap extends Provider {
             address: providerToken.id,
             solidityAddress,
             icon: providerToken.icon ? `https://www.saucerswap.finance/${providerToken.icon?.replace(/^\//, '')}` : '',
-            providers: [this.constructor.name],
+            providers: [this.aggregatorId],
         }
     }
 }

@@ -64,33 +64,41 @@ function App() {
         SaucerSwap: new SaucerSwap({
             mainnet: {
                 getTokensUrl: 'https://api.saucerswap.finance/tokens',
+                whbar: '0x0000000000000000000000000000000000163b5a',
             },
             testnet: {
                 getTokensUrl: 'https://test-api.saucerswap.finance/tokens',
+                whbar: '0x000000000000000000000000000000000000e6a2',
             }
         }),
         Pangolin: new Pangolin({
             mainnet: {
                 getTokensUrl: 'https://raw.githubusercontent.com/pangolindex/tokenlists/main/pangolin.tokenlist.json',
+                whbar: '0x00000000000000000000000000000000001a8837',
             },
             testnet: {
                 getTokensUrl: 'https://raw.githubusercontent.com/pangolindex/tokenlists/main/pangolin.tokenlist.json',
+                whbar: '0x000000000000000000000000000000000002690a',
             }
         }),
         HeliSwap: new HeliSwap({
             mainnet: {
                 getTokensUrl: 'https://heliswap.infura-ipfs.io/ipfs/Qmf5u6N2ohZnBc1yxepYzS3RYagkMZbU5dwwU4TGxXt9Lf',
+                whbar: '0x00000000000000000000000000000000002cc823',
             },
             testnet: {
                 getTokensUrl: null,
+                whbar: null,
             }
         }),
         HSuite: new HSuite({
             mainnet: {
                 getTokensUrl: 'https://mainnet-sn1.hbarsuite.network/tokens/list',
+                whbar: null,
             },
             testnet: {
                 getTokensUrl: 'https://testnet-sn1.hbarsuite.network/tokens/list',
+                whbar: null,
             }
         }),
     });
@@ -210,7 +218,9 @@ function App() {
                             tokens={tokens}
                             network={network}
                             hSuitePools={hSuitePools}
-                            rate={rate} />
+                            rate={rate}
+                            providers={providers}
+                        />
                     </div>
                     <div className="social">
                         <Social/>

@@ -3,8 +3,15 @@ import { Props } from './types/props';
 import { PangolinGetToken } from './types/tokens';
 import { Token } from '../../types/token';
 import { ContractId } from '@hashgraph/sdk';
+// @ts-ignore
+import PangolinLogo from '../../assets/img/pangolin.png';
 
 export class Pangolin extends Provider {
+    public icon = PangolinLogo;
+    public aggregatorId = this.constructor.name;
+    public feePromille = 3;
+    public feeDEXPromille = 3;
+
     constructor(props: Props) {
         super(props);
     }
@@ -17,7 +24,7 @@ export class Pangolin extends Provider {
             address: ContractId.fromSolidityAddress(providerToken.address).toString(),
             solidityAddress: providerToken.address,
             icon: providerToken.logoURI || '',
-            providers: [this.constructor.name],
+            providers: [this.aggregatorId],
         }
     }
 }

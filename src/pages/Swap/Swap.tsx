@@ -20,13 +20,13 @@ import {
     exchange, getSortedPrices,
     hSuiteApiKey,
     oracles,
-    oracleSettings, swapTokens
+    swapTokens
 } from "./swap.utils";
 import {SlippageTolerance} from "./Components/SlippageTolerance/SlippageTolerance";
 import {TokensModal} from "./Components/TokensModal/TokensModal";
 import {toastTypes} from "../../Models/Toast";
-import {IToken} from "../../Models";
 import { Token } from '../../types/token';
+import { Provider } from '../../class/providers/provider';
 
 export interface ISwapProps {
     wallet: any;
@@ -34,9 +34,10 @@ export interface ISwapProps {
     network: string;
     hSuitePools: {};
     rate: number | null;
+    providers: Record<string, Provider>;
 }
 
-function Swap({wallet, tokens: tokensMap, network, hSuitePools, rate}: ISwapProps) {
+function Swap({wallet, tokens: tokensMap, network, hSuitePools, rate, providers}: ISwapProps) {
     const {loading, showLoader, hideLoader} = useLoader();
     const {showToast} = useToaster();
 
@@ -290,9 +291,9 @@ function Swap({wallet, tokens: tokensMap, network, hSuitePools, rate}: ISwapProp
 
             let amountFromHsuite = ethers.utils.parseUnits(tokenOneAmount, tokenOne.decimals);
             if (tokenOne.solidityAddress === ethers.constants.AddressZero) {
-                amountFromHsuite = amountFromHsuite.mul(1000 - oracleSettings(network)[bestRate.name].feePromille).div(1000);
+                amountFromHsuite = amountFromHsuite.mul(1000 - providers[bestRate.name].feePromille).div(1000);
             } else if (tokenOne.symbol === 'HSUITE') {
-                const hSuiteFee = Math.max(10000, amountFromHsuite.mul(oracleSettings(network)[bestRate.name].feeDEXPromille).div(1000).toNumber());
+                const hSuiteFee = Math.max(10000, amountFromHsuite.mul(providers[bestRate].feeDEXPromille).div(1000).toNumber());
                 amountFromHsuite = amountFromHsuite.sub(hSuiteFee);
             }
 
@@ -365,7 +366,7 @@ function Swap({wallet, tokens: tokensMap, network, hSuitePools, rate}: ISwapProp
                 .setContractId(exchange(network))
                 .setGas(getGasPrice(bestRate.name))
                 .setFunction("swap", new ContractFunctionParameters()
-                    .addString(oracleSettings(network)[bestRate.name].aggregatorId)
+                    .addString(providers[bestRate.name].aggregatorId)
                     .addAddress(tokenOne.solidityAddress)
                     .addAddress(tokenTwo.solidityAddress)
                     .addUint256(
@@ -582,7 +583,7 @@ function Swap({wallet, tokens: tokensMap, network, hSuitePools, rate}: ISwapProp
                                                                                                                                    }) =>
                             <div
                                 className='ratesLogo' key={name}>
-                                <img className='ratesLogoIcon' title={name} src={oracleSettings(network)?.[name]?.icon}
+                                <img className='ratesLogoIcon' title={name} src={providers[name].icon}
                                      alt={name}/> {ethers.utils.formatUnits(amountOut, feeOnTransfer ? tokenOne?.decimals : tokenTwo.decimals)} (impact: {ethers.utils.formatUnits(priceImpact.toString(), 2)}%)
                             </div>)
                         : ''

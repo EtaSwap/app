@@ -3,8 +3,15 @@ import { Props } from './types/props';
 import { HeliSwapGetToken } from './types/tokens';
 import { Token } from '../../types/token';
 import { ContractId } from '@hashgraph/sdk';
+// @ts-ignore
+import HeliSwapLogo from '../../assets/img/heliswap.png';
 
 export class HeliSwap extends Provider {
+    public icon = HeliSwapLogo;
+    public aggregatorId = this.constructor.name;
+    public feePromille = 5;
+    public feeDEXPromille = 3;
+
     constructor(props: Props) {
         super(props);
     }
@@ -17,7 +24,7 @@ export class HeliSwap extends Provider {
             address: ContractId.fromSolidityAddress(providerToken.address).toString(),
             solidityAddress: providerToken.address,
             icon: providerToken.logoURI || '',
-            providers: [this.constructor.name],
+            providers: [this.aggregatorId],
         }
     }
 }

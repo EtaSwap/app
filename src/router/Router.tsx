@@ -4,6 +4,7 @@ import Tokens from "../pages/Tokens/Tokens";
 import {Route, Routes} from "react-router-dom";
 import {IToken, IWallet} from "../Models";
 import { Token } from '../types/token';
+import { Provider } from '../class/providers/provider';
 
 export interface IAppRouterProps{
     wallet: IWallet;
@@ -11,9 +12,10 @@ export interface IAppRouterProps{
     network: string;
     hSuitePools: {};
     rate: number | null;
+    providers: Record<string, Provider>;
 }
 
-const AppRouter = ({wallet, tokens, hSuitePools, network, rate}: IAppRouterProps) => {
+const AppRouter = ({wallet, tokens, hSuitePools, network, rate, providers}: IAppRouterProps) => {
 
     return (
         <Routes>
@@ -24,6 +26,7 @@ const AppRouter = ({wallet, tokens, hSuitePools, network, rate}: IAppRouterProps
                     network={network}
                     hSuitePools={hSuitePools}
                     rate={rate}
+                    providers={providers}
                 />
             }/>
             <Route path="/tokens" element={<Tokens tokens={tokens}/>}/>

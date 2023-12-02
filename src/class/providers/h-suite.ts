@@ -3,8 +3,15 @@ import { Props } from './types/props';
 import { Token } from '../../types/token';
 import { HSuiteGetToken } from './types/tokens';
 import { ContractId } from '@hashgraph/sdk';
+// @ts-ignore
+import HSuiteLogo from '../../assets/img/hsuite.png';
 
 export class HSuite extends Provider {
+    public icon = HSuiteLogo;
+    public aggregatorId = this.constructor.name;
+    public feePromille = 3;
+    public feeDEXPromille = 3;
+
     constructor(props: Props) {
         super(props);
     }
@@ -18,7 +25,7 @@ export class HSuite extends Provider {
             address: providerToken.id,
             solidityAddress,
             icon: providerToken.image ? decodeURIComponent(providerToken.image) : '',
-            providers: [this.constructor.name],
+            providers: [this.aggregatorId],
         }
     }
 }
