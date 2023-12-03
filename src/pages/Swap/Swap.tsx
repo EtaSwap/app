@@ -30,12 +30,11 @@ export interface ISwapProps {
     wallet: any;
     tokens: Map<string, Token>;
     network: string;
-    hSuitePools: {};
     rate: number | null;
     providers: Record<string, Provider>;
 }
 
-function Swap({ wallet, tokens: tokensMap, network, hSuitePools, rate, providers }: ISwapProps) {
+function Swap({ wallet, tokens: tokensMap, network, rate, providers }: ISwapProps) {
     const { loading, showLoader, hideLoader } = useLoader();
     const { showToast } = useToaster();
 
@@ -187,7 +186,7 @@ function Swap({ wallet, tokens: tokensMap, network, hSuitePools, rate, providers
         if (isLoader) {
             showLoader();
         }
-        const result = await swapTokens(tokenA, tokenB, hSuitePools, network, oracleContracts, providers);
+        const result = await swapTokens(tokenA, tokenB, network, oracleContracts, providers);
 
         if (isLoader) {
             hideLoader();
@@ -491,8 +490,8 @@ function Swap({ wallet, tokens: tokensMap, network, hSuitePools, rate, providers
 
     useEffect(() => {
         setTokenOne(tokens[0]);
-        setTokenTwo(tokens[1]);
-        fetchDexSwap(tokens[0]?.solidityAddress, tokens[1]?.solidityAddress)
+        setTokenTwo(tokens[13]);
+        fetchDexSwap(tokens[0]?.solidityAddress, tokens[13]?.solidityAddress)
     }, [oracleContracts]);
 
     useEffect(() => {

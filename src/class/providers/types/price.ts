@@ -1,4 +1,6 @@
+import { BigNumber } from 'ethers';
+
 export type PriceMirrorNodeResponse = {
-    rate: string;
-    weight: string;
+    rate: BigNumber | null;
+    weight: BigNumber | null;
 }

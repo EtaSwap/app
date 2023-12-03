@@ -35,7 +35,7 @@ export abstract class Provider {
         return null;
     }
 
-    public getPrice(tokenA: string, tokenB: string, network: string, oracleContract: any): Promise<PriceMirrorNodeResponse> {
+    public getPrice(tokenA: string, tokenB: string, network: string, oracleContract: any): Promise<PriceMirrorNodeResponse> | null {
         let _tokenA = tokenA;
         let _tokenB = tokenB;
         if (tokenA === ethers.constants.AddressZero) {

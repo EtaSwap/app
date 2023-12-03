@@ -80,21 +80,18 @@ export const getSortedPrices = (prices: any, tokenOne: any, tokenTwo: any, token
             priceRes.priceImpact = priceImpact;
             pricesRes.push(priceRes);
         }
-
     }
 
     return pricesRes.sort((a: any, b: any) => feeOnTransfer ? a.amountOut.sub(b.amountOut) : b.amountOut.sub(a.amountOut));
 }
 
 
-export const swapTokens = async (tokenA: any, tokenB: any, hSuitePools: any, network: any, oracleContracts: any, providers: Record<string, Provider>) => {
-    const hSuitePool = hSuitePools[`${tokenA}_${tokenB}`] || hSuitePools[`${tokenB}_${tokenA}`] || null;
-
+export const swapTokens = async (tokenA: any, tokenB: any, network: any, oracleContracts: any, providers: Record<string, Provider>) => {
     const res = await Promise.allSettled([
         oracleContracts.SaucerSwap ? providers.SaucerSwap.getPrice(tokenA, tokenB, network, oracleContracts.SaucerSwap) : null,
         oracleContracts.Pangolin ? providers.Pangolin.getPrice(tokenA, tokenB, network, oracleContracts.Pangolin) : null,
         !oracleContracts.HeliSwap || network === NETWORKS.TESTNET ? null : providers.HeliSwap.getPrice(tokenA, tokenB, network, oracleContracts.HeliSwap),
-        oracleContracts.HSuite ? providers.HSuite.getPrice(tokenA, tokenB, network, oracleContracts.HSuite) : null,
+        providers.HSuite.getPrice(tokenA, tokenB, network, oracleContracts.HSuite),
     ]);
 
     return {

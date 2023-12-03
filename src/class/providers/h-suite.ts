@@ -9,7 +9,6 @@ import { NETWORKS } from '../../utils/constants';
 import { PriceMirrorNodeResponse } from './types/price';
 import { BigNumber, ethers } from 'ethers';
 import axios from 'axios';
-import { IToken } from '../../Models';
 import { sqrt } from '../../utils/utils';
 
 export class HSuite extends Provider {
@@ -42,35 +41,35 @@ export class HSuite extends Provider {
         return 'd5db1f4a-8791-4f12-925f-920754547ce7';
     }
 
-    public getPrice(tokenA: string, tokenB: string, network: string): Promise<PriceMirrorNodeResponse> {
-        let rate = '0';
-        let weight = '0';
-        // const hSuitePool = hSuitePools[`${tokenA}_${tokenB}`] || hSuitePools[`${tokenB}_${tokenA}`] || null;
-        // if (hSuitePool) {
-        //     oraclePromises.push(axios.get(`https://${network}.mirrornode.hedera.com/api/v1/accounts/${hSuitePool}`));
-        //     const balance = res[network === NETWORKS.MAINNET ? 3 : 2].value.data.balance;
-        //     let balanceA = 0;
-        //     let balanceB = 0;
-        //     if (tokenA === ethers.constants.AddressZero) {
-        //         balanceA = balance.balance;
-        //     } else {
-        //         const idA = TokenId.fromSolidityAddress(tokenA).toString();
-        //         balanceA = balance.tokens.find((token: IToken) => token.token_id === idA)?.balance;
-        //     }
-        //     if (tokenB === ethers.constants.AddressZero) {
-        //         balanceB = balance.balance;
-        //     } else {
-        //         const idB = TokenId.fromSolidityAddress(tokenB).toString();
-        //         balanceB = balance.tokens.find((token: IToken) => token.token_id === idB)?.balance;
-        //     }
-        //
-        //     hSuitePriceArr = [];
-        //     hSuitePriceArr['rate'] = BigNumber.from(balanceB).mul(BigNumber.from('1000000000000000000')).div(BigNumber.from(balanceA));
-        //     hSuitePriceArr['weight'] = sqrt(BigNumber.from(balanceA).mul(balanceB));
-        // }
-        return Promise.resolve({
-            rate,
-            weight,
+    public getPrice(tokenA: string, tokenB: string, network: string): Promise<PriceMirrorNodeResponse> | null {
+        if (!tokenA || !tokenB || !network) {
+            return null;
+        }
+
+        let idA = TokenId.fromSolidityAddress(tokenA).toString();
+        let idB = TokenId.fromSolidityAddress(tokenB).toString();
+        if (tokenA === ethers.constants.AddressZero) {
+            idA = 'HBAR';
+        }
+        if (tokenB === ethers.constants.AddressZero) {
+            idB = 'HBAR';
+        }
+
+        return new Promise(async resolve => {
+            const { data } = await axios.get(`https://${network}-sn1.hbarsuite.network/pools/price?amount=0&baseToken=${idA}&swapToken=${idB}`);
+            if (!data.length) {
+                return resolve({ rate: null, weight: null });
+            }
+            const decimalsA = +data[0].payin.tokenDecimals;
+            const decimalsB = +data[data.length - 1].payout.tokenDecimals;
+            const balanceA: string = data[0].ratio.baseToken.amount.split('.');
+            const balanceB: string = data[data.length - 1].ratio.swapToken.amount.split('.');
+            const balanceACoins = `${balanceA[0]}${(balanceA[1] || '').padEnd(decimalsA, '0')}`;
+            const balanceBCoins = `${balanceB[0]}${(balanceB[1] || '').padEnd(decimalsB, '0')}`;
+            resolve({
+                rate: BigNumber.from(balanceBCoins).mul(BigNumber.from('1000000000000000000')).div(BigNumber.from(balanceACoins)),
+                weight: sqrt(BigNumber.from(balanceACoins).mul(balanceBCoins)),
+            });
         });
     }
 }

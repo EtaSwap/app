@@ -10,12 +10,11 @@ export interface IAppRouterProps{
     wallet: IWallet;
     tokens: Map<string, Token>;
     network: string;
-    hSuitePools: {};
     rate: number | null;
     providers: Record<string, Provider>;
 }
 
-const AppRouter = ({wallet, tokens, hSuitePools, network, rate, providers}: IAppRouterProps) => {
+const AppRouter = ({wallet, tokens, network, rate, providers}: IAppRouterProps) => {
 
     return (
         <Routes>
@@ -24,7 +23,6 @@ const AppRouter = ({wallet, tokens, hSuitePools, network, rate, providers}: IApp
                     wallet={wallet}
                     tokens={tokens}
                     network={network}
-                    hSuitePools={hSuitePools}
                     rate={rate}
                     providers={providers}
                 />

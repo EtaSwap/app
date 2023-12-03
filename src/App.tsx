@@ -41,7 +41,6 @@ function App() {
     });
     const [tokens, setTokens] = useState<Map<string, Token>>(new Map());
     const [network, setNetwork] = useState(NETWORKS.MAINNET);
-    const [hSuitePools, setHSuitePools] = useState({});
     const [rate, setRate] = useState<number | null>(null);
 
     const [wallets] = useState<IWallets>({
@@ -121,18 +120,12 @@ function App() {
     useEffect(() => {
         const tokenPromises = Object.values(providers).map(provider => provider.getTokens(network));
         const tokenList = new Set(network === NETWORKS.TESTNET ? tokenListTestnet : tokenListMainnet);
-        tokenPromises.push(
-            network === NETWORKS.TESTNET
-            ? axios.get('https://testnet-sn1.hbarsuite.network/pools/list')
-            : axios.get('https://mainnet-sn1.hbarsuite.network/pools/list'),
-        );
 
         Promise.all(tokenPromises).then(([
             saucerSwapTokens,
             pangolinTokens,
             heliswapTokens,
             hsuiteTokens,
-            hsuitePools,
         ]: (AxiosResponse | null)[]) => {
             const tokenMap: Map<string, Token> = new Map();
             const providerNames: string[] = Object.values(providers).map(provider => provider.constructor.name);
@@ -194,19 +187,6 @@ function App() {
             }
 
             setTokens(tokenMap);
-
-            const _hSuitePools: IHSuitePool[] = [];
-            hsuitePools?.data?.forEach((pool: IHSuitePool) => {
-                const token1Addr = pool.tokens.base.id !== typeWallet.HBAR
-                    ? `0x${AccountId.fromString(pool.tokens.base.id).toSolidityAddress()}`.toLowerCase()
-                    : ethers.constants.AddressZero;
-                const token2Addr = pool.tokens.swap.id !== typeWallet.HBAR
-                    ? `0x${AccountId.fromString(pool.tokens.swap.id).toSolidityAddress()}`.toLowerCase()
-                    : ethers.constants.AddressZero;
-                // @ts-ignore
-                _hSuitePools[`${token1Addr}_${token2Addr}`] = pool.walletId;
-            });
-            setHSuitePools(_hSuitePools);
         });
     }, [network]);
 
@@ -225,7 +205,6 @@ function App() {
                             wallet={wallet}
                             tokens={tokens}
                             network={network}
-                            hSuitePools={hSuitePools}
                             rate={rate}
                             providers={providers}
                         />
