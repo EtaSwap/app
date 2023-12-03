@@ -1,17 +1,19 @@
-import {Input, Modal} from "antd";
-import {oracleSettings} from "../../swap.utils";
-import {useEffect} from "react";
-import {IToken} from "../../../../Models";
+import { Input, Modal } from "antd";
+import { useEffect } from "react";
+import { IToken } from "../../../../Models";
 
-export function TokensModal ({isOpen,
-                                 setSearchPhrase,
-                                 searchPhrase,
-                                 modifyToken,
-                                 setIsOpen,
-                                 hiddenTokens,
-                                 tokens,
-                                 network,
-                                 setHiddenTokens}: any) {
+export function TokensModal({
+                                isOpen,
+                                setSearchPhrase,
+                                searchPhrase,
+                                modifyToken,
+                                setIsOpen,
+                                hiddenTokens,
+                                tokens,
+                                network,
+                                setHiddenTokens,
+                                providers
+                            }: any) {
 
     useEffect(() => {
         const lowerCase = searchPhrase.toLowerCase();
@@ -63,9 +65,8 @@ export function TokensModal ({isOpen,
                             </div>
                             <div className='tokenChoiceProviders'>
                                 {token.providers.map((provider: string) => {
-                                    if (oracleSettings(network)[provider]) {
-                                        return <img src={oracleSettings(network)[provider].icon} alt={provider}
-                                                    key={provider}/>
+                                    if (providers[provider].icon) {
+                                        return <img src={providers[provider].icon} alt={provider} key={provider}/>
                                     }
                                 })}
                             </div>

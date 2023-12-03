@@ -12,6 +12,7 @@ import axios from "axios";
 import {TokenId} from "@hashgraph/sdk";
 import {sqrt} from "../../utils/utils";
 import {IToken} from "../../Models";
+import { Provider } from '../../class/providers/provider';
 
 export const defaultOracleContracts = {
     SaucerSwap: null,
@@ -28,11 +29,6 @@ export const defaultPrices = {
 
 export const exchange = (network: any) => network === NETWORKS.MAINNET ? '0.0.3745835' : '0.0.1772118';
 
-export const feeWallet = (network: any) => network === NETWORKS.MAINNET ? '0.0.3745833' : '0.0.1772102';
-
-export const hSuiteApiKey = (network: any) => network === NETWORKS.MAINNET ? 'd5db1f4a-8791-4f12-925f-920754547ce7' : '25f54dd3-47a1-4667-b9d8-2863585bc460';
-
-
 export const defaultTokens = (tokensMap: any) => ([...tokensMap]
     .map(wrap => wrap[1])
     .sort((a, b) =>
@@ -45,7 +41,7 @@ export const defaultTokens = (tokensMap: any) => ([...tokensMap]
     )
 );
 
-export const getSortedPrices = (prices: any, tokenOne: any, tokenTwo: any, tokenTwoAmount: any, tokenOneAmount: any, feeOnTransfer: any, network: any) => {
+export const getSortedPrices = (prices: any, tokenOne: any, tokenTwo: any, tokenTwoAmount: any, tokenOneAmount: any, feeOnTransfer: any, network: any, providers: Record<string, Provider>) => {
     const sortedPrices = Object.keys(prices)
         .filter(name => prices[name]?.rate && !prices[name]?.rate?.eq(0))
         .sort((a, b) => prices[b].rate.sub(prices[a].rate))
@@ -57,7 +53,7 @@ export const getSortedPrices = (prices: any, tokenOne: any, tokenTwo: any, token
     }
     const pricesRes = [];
     for (let {name, price, weight} of sortedPrices) {
-        if (!price || !tokenOne?.decimals || !tokenTwo?.decimals || !oracleSettings(network)[name]) {
+        if (!price || !tokenOne?.decimals || !tokenTwo?.decimals) {// || !oracleSettings(network)[name]) {
             continue;
         }
 
@@ -68,7 +64,7 @@ export const getSortedPrices = (prices: any, tokenOne: any, tokenTwo: any, token
         const Vb = volume.div(Va);
 
         if (feeOnTransfer) {
-            const amountOut = BigNumber.from(ethers.utils.parseUnits(tokenTwoAmount.toString(), tokenTwo.decimals)).mul(1000 + oracleSettings(network)[name].feePromille + oracleSettings(network)[name].feeDEXPromille).div(1000);
+            const amountOut = BigNumber.from(ethers.utils.parseUnits(tokenTwoAmount.toString(), tokenTwo.decimals)).mul(1000 + providers[name].feePromille + providers[name].feeDEXPromille).div(1000);
             const VaAfter = amountOut.mul(Va).div(Vb.sub(amountOut));
             const priceImpact = amountOut.mul(10000).div(Vb);
             priceRes.amountOut = VaAfter;
@@ -77,7 +73,7 @@ export const getSortedPrices = (prices: any, tokenOne: any, tokenTwo: any, token
                 pricesRes.push(priceRes);
             }
         } else {
-            const amountIn = BigNumber.from(ethers.utils.parseUnits(tokenOneAmount.toString(), tokenOne.decimals)).mul(1000 - oracleSettings(network)[name].feePromille - oracleSettings(network)[name].feeDEXPromille).div(1000);
+            const amountIn = BigNumber.from(ethers.utils.parseUnits(tokenOneAmount.toString(), tokenOne.decimals)).mul(1000 - providers[name].feePromille - providers[name].feeDEXPromille).div(1000);
             const VbAfter = amountIn.mul(Vb).div(Va.add(amountIn));
             const priceImpact = VbAfter.mul(10000).div(Vb);
             priceRes.amountOut = VbAfter;
@@ -91,109 +87,20 @@ export const getSortedPrices = (prices: any, tokenOne: any, tokenTwo: any, token
 }
 
 
-export const swapTokens = async (tokenA: any, tokenB: any, hSuitePools: any, network: any, oracleContracts: any) => {
+export const swapTokens = async (tokenA: any, tokenB: any, hSuitePools: any, network: any, oracleContracts: any, providers: Record<string, Provider>) => {
     const hSuitePool = hSuitePools[`${tokenA}_${tokenB}`] || hSuitePools[`${tokenB}_${tokenA}`] || null;
 
-    const oraclePromises = [
-        ...Object.keys(oracleContracts).map(async i => {
-            let _tokenA = tokenA;
-            let _tokenB = tokenB;
-            if (tokenA === ethers.constants.AddressZero) {
-                _tokenA = oracleSettings(network)[i].whbar;
-            }
-            if (tokenB === ethers.constants.AddressZero) {
-                _tokenB = oracleSettings(network)[i].whbar;
-            }
-            return oracleContracts[i].getRate(_tokenA, _tokenB);
-        }),
-    ];
-    if (hSuitePool) {
-        oraclePromises.push(axios.get(`https://${network}.mirrornode.hedera.com/api/v1/accounts/${hSuitePool}`));
-    }
-
-    const res: any = await Promise.allSettled(oraclePromises);
-
-    let hSuitePriceArr: any = null;
-    if (res[network === NETWORKS.MAINNET ? 3 : 2]?.status === 'fulfilled') {
-        const balance = res[network === NETWORKS.MAINNET ? 3 : 2].value.data.balance;
-        let balanceA = 0;
-        let balanceB = 0;
-        if (tokenA === ethers.constants.AddressZero) {
-            balanceA = balance.balance;
-        } else {
-            const idA = TokenId.fromSolidityAddress(tokenA).toString();
-            balanceA = balance.tokens.find((token: IToken) => token.token_id === idA)?.balance;
-        }
-        if (tokenB === ethers.constants.AddressZero) {
-            balanceB = balance.balance;
-        } else {
-            const idB = TokenId.fromSolidityAddress(tokenB).toString();
-            balanceB = balance.tokens.find((token: IToken) => token.token_id === idB)?.balance;
-        }
-
-        hSuitePriceArr = [];
-        hSuitePriceArr['rate'] = BigNumber.from(balanceB).mul(BigNumber.from('1000000000000000000')).div(BigNumber.from(balanceA));
-        hSuitePriceArr['weight'] = sqrt(BigNumber.from(balanceA).mul(balanceB));
-    }
+    const res = await Promise.allSettled([
+        oracleContracts.SaucerSwap ? providers.SaucerSwap.getPrice(tokenA, tokenB, network, oracleContracts.SaucerSwap) : null,
+        oracleContracts.Pangolin ? providers.Pangolin.getPrice(tokenA, tokenB, network, oracleContracts.Pangolin) : null,
+        !oracleContracts.HeliSwap || network === NETWORKS.TESTNET ? null : providers.HeliSwap.getPrice(tokenA, tokenB, network, oracleContracts.HeliSwap),
+        oracleContracts.HSuite ? providers.HSuite.getPrice(tokenA, tokenB, network, oracleContracts.HSuite) : null,
+    ]);
 
     return {
         SaucerSwap: res[0].status === 'fulfilled' ? res[0].value : null,
         Pangolin: res[1].status === 'fulfilled' ? res[1].value : null,
-        HeliSwap: network === NETWORKS.MAINNET ? (res[2]?.status === 'fulfilled' ? res[2].value : null) : null,
-        HSuite: hSuitePriceArr,
+        HeliSwap: network === NETWORKS.TESTNET ? null : (res[2]?.status === 'fulfilled' ? res[2].value : null),
+        HSuite: res[3].status === 'fulfilled' ? res[3].value : null,
     }
 }
-
-
-export const oracleSettings = (network: any): any => network === NETWORKS.MAINNET ? {
-    SaucerSwap: {
-        icon: SaucerSwapLogo,
-        aggregatorId: 'SaucerSwap',
-        feePromille: 3,
-        feeDEXPromille: 3,
-        whbar: '0x0000000000000000000000000000000000163b5a',
-    },
-    Pangolin: {
-        icon: PangolinLogo,
-        aggregatorId: 'Pangolin',
-        feePromille: 3,
-        feeDEXPromille: 3,
-        whbar: '0x00000000000000000000000000000000001a8837',
-    },
-    HeliSwap: {
-        icon: HeliSwapLogo,
-        aggregatorId: 'HeliSwap',
-        feePromille: 5,
-        feeDEXPromille: 3,
-        whbar: '0x00000000000000000000000000000000002cc823',
-    },
-    HSuite: {
-        icon: HSuiteLogo,
-        aggregatorId: 'HSuite',
-        feePromille: 3,
-        feeDEXPromille: 3,
-        whbar: '',
-    },
-} : {
-    SaucerSwap: {
-        icon: SaucerSwapLogo,
-        aggregatorId: 'SaucerSwap',
-        feePromille: 3,
-        feeDEXPromille: 3,
-        whbar: '0x000000000000000000000000000000000000e6a2',
-    },
-    Pangolin: {
-        icon: PangolinLogo,
-        aggregatorId: 'Pangolin',
-        feePromille: 3,
-        feeDEXPromille: 3,
-        whbar: '0x000000000000000000000000000000000002690a',
-    },
-    HSuite: {
-        icon: HSuiteLogo,
-        aggregatorId: 'HSuite',
-        feePromille: 3,
-        feeDEXPromille: 3,
-        whbar: '',
-    },
-};

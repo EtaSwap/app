@@ -1,7 +1,7 @@
-import {Input, Popover, message} from 'antd'
-import {ArrowDownOutlined} from '@ant-design/icons'
-import {useState, useEffect, useRef} from 'react'
-import {BigNumber, ethers} from 'ethers';
+import { Input, Popover, message } from 'antd'
+import { ArrowDownOutlined } from '@ant-design/icons'
+import { useState, useEffect, useRef } from 'react'
+import { BigNumber, ethers } from 'ethers';
 import {
     ContractExecuteTransaction,
     ContractFunctionParameters,
@@ -9,21 +9,20 @@ import {
 } from '@hashgraph/sdk';
 import axios from 'axios';
 import BasicOracleABI from '../../assets/abi/basic-oracle-abi.json';
-import {NETWORKS, GAS_LIMITS, HSUITE_NODES} from '../../utils/constants';
-import {SmartNodeSocket} from '../../class/smart-node-socket';
-import {useLoader} from "../../components/Loader/LoaderContext";
-import {useToaster} from "../../components/Toaster/ToasterContext";
+import { NETWORKS, GAS_LIMITS, HSUITE_NODES } from '../../utils/constants';
+import { SmartNodeSocket } from '../../class/smart-node-socket';
+import { useLoader } from "../../components/Loader/LoaderContext";
+import { useToaster } from "../../components/Toaster/ToasterContext";
 import {
     defaultOracleContracts,
     defaultPrices,
     defaultTokens,
     exchange, getSortedPrices,
-    hSuiteApiKey,
     swapTokens
 } from "./swap.utils";
-import {SlippageTolerance} from "./Components/SlippageTolerance/SlippageTolerance";
-import {TokensModal} from "./Components/TokensModal/TokensModal";
-import {toastTypes} from "../../Models/Toast";
+import { SlippageTolerance } from "./Components/SlippageTolerance/SlippageTolerance";
+import { TokensModal } from "./Components/TokensModal/TokensModal";
+import { toastTypes } from "../../Models/Toast";
 import { Token } from '../../types/token';
 import { Provider } from '../../class/providers/provider';
 
@@ -36,9 +35,9 @@ export interface ISwapProps {
     providers: Record<string, Provider>;
 }
 
-function Swap({wallet, tokens: tokensMap, network, hSuitePools, rate, providers}: ISwapProps) {
-    const {loading, showLoader, hideLoader} = useLoader();
-    const {showToast} = useToaster();
+function Swap({ wallet, tokens: tokensMap, network, hSuitePools, rate, providers }: ISwapProps) {
+    const { loading, showLoader, hideLoader } = useLoader();
+    const { showToast } = useToaster();
 
     const tokens = defaultTokens(tokensMap);
     const [tokenOneAmount, setTokenOneAmount] = useState<any>(0)
@@ -68,7 +67,7 @@ function Swap({wallet, tokens: tokensMap, network, hSuitePools, rate, providers}
             try {
                 showLoader();
                 let randomNode = HSUITE_NODES[network][Math.floor(Math.random() * HSUITE_NODES[network].length)];
-                let nodeSocket: any = new SmartNodeSocket(randomNode, wallet.address, hSuiteApiKey(network));
+                let nodeSocket: any = new SmartNodeSocket(randomNode, wallet.address, providers.HSuite.getApiKey(network));
 
                 nodeSocket.getSocket('gateway').on('connect', async () => {
                     console.log(`account ${wallet.address} connected to node ${nodeSocket.getNode().operator}`);
@@ -188,12 +187,12 @@ function Swap({wallet, tokens: tokensMap, network, hSuitePools, rate, providers}
         if (isLoader) {
             showLoader();
         }
-        const result = await swapTokens(tokenA, tokenB, hSuitePools, network, oracleContracts);
+        const result = await swapTokens(tokenA, tokenB, hSuitePools, network, oracleContracts, providers);
 
         if (isLoader) {
             hideLoader();
         }
-        setPrices(result);
+        setPrices(result as any);
     }
 
     const convertPrice = (price: any) => {
@@ -238,7 +237,7 @@ function Swap({wallet, tokens: tokensMap, network, hSuitePools, rate, providers}
     const fetchDex = async () => {
         const deadline = Math.floor(Date.now() / 1000) + 1000;
 
-        const bestRate = getSortedPrices(prices, tokenOne, tokenTwo, tokenTwoAmount, tokenOneAmount, feeOnTransfer, network)?.[0];
+        const bestRate = getSortedPrices(prices, tokenOne, tokenTwo, tokenTwoAmount, tokenOneAmount, feeOnTransfer, network, providers)?.[0];
         if (!bestRate?.price || bestRate.price.eq(0)) {
             messageApi.open({
                 type: 'error',
@@ -426,16 +425,16 @@ function Swap({wallet, tokens: tokensMap, network, hSuitePools, rate, providers}
     }
 
     const getBestPriceDescr = () => {
-        const bestPrice = getSortedPrices(prices, tokenOne, tokenTwo, tokenTwoAmount, tokenOneAmount, feeOnTransfer, network)?.[0];
+        const bestPrice = getSortedPrices(prices, tokenOne, tokenTwo, tokenTwoAmount, tokenOneAmount, feeOnTransfer, network, providers)?.[0];
         return parseFloat(convertPrice(bestPrice?.price))?.toFixed(6);
     }
 
     const getBestImpactError = () => {
-        return (getSortedPrices(prices, tokenOne, tokenTwo, tokenTwoAmount, tokenOneAmount, feeOnTransfer, network)?.[0]?.priceImpact || BigNumber.from(0)).gt(2000);
+        return (getSortedPrices(prices, tokenOne, tokenTwo, tokenTwoAmount, tokenOneAmount, feeOnTransfer, network, providers)?.[0]?.priceImpact || BigNumber.from(0)).gt(2000);
     }
 
     const swapDisabled = () => {
-        const bestPrice = getSortedPrices(prices, tokenOne, tokenTwo, tokenTwoAmount, tokenOneAmount, feeOnTransfer, network)?.[0];
+        const bestPrice = getSortedPrices(prices, tokenOne, tokenTwo, tokenTwoAmount, tokenOneAmount, feeOnTransfer, network, providers)?.[0];
         return !tokenOneAmount
             || !wallet?.address
             || !bestPrice?.price
@@ -443,7 +442,7 @@ function Swap({wallet, tokens: tokensMap, network, hSuitePools, rate, providers}
     }
 
     const getNetworkFee = () => {
-        const bestPrice = getSortedPrices(prices, tokenOne, tokenTwo, tokenTwoAmount, tokenOneAmount, feeOnTransfer, network)?.[0];
+        const bestPrice = getSortedPrices(prices, tokenOne, tokenTwo, tokenTwoAmount, tokenOneAmount, feeOnTransfer, network, providers)?.[0];
         if (!rate || !tokenOne || !tokenTwo || !bestPrice?.name) {
             return 0;
         }
@@ -470,7 +469,7 @@ function Swap({wallet, tokens: tokensMap, network, hSuitePools, rate, providers}
 
     useEffect(() => {
         if (!feeOnTransfer) {
-            const bestReceive = getSortedPrices(prices, tokenOne, tokenTwo, tokenTwoAmount, tokenOneAmount, feeOnTransfer, network)?.[0]?.amountOut?.toString();
+            const bestReceive = getSortedPrices(prices, tokenOne, tokenTwo, tokenTwoAmount, tokenOneAmount, feeOnTransfer, network, providers)?.[0]?.amountOut?.toString();
             if (tokenOneAmount && bestReceive && parseFloat(bestReceive) !== 0) {
                 setTokenTwoAmount(ethers.utils.formatUnits(bestReceive, tokenTwo?.decimals));
             } else {
@@ -481,7 +480,7 @@ function Swap({wallet, tokens: tokensMap, network, hSuitePools, rate, providers}
 
     useEffect(() => {
         if (feeOnTransfer) {
-            const bestSpend = getSortedPrices(prices, tokenOne, tokenTwo, tokenTwoAmount, tokenOneAmount, feeOnTransfer, network)?.[0]?.amountOut?.toString();
+            const bestSpend = getSortedPrices(prices, tokenOne, tokenTwo, tokenTwoAmount, tokenOneAmount, feeOnTransfer, network, providers)?.[0]?.amountOut?.toString();
             if (tokenTwoAmount && bestSpend && parseFloat(bestSpend) !== 0) {
                 setTokenOneAmount(ethers.utils.formatUnits(bestSpend, tokenOne?.decimals));
             } else {
@@ -523,15 +522,18 @@ function Swap({wallet, tokens: tokensMap, network, hSuitePools, rate, providers}
     return (
         <>
             {contextHolder}
-            <TokensModal hiddenTokens={hiddenTokens}
-                         modifyToken={modifyToken}
-                         tokens={tokens}
-                         isOpen={isOpen}
-                         setIsOpen={setIsOpen}
-                         searchPhrase={searchPhrase}
-                         setSearchPhrase={setSearchPhrase}
-                         setHiddenTokens={setHiddenTokens}
-                         network={network}/>
+            <TokensModal
+                hiddenTokens={hiddenTokens}
+                modifyToken={modifyToken}
+                tokens={tokens}
+                isOpen={isOpen}
+                setIsOpen={setIsOpen}
+                searchPhrase={searchPhrase}
+                setSearchPhrase={setSearchPhrase}
+                setHiddenTokens={setHiddenTokens}
+                network={network}
+                providers={providers}
+            />
             <div className='tradeBox'>
                 <div className='tradeBoxHeader'>
                     <h4>Swap</h4>
@@ -573,7 +575,7 @@ function Swap({wallet, tokens: tokensMap, network, hSuitePools, rate, providers}
                                 onClick={() => switchAllRates()}>{checkAllRatesOpen ? 'Hide all rates' : 'Show all rates'}</button>
                     </div>
                     {checkAllRatesOpen
-                        ? getSortedPrices(prices, tokenOne, tokenTwo, tokenTwoAmount, tokenOneAmount, feeOnTransfer, network).map(({
+                        ? getSortedPrices(prices, tokenOne, tokenTwo, tokenTwoAmount, tokenOneAmount, feeOnTransfer, network, providers).map(({
                                                                                                                                        name,
                                                                                                                                        price,
                                                                                                                                        lowVolume,
@@ -599,7 +601,7 @@ function Swap({wallet, tokens: tokensMap, network, hSuitePools, rate, providers}
                 <div className='networkFee'>Network fee: ≈{getNetworkFee().toFixed(4)} HBAR</div>
                 <div className="refreshTicker">
                     <div className={isRefreshAnimationActive ? 'active' : ''}
-                         style={{animationDuration: parseInt(String((25000 + 30 * refreshCount.current * refreshCount.current) / 1000)) + 's'}}></div>
+                         style={{ animationDuration: parseInt(String((25000 + 30 * refreshCount.current * refreshCount.current) / 1000)) + 's' }}></div>
                 </div>
                 <div className='assocWarning'>&#9432; Make sure selected tokens are associated to your account.</div>
                 {getBestImpactError()
