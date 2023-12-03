@@ -19,7 +19,6 @@ import {
     defaultTokens,
     exchange, getSortedPrices,
     hSuiteApiKey,
-    oracles,
     swapTokens
 } from "./swap.utils";
 import {SlippageTolerance} from "./Components/SlippageTolerance/SlippageTolerance";
@@ -502,12 +501,12 @@ function Swap({wallet, tokens: tokensMap, network, hSuitePools, rate, providers}
         setTokenTwoAmount(0);
         const provider = new ethers.providers.JsonRpcProvider(`https://${network}.hashio.io/api`);
         setOracleContracts(network === NETWORKS.MAINNET ? {
-            SaucerSwap: new ethers.Contract(oracles(network).SaucerSwap, BasicOracleABI, provider),
-            Pangolin: new ethers.Contract(oracles(network).Pangolin, BasicOracleABI, provider),
-            HeliSwap: new ethers.Contract(oracles(network).HeliSwap, BasicOracleABI, provider),
+            SaucerSwap: new ethers.Contract(providers.SaucerSwap.getOracle(network)!, BasicOracleABI, provider),
+            Pangolin: new ethers.Contract(providers.Pangolin.getOracle(network)!, BasicOracleABI, provider),
+            HeliSwap: new ethers.Contract(providers.HeliSwap.getOracle(network)!, BasicOracleABI, provider),
         } : {
-            SaucerSwap: new ethers.Contract(oracles(network).SaucerSwap, BasicOracleABI, provider),
-            Pangolin: new ethers.Contract(oracles(network).Pangolin, BasicOracleABI, provider),
+            SaucerSwap: new ethers.Contract(providers.SaucerSwap.getOracle(network)!, BasicOracleABI, provider),
+            Pangolin: new ethers.Contract(providers.Pangolin.getOracle(network)!, BasicOracleABI, provider),
         });
     }, [wallet, tokensMap]);
 

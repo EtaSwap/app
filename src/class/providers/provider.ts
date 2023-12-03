@@ -24,4 +24,8 @@ export abstract class Provider {
     public getWHBAR(network: string): string | null {
         return this.props[network].whbar;
     }
+
+    public getOracle(network: string): string | null {
+        return this.props[network].oracle;
+    }
 }

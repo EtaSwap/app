@@ -13,15 +13,6 @@ import {TokenId} from "@hashgraph/sdk";
 import {sqrt} from "../../utils/utils";
 import {IToken} from "../../Models";
 
-export const oracles = (network: any): any => network === NETWORKS.MAINNET ? {
-    SaucerSwap: '0xc47037963fad3a5397cca3fef5c1c95839dc6363',
-    Pangolin: '0xfa7206b4c9d46af2e2f7f3b1bd4d3aa2aeca6e71',
-    HeliSwap: '0x51851a39da39c53f9b564cfdf7e6f55dc8850225',
-} : {
-    SaucerSwap: '0x4afa14cbA5043BE757c028b0D0B5148df12ce9e4',
-    Pangolin: '0x9dAdB3285AC2d65A2cbB1341Aa0c14edc8c2F2b9',
-};
-
 export const defaultOracleContracts = {
     SaucerSwap: null,
     Pangolin: null,
