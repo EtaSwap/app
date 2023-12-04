@@ -33,6 +33,16 @@ export interface IGASLIMITS {
     };
 }
 
+export interface IAssociatedButton{
+    address: string;
+    name: string;
+    icon: string;
+    providers: string[];
+    solidityAddress: string;
+    decimals: number;
+}
+
+
 export interface IWallet {
     name: string;
     address: string;

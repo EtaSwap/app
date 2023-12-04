@@ -25,6 +25,7 @@ import { TokensModal } from "./Components/TokensModal/TokensModal";
 import { toastTypes } from "../../models/Toast";
 import { Token } from '../../types/token';
 import { Provider } from '../../class/providers/provider';
+import {IAssociatedButton} from "../../models";
 
 export interface ISwapProps {
     wallet: any;
@@ -45,6 +46,7 @@ function Swap({ wallet, tokens: tokensMap, network, rate, providers }: ISwapProp
     const [tokenOne, setTokenOne] = useState(tokens[1])
 
     const [oracleContracts, setOracleContracts] = useState<any>(defaultOracleContracts);
+    const [associatedButtons, setAssociatedButtons] = useState<IAssociatedButton[]>([]);
     const [slippage, setSlippage] = useState(1);
     const [feeOnTransfer, setFeeOnTransfer] = useState<any>(false);
     const [messageApi, contextHolder] = message.useMessage()
@@ -434,7 +436,15 @@ function Swap({ wallet, tokens: tokensMap, network, rate, providers }: ISwapProp
 
     const swapDisabled = () => {
         const bestPrice = getSortedPrices(prices, tokenOne, tokenTwo, tokenTwoAmount, tokenOneAmount, feeOnTransfer, network, providers)?.[0];
+        let availableTokens = false;
+        if(wallet.associatedTokens && tokenOne && tokenTwo){
+            if(!wallet.associatedTokens.has(tokenTwo.address)){
+                availableTokens = true;
+            }
+        }
+
         return !tokenOneAmount
+            || availableTokens
             || !wallet?.address
             || !bestPrice?.price
             || bestPrice?.priceImpact?.gt(2000);
@@ -489,6 +499,19 @@ function Swap({ wallet, tokens: tokensMap, network, rate, providers }: ISwapProp
     }, [tokenTwoAmount]);
 
     useEffect(() => {
+        if(wallet.associatedTokens && tokenOne && tokenTwo){
+            let tokens: IAssociatedButton[] = [];
+            if(!wallet.associatedTokens.has(tokenOne.address)){
+                tokens.push({...tokenOne});
+            }
+            if(!wallet.associatedTokens.has(tokenTwo.address)){
+                tokens.push({...tokenTwo});
+            }
+            setAssociatedButtons(tokens);
+        }
+    },[tokenOne, tokenTwo]);
+
+    useEffect(() => {
         setTokenOne(tokens[0]);
         setTokenTwo(tokens[13]);
         fetchDexSwap(tokens[0]?.solidityAddress, tokens[13]?.solidityAddress)
@@ -506,7 +529,6 @@ function Swap({ wallet, tokens: tokensMap, network, rate, providers }: ISwapProp
             SaucerSwap: new ethers.Contract(providers.SaucerSwap.getOracle(network)!, BasicOracleABI, provider),
             Pangolin: new ethers.Contract(providers.Pangolin.getOracle(network)!, BasicOracleABI, provider),
         });
-
     }, [wallet, tokensMap]);
 
 
@@ -569,9 +591,10 @@ function Swap({ wallet, tokens: tokensMap, network, rate, providers }: ISwapProp
                         {tokenTwo?.symbol}
                     </div>
                 </div>
-                <div>
-                    <p>Test</p>
-                </div>
+                {associatedButtons.map((e: IAssociatedButton) => <div>
+                    <p>Token {e.name} is not associated with your account</p>
+                </div>)}
+
 
                 <div className='ratesLogoWrapper'>
                     <div className='ratesLogoInner'>

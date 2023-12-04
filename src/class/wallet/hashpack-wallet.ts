@@ -14,7 +14,7 @@ export class HashpackWallet {
     hashconnect: any;
     setWallet: any;
     network: any;
-    associatedTokens: any[] = [];
+    associatedTokens: any[] | null = null;
 
     constructor(setWallet: any) {
         this.hashconnect = new HashConnect();

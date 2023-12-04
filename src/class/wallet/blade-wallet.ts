@@ -41,7 +41,6 @@ export class BladeWallet {
         this.address = accountIds?.[0];
         this.signer = this.bladeConnector.getSigner();
 
-        console.log(this.signer, );
         this.refreshWallet();
     }
 
