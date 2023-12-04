@@ -619,7 +619,7 @@ function Swap({ wallet, tokens: tokensMap, network, rate, providers }: ISwapProp
                 </>
 
                 <button className='swapButton' onClick={fetchDex} disabled={swapDisabled()}>
-                    { true ? 'This token is not associated with your account' : 'Swap'}
+                    Swap
                 </button>
             </div>
         </>
