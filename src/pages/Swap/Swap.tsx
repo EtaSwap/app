@@ -507,8 +507,6 @@ function Swap({ wallet, tokens: tokensMap, network, rate, providers }: ISwapProp
             Pangolin: new ethers.Contract(providers.Pangolin.getOracle(network)!, BasicOracleABI, provider),
         });
 
-        console.log();
-        console.log(tokens, wallet.associatedTokens);
     }, [wallet, tokensMap]);
 
 

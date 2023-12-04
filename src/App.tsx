@@ -147,10 +147,6 @@ function App() {
         });
     }, [network]);
 
-    useEffect(() => {
-        console.log(tokens);
-    }, [tokens]);
-
 
     return (
         <div className="App">
