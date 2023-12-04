@@ -40,6 +40,8 @@ export class BladeWallet {
         const accountIds = await this.bladeConnector.createSession({ network });
         this.address = accountIds?.[0];
         this.signer = this.bladeConnector.getSigner();
+
+        console.log(this.signer, );
         this.refreshWallet();
     }
 
