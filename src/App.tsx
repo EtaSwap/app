@@ -32,6 +32,7 @@ import { HeliSwap } from './class/providers/heli-swap';
 import { HSuite } from './class/providers/h-suite';
 import { Token } from './types/token';
 import { HeliSwapGetToken, HSuiteGetToken, PangolinGetToken, SaucerSwapGetToken } from './class/providers/types/tokens';
+import {heliSwapDefault, hsuitDefault, pangolinDefault, saucerMapDefault} from "./app.utils";
 
 function App() {
     const [wallet, setWallet] = useState<IWallet>({
@@ -60,54 +61,10 @@ function App() {
         },
     });
     const [providers] = useState({
-        SaucerSwap: new SaucerSwap({
-            mainnet: {
-                getTokensUrl: 'https://api.saucerswap.finance/tokens',
-                whbar: '0x0000000000000000000000000000000000163b5a',
-                oracle: '0xc47037963fad3a5397cca3fef5c1c95839dc6363',
-            },
-            testnet: {
-                getTokensUrl: 'https://test-api.saucerswap.finance/tokens',
-                whbar: '0x000000000000000000000000000000000000e6a2',
-                oracle: '0x4afa14cbA5043BE757c028b0D0B5148df12ce9e4',
-            }
-        }),
-        Pangolin: new Pangolin({
-            mainnet: {
-                getTokensUrl: 'https://raw.githubusercontent.com/pangolindex/tokenlists/main/pangolin.tokenlist.json',
-                whbar: '0x00000000000000000000000000000000001a8837',
-                oracle: '0xfa7206b4c9d46af2e2f7f3b1bd4d3aa2aeca6e71',
-            },
-            testnet: {
-                getTokensUrl: 'https://raw.githubusercontent.com/pangolindex/tokenlists/main/pangolin.tokenlist.json',
-                whbar: '0x000000000000000000000000000000000002690a',
-                oracle: '0x9dAdB3285AC2d65A2cbB1341Aa0c14edc8c2F2b9',
-            }
-        }),
-        HeliSwap: new HeliSwap({
-            mainnet: {
-                getTokensUrl: 'https://heliswap.infura-ipfs.io/ipfs/Qmf5u6N2ohZnBc1yxepYzS3RYagkMZbU5dwwU4TGxXt9Lf',
-                whbar: '0x00000000000000000000000000000000002cc823',
-                oracle: '0x51851a39da39c53f9b564cfdf7e6f55dc8850225',
-            },
-            testnet: {
-                getTokensUrl: null,
-                whbar: null,
-                oracle: null,
-            }
-        }),
-        HSuite: new HSuite({
-            mainnet: {
-                getTokensUrl: 'https://mainnet-sn1.hbarsuite.network/tokens/list',
-                whbar: null,
-                oracle: null,
-            },
-            testnet: {
-                getTokensUrl: 'https://testnet-sn1.hbarsuite.network/tokens/list',
-                whbar: null,
-                oracle: null,
-            }
-        }),
+        SaucerSwap: new SaucerSwap(saucerMapDefault),
+        Pangolin: new Pangolin(pangolinDefault),
+        HeliSwap: new HeliSwap(heliSwapDefault),
+        HSuite: new HSuite(hsuitDefault),
     });
 
     useEffect(() => {
@@ -189,6 +146,11 @@ function App() {
             setTokens(tokenMap);
         });
     }, [network]);
+
+    useEffect(() => {
+        console.log(tokens);
+    }, [tokens]);
+
 
     return (
         <div className="App">
