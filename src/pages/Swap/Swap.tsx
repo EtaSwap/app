@@ -5,7 +5,7 @@ import { BigNumber, ethers } from 'ethers';
 import {
     ContractExecuteTransaction,
     ContractFunctionParameters,
-    AccountAllowanceApproveTransaction, Transaction, TokenId,
+    AccountAllowanceApproveTransaction, Transaction,
 } from '@hashgraph/sdk';
 import axios from 'axios';
 import BasicOracleABI from '../../assets/abi/basic-oracle-abi.json';
@@ -22,7 +22,7 @@ import {
 } from "./swap.utils";
 import { SlippageTolerance } from "./Components/SlippageTolerance/SlippageTolerance";
 import { TokensModal } from "./Components/TokensModal/TokensModal";
-import { toastTypes } from "../../Models/Toast";
+import { toastTypes } from "../../models/Toast";
 import { Token } from '../../types/token';
 import { Provider } from '../../class/providers/provider';
 
@@ -506,7 +506,11 @@ function Swap({ wallet, tokens: tokensMap, network, rate, providers }: ISwapProp
             SaucerSwap: new ethers.Contract(providers.SaucerSwap.getOracle(network)!, BasicOracleABI, provider),
             Pangolin: new ethers.Contract(providers.Pangolin.getOracle(network)!, BasicOracleABI, provider),
         });
+
+        console.log();
+        console.log(tokens, wallet.associatedTokens);
     }, [wallet, tokensMap]);
+
 
     useEffect(() => {
         setIsRefreshAnimationActive(false);
@@ -567,6 +571,10 @@ function Swap({ wallet, tokens: tokensMap, network, rate, providers }: ISwapProp
                         {tokenTwo?.symbol}
                     </div>
                 </div>
+                <div>
+                    <p>Test</p>
+                </div>
+
                 <div className='ratesLogoWrapper'>
                     <div className='ratesLogoInner'>
                         <span className='ratesLogoTop'>Best rate: {getBestPriceDescr()}</span>
@@ -575,12 +583,12 @@ function Swap({ wallet, tokens: tokensMap, network, rate, providers }: ISwapProp
                     </div>
                     {checkAllRatesOpen
                         ? getSortedPrices(prices, tokenOne, tokenTwo, tokenTwoAmount, tokenOneAmount, feeOnTransfer, network, providers).map(({
-                                                                                                                                       name,
-                                                                                                                                       price,
-                                                                                                                                       lowVolume,
-                                                                                                                                       amountOut,
-                                                                                                                                       priceImpact
-                                                                                                                                   }) =>
+                                                                                                                                                  name,
+                                                                                                                                                  price,
+                                                                                                                                                  lowVolume,
+                                                                                                                                                  amountOut,
+                                                                                                                                                  priceImpact
+                                                                                                                                              }) =>
                             <div
                                 className='ratesLogo' key={name}>
                                 <img className='ratesLogoIcon' title={name} src={providers[name].icon}
@@ -600,7 +608,7 @@ function Swap({ wallet, tokens: tokensMap, network, rate, providers }: ISwapProp
                 <div className='networkFee'>Network fee: ≈{getNetworkFee().toFixed(4)} HBAR</div>
                 <div className="refreshTicker">
                     <div className={isRefreshAnimationActive ? 'active' : ''}
-                         style={{ animationDuration: parseInt(String((25000 + 30 * refreshCount.current * refreshCount.current) / 1000)) + 's' }}></div>
+                         style={{animationDuration: parseInt(String((25000 + 30 * refreshCount.current * refreshCount.current) / 1000)) + 's'}}></div>
                 </div>
                 <div className='assocWarning'>&#9432; Make sure selected tokens are associated to your account.</div>
                 {getBestImpactError()
@@ -609,8 +617,9 @@ function Swap({ wallet, tokens: tokensMap, network, rate, providers }: ISwapProp
                 }
                 <>
                 </>
+
                 <button className='swapButton' onClick={fetchDex} disabled={swapDisabled()}>
-                    Swap
+                    { true ? 'This token is not associated with your account' : 'Swap'}
                 </button>
             </div>
         </>

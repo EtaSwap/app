@@ -9,7 +9,7 @@ import Disconnect from '../../assets/img/disconnect.png'
 import './Header.css'
 import {ConnectWalletModal} from "./components/ConnectWalletModal";
 import {SelectNetworkModal} from "./components/SelectNetworkModal";
-import {IWallet, IWallets} from "../../Models";
+import {IWallet, IWallets} from "../../models";
 
 export interface IHeaderProps {
     wallet: IWallet;

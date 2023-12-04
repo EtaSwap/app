@@ -1,6 +1,6 @@
 import { Input, Modal } from "antd";
 import { useEffect } from "react";
-import { IToken } from "../../../../Models";
+import { IToken } from "../../../../models";
 
 export function TokensModal({
                                 isOpen,

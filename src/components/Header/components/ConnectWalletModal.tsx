@@ -1,6 +1,6 @@
 import {Modal} from "antd";
 import React from "react";
-import {IWallets, IWalletsInfo} from "../../../Models";
+import {IWallets, IWalletsInfo} from "../../../models";
 
 export interface IConnectWalletModalProps{
     wallets: IWallets;

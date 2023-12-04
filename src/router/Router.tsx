@@ -1,8 +1,8 @@
-import React, {Suspense, lazy} from 'react';
+import React from 'react';
 import Swap from "../pages/Swap/Swap";
 import Tokens from "../pages/Tokens/Tokens";
 import {Route, Routes} from "react-router-dom";
-import {IToken, IWallet} from "../Models";
+import {IWallet} from "../models";
 import { Token } from '../types/token';
 import { Provider } from '../class/providers/provider';
 

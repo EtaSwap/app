@@ -1,7 +1,7 @@
 import React from 'react'
 import './Tokens.css'
 import {parseTokens} from "./tokens.utils";
-import {IToken} from "../../Models";
+import {IToken} from "../../models";
 import { Token } from '../../types/token';
 
 export interface ITokensProps {

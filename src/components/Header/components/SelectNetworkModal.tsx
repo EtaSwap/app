@@ -3,7 +3,6 @@ import {NETWORKS} from "../../../utils/constants";
 import HederaLogo from "../../../assets/img/hedera-logo.png";
 import {Modal} from "antd";
 import React from "react";
-import {IWallets} from "../../../Models";
 
 export interface ISelectNetworkModalProps{
     networkModalOpen: boolean;

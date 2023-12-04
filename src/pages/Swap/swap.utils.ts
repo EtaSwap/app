@@ -1,17 +1,6 @@
 import {NETWORKS} from "../../utils/constants";
-// @ts-ignore
-import SaucerSwapLogo from "../../assets/img/saucerswap.ico";
-// @ts-ignore
-import PangolinLogo from "../../assets/img/pangolin.png";
-// @ts-ignore
-import HeliSwapLogo from "../../assets/img/heliswap.png";
-// @ts-ignore
-import HSuiteLogo from "../../assets/img/hsuite.png";
 import {BigNumber, ethers} from "ethers";
-import axios from "axios";
-import {TokenId} from "@hashgraph/sdk";
 import {sqrt} from "../../utils/utils";
-import {IToken} from "../../Models";
 import { Provider } from '../../class/providers/provider';
 
 export const defaultOracleContracts = {

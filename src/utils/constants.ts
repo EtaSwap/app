@@ -1,4 +1,4 @@
-import {IGASLIMITS} from "../Models";
+import {IGASLIMITS} from "../models";
 
 export const NETWORKS = {
     MAINNET: 'mainnet',

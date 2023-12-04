@@ -1,5 +1,5 @@
 import { HashConnect } from 'hashconnect';
-import { Transaction } from '@hashgraph/sdk';
+import { AccountBalanceQuery } from '@hashgraph/sdk';
 
 export class HashpackWallet {
     name = 'hashpack';
@@ -14,6 +14,7 @@ export class HashpackWallet {
     hashconnect: any;
     setWallet: any;
     network: any;
+    associatedTokens: any[] = [];
 
     constructor(setWallet: any) {
         this.hashconnect = new HashConnect();
@@ -33,6 +34,7 @@ export class HashpackWallet {
             name: this.name,
             address: this.address,
             signer: this.signer,
+            associatedTokens: this.associatedTokens,
             auth: this.auth.bind(this),
             signTransaction: this.signTransaction.bind(this),
             executeTransaction: this.executeTransaction.bind(this),
@@ -48,6 +50,8 @@ export class HashpackWallet {
             this.address = this.connectionData?.accountIds?.[0];
             const provider = this.hashconnect.getProvider(network, initData?.topic, initData?.savedPairings?.[0]?.accountIds?.[0]);
             this.signer = this.hashconnect.getSigner(provider);
+            const balance = await this.signer.getAccountBalance();
+            this.associatedTokens = balance.tokens?._map;
             this.refreshWallet();
         } else if (!onLoad) {
             //new connection

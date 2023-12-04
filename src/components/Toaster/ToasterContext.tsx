@@ -3,7 +3,7 @@ import {toast} from "react-toastify";
 import './Toaster.css';
 import 'react-toastify/dist/ReactToastify.css';
 import {CopyOutlined} from "@ant-design/icons";
-import {toastTypes} from "../../Models/Toast";
+import {toastTypes} from "../../models/Toast";
 
 
 interface ToasterContextProps {
