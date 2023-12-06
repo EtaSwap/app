@@ -31,7 +31,7 @@ export const defaultTokens = (tokensMap: any) => ([...tokensMap]
     )
 );
 
-export const getSortedPrices = memoize((prices: any, tokenOne: any, tokenTwo: any, tokenTwoAmount: any, tokenOneAmount: any, feeOnTransfer: any, network: any, providers: Record<string, Provider>) => {
+export const getSortedPrices = memoize((prices: any, tokenOne: any, tokenTwo: any, tokenOneAmount: any, tokenTwoAmount: any, feeOnTransfer: any, network: any, providers: Record<string, Provider>) => {
     console.log('Prices!');
     const sortedPrices = Object.keys(prices)
         .filter(name => prices[name]?.rate && !prices[name]?.rate?.eq(0))
