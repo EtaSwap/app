@@ -25,7 +25,8 @@ import { TokensModal } from "./Components/TokensModal/TokensModal";
 import { toastTypes } from "../../models/Toast";
 import { Token } from '../../types/token';
 import { Provider } from '../../class/providers/provider';
-import {IAssociatedButton} from "../../models";
+import {IAssociatedButton, typeWallet} from "../../models";
+import useDebounce from "../../hooks/useDebounce";
 
 export interface ISwapProps {
     wallet: any;
@@ -40,11 +41,15 @@ function Swap({ wallet, tokens: tokensMap, network, rate, providers }: ISwapProp
     const { showToast } = useToaster();
 
     const tokens = defaultTokens(tokensMap);
-    const [tokenOneAmount, setTokenOneAmount] = useState<any>(0)
-    const [tokenTwoAmount, setTokenTwoAmount] = useState<any>(0)
+    const [tokenOneAmountInput, setTokenOneAmountInput] = useState<any>(0);
+    const [tokenTwoAmountInput, setTokenTwoAmountInput] = useState<any>(0);
+    const [tokenOneAmount, setTokenOneAmount] = useState<any>(0);
+    const [tokenTwoAmount, setTokenTwoAmount] = useState<any>(0);
     const [tokenTwo, setTokenTwo] = useState(tokens[7])
     const [tokenOne, setTokenOne] = useState(tokens[1])
 
+    const debouncedTokenOneAmountInput: string = useDebounce(tokenOneAmountInput, 1000);
+    const debouncedTokenTwoAmountInput: string = useDebounce(tokenTwoAmountInput, 1000);
     const [oracleContracts, setOracleContracts] = useState<any>(defaultOracleContracts);
     const [associatedButtons, setAssociatedButtons] = useState<IAssociatedButton[]>([]);
     const [slippage, setSlippage] = useState(1);
@@ -128,18 +133,16 @@ function Swap({ wallet, tokens: tokensMap, network, rate, providers }: ISwapProp
     }
 
 
-    const changeAmountOne = (e: any) => {
+    const changeAmountOne = (input: string) => {
         setFeeOnTransfer(false);
-        const input = e.target.value;
         if (input.match(/^[0-9]{0,10}(?:\.[0-9]{0,8})?$/)) {
             setTokenOneAmount(input ? (['.', '0'].includes(input.charAt(input.length - 1)) ? input : parseFloat(input).toString()) : 0);
         }
     }
 
 
-    const changeAmountTwo = (e: any) => {
+    const changeAmountTwo = (input: string) => {
         setFeeOnTransfer(true);
-        const input = e.target.value;
         if (input.match(/^[0-9]{0,10}(?:\.[0-9]{0,8})?$/)) {
             setTokenTwoAmount(input ? (['.', '0'].includes(input.charAt(input.length - 1)) ? input : parseFloat(input).toString()) : 0);
         }
@@ -438,7 +441,8 @@ function Swap({ wallet, tokens: tokensMap, network, rate, providers }: ISwapProp
         const bestPrice = getSortedPrices(prices, tokenOne, tokenTwo, tokenTwoAmount, tokenOneAmount, feeOnTransfer, network, providers)?.[0];
         let availableTokens = false;
         if(wallet.associatedTokens && tokenOne && tokenTwo){
-            if(!wallet.associatedTokens.has(tokenTwo.address)){
+            if(!(wallet.associatedTokens.has(tokenTwo.address) || tokenOne.symbol === typeWallet.HBAR) ||
+                !(wallet.associatedTokens.has(tokenOne.address) || tokenOne.symbol === typeWallet.HBAR)){
                 availableTokens = true;
             }
         }
@@ -499,12 +503,23 @@ function Swap({ wallet, tokens: tokensMap, network, rate, providers }: ISwapProp
     }, [tokenTwoAmount]);
 
     useEffect(() => {
+        if (debouncedTokenTwoAmountInput) {
+            changeAmountTwo(debouncedTokenTwoAmountInput);
+        }
+    }, [debouncedTokenTwoAmountInput]);
+    useEffect(() => {
+        if (debouncedTokenOneAmountInput) {
+            changeAmountOne(debouncedTokenOneAmountInput);
+        }
+    }, [debouncedTokenOneAmountInput]);
+
+    useEffect(() => {
         if(wallet.associatedTokens && tokenOne && tokenTwo){
             let tokens: IAssociatedButton[] = [];
-            if(!wallet.associatedTokens.has(tokenOne.address)){
+            if(!(wallet.associatedTokens.has(tokenOne.address) || tokenOne.symbol === typeWallet.HBAR)){
                 tokens.push({...tokenOne});
             }
-            if(!wallet.associatedTokens.has(tokenTwo.address)){
+            if(!(wallet.associatedTokens.has(tokenTwo.address) || tokenOne.symbol === typeWallet.HBAR)){
                 tokens.push({...tokenTwo});
             }
             setAssociatedButtons(tokens);
@@ -566,16 +581,16 @@ function Swap({ wallet, tokens: tokensMap, network, rate, providers }: ISwapProp
                     <div className={feeOnTransfer ? 'approx' : ''}>
                         <Input
                             placeholder='0'
-                            value={tokenOneAmount}
-                            onChange={changeAmountOne}
+                            value={tokenOneAmountInput}
+                            onChange={(e) => setTokenOneAmountInput(e.target.value)}
                             disabled={isAtLeastOnePrice()}
                         />
                     </div>
                     <div className={feeOnTransfer ? '' : 'approx'}>
                         <Input
                             placeholder='0'
-                            value={tokenTwoAmount}
-                            onChange={changeAmountTwo}
+                            value={tokenTwoAmountInput}
+                            onChange={(e) => setTokenTwoAmountInput(e.target.value)}
                             disabled={isAtLeastOnePrice()}
                         />
                     </div>

@@ -2,6 +2,7 @@ import {NETWORKS} from "../../utils/constants";
 import {BigNumber, ethers} from "ethers";
 import {sqrt} from "../../utils/utils";
 import { Provider } from '../../class/providers/provider';
+import memoize from 'memoize-one';
 
 export const defaultOracleContracts = {
     SaucerSwap: null,
@@ -30,7 +31,8 @@ export const defaultTokens = (tokensMap: any) => ([...tokensMap]
     )
 );
 
-export const getSortedPrices = (prices: any, tokenOne: any, tokenTwo: any, tokenTwoAmount: any, tokenOneAmount: any, feeOnTransfer: any, network: any, providers: Record<string, Provider>) => {
+export const getSortedPrices = memoize((prices: any, tokenOne: any, tokenTwo: any, tokenTwoAmount: any, tokenOneAmount: any, feeOnTransfer: any, network: any, providers: Record<string, Provider>) => {
+    console.log('Prices!');
     const sortedPrices = Object.keys(prices)
         .filter(name => prices[name]?.rate && !prices[name]?.rate?.eq(0))
         .sort((a, b) => prices[b].rate.sub(prices[a].rate))
@@ -72,7 +74,7 @@ export const getSortedPrices = (prices: any, tokenOne: any, tokenTwo: any, token
     }
 
     return pricesRes.sort((a: any, b: any) => feeOnTransfer ? a.amountOut.sub(b.amountOut) : b.amountOut.sub(a.amountOut));
-}
+})
 
 
 export const swapTokens = async (tokenA: any, tokenB: any, network: any, oracleContracts: any, providers: Record<string, Provider>) => {
