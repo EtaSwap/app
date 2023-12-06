@@ -241,7 +241,7 @@ function Swap({ wallet, tokens: tokensMap, network, rate, providers }: ISwapProp
     const fetchDex = async () => {
         const deadline = Math.floor(Date.now() / 1000) + 1000;
 
-        const bestRate = getSortedPrices(prices, tokenOne, tokenTwo, tokenOneAmount, tokenTwoAmount, feeOnTransfer, network, providers)?.[0];
+        const bestRate = getSortedPrices(prices, tokenOne, tokenTwo, tokenTwoAmount, tokenOneAmount, feeOnTransfer, network, providers)?.[0];
         if (!bestRate?.price || bestRate.price.eq(0)) {
             messageApi.open({
                 type: 'error',
@@ -429,16 +429,16 @@ function Swap({ wallet, tokens: tokensMap, network, rate, providers }: ISwapProp
     }
 
     const getBestPriceDescr = () => {
-        const bestPrice = getSortedPrices(prices, tokenOne, tokenTwo, tokenOneAmount, tokenTwoAmount, feeOnTransfer, network, providers)?.[0];
+        const bestPrice = getSortedPrices(prices, tokenOne, tokenTwo, tokenTwoAmount, tokenOneAmount, feeOnTransfer, network, providers)?.[0];
         return parseFloat(convertPrice(bestPrice?.price))?.toFixed(6);
     }
 
     const getBestImpactError = () => {
-        return (getSortedPrices(prices, tokenOne, tokenTwo, tokenOneAmount, tokenTwoAmount, feeOnTransfer, network, providers)?.[0]?.priceImpact || BigNumber.from(0)).gt(2000);
+        return (getSortedPrices(prices, tokenOne, tokenTwo, tokenTwoAmount, tokenOneAmount, feeOnTransfer, network, providers)?.[0]?.priceImpact || BigNumber.from(0)).gt(2000);
     }
 
     const swapDisabled = () => {
-        const bestPrice = getSortedPrices(prices, tokenOne, tokenTwo, tokenOneAmount, tokenTwoAmount, feeOnTransfer, network, providers)?.[0];
+        const bestPrice = getSortedPrices(prices, tokenOne, tokenTwo, tokenTwoAmount, tokenOneAmount, feeOnTransfer, network, providers)?.[0];
         let availableTokens = false;
         if(wallet.associatedTokens && tokenOne && tokenTwo){
             if(!(wallet.associatedTokens.has(tokenTwo.address) || tokenOne.symbol === typeWallet.HBAR) ||
@@ -455,7 +455,7 @@ function Swap({ wallet, tokens: tokensMap, network, rate, providers }: ISwapProp
     }
 
     const getNetworkFee = () => {
-        const bestPrice = getSortedPrices(prices, tokenOne, tokenTwo, tokenOneAmount, tokenTwoAmount, feeOnTransfer, network, providers)?.[0];
+        const bestPrice = getSortedPrices(prices, tokenOne, tokenTwo, tokenTwoAmount, tokenOneAmount, feeOnTransfer, network, providers)?.[0];
         if (!rate || !tokenOne || !tokenTwo || !bestPrice?.name) {
             return 0;
         }
@@ -482,7 +482,7 @@ function Swap({ wallet, tokens: tokensMap, network, rate, providers }: ISwapProp
 
     useEffect(() => {
         if (!feeOnTransfer) {
-            const bestReceive = getSortedPrices(prices, tokenOne, tokenTwo, tokenOneAmount, tokenTwoAmount, feeOnTransfer, network, providers)?.[0]?.amountOut?.toString();
+            const bestReceive = getSortedPrices(prices, tokenOne, tokenTwo, tokenTwoAmount, tokenOneAmount, feeOnTransfer, network, providers)?.[0]?.amountOut?.toString();
             if (tokenOneAmount && bestReceive && parseFloat(bestReceive) !== 0) {
                 setTokenTwoAmount(ethers.utils.formatUnits(bestReceive, tokenTwo?.decimals));
             } else {
@@ -493,7 +493,7 @@ function Swap({ wallet, tokens: tokensMap, network, rate, providers }: ISwapProp
 
     useEffect(() => {
         if (feeOnTransfer) {
-            const bestSpend = getSortedPrices(prices, tokenOne, tokenTwo, tokenOneAmount, tokenTwoAmount, feeOnTransfer, network, providers)?.[0]?.amountOut?.toString();
+            const bestSpend = getSortedPrices(prices, tokenOne, tokenTwo, tokenTwoAmount, tokenOneAmount, feeOnTransfer, network, providers)?.[0]?.amountOut?.toString();
             if (tokenTwoAmount && bestSpend && parseFloat(bestSpend) !== 0) {
                 setTokenOneAmount(ethers.utils.formatUnits(bestSpend, tokenOne?.decimals));
             } else {
@@ -618,7 +618,7 @@ function Swap({ wallet, tokens: tokensMap, network, rate, providers }: ISwapProp
                                 onClick={() => switchAllRates()}>{checkAllRatesOpen ? 'Hide all rates' : 'Show all rates'}</button>
                     </div>
                     {checkAllRatesOpen
-                        ? getSortedPrices(prices, tokenOne, tokenTwo, tokenOneAmount, tokenTwoAmount, feeOnTransfer, network, providers).map(({
+                        ? getSortedPrices(prices, tokenOne, tokenTwo, tokenTwoAmount, tokenOneAmount, feeOnTransfer, network, providers).map(({
                                                                                                                                                   name,
                                                                                                                                                   price,
                                                                                                                                                   lowVolume,
