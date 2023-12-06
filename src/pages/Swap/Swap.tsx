@@ -48,8 +48,8 @@ function Swap({ wallet, tokens: tokensMap, network, rate, providers }: ISwapProp
     const [tokenTwo, setTokenTwo] = useState(tokens[7])
     const [tokenOne, setTokenOne] = useState(tokens[1])
 
-    const debouncedTokenOneAmountInput: string = useDebounce(tokenOneAmountInput, 1000);
-    const debouncedTokenTwoAmountInput: string = useDebounce(tokenTwoAmountInput, 1000);
+    const debouncedTokenOneAmountInput: string = useDebounce(tokenOneAmountInput, 500);
+    const debouncedTokenTwoAmountInput: string = useDebounce(tokenTwoAmountInput, 500);
     const [oracleContracts, setOracleContracts] = useState<any>(defaultOracleContracts);
     const [associatedButtons, setAssociatedButtons] = useState<IAssociatedButton[]>([]);
     const [slippage, setSlippage] = useState(1);
