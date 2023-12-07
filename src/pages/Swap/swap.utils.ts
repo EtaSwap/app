@@ -2,6 +2,7 @@ import {NETWORKS} from "../../utils/constants";
 import {BigNumber, ethers} from "ethers";
 import {sqrt} from "../../utils/utils";
 import { Provider } from '../../class/providers/provider';
+import memoize from 'memoize-one';
 
 export const defaultOracleContracts = {
     SaucerSwap: null,
@@ -19,18 +20,19 @@ export const defaultPrices = {
 export const exchange = (network: any) => network === NETWORKS.MAINNET ? '0.0.3745835' : '0.0.1772118';
 
 export const defaultTokens = (tokensMap: any) => ([...tokensMap]
-        .map(wrap => wrap[1])
-        .sort((a, b) =>
-            a.providers.length > b.providers.length
-                ? -1
-                : (a.providers.length === b.providers.length
-                        ? (a.name > b.name ? 1 : -1)
-                        : 1
-                )
-        )
+    .map(wrap => wrap[1])
+    .sort((a, b) =>
+        a.providers.length > b.providers.length
+            ? -1
+            : (a.providers.length === b.providers.length
+                    ? (a.name > b.name ? 1 : -1)
+                    : 1
+            )
+    )
 );
 
-export const getSortedPrices = (prices: any, tokenOne: any, tokenTwo: any, tokenTwoAmount: any, tokenOneAmount: any, feeOnTransfer: any, network: any, providers: Record<string, Provider>) => {
+export const getSortedPrices = memoize((prices: any, tokenOne: any, tokenTwo: any, tokenTwoAmount: any, tokenOneAmount: any, feeOnTransfer: any, network: any, providers: Record<string, Provider>) => {
+    console.log('Prices!');
     const sortedPrices = Object.keys(prices)
         .filter(name => prices[name]?.rate && !prices[name]?.rate?.eq(0))
         .sort((a, b) => prices[b].rate.sub(prices[a].rate))
@@ -72,7 +74,7 @@ export const getSortedPrices = (prices: any, tokenOne: any, tokenTwo: any, token
     }
 
     return pricesRes.sort((a: any, b: any) => feeOnTransfer ? a.amountOut.sub(b.amountOut) : b.amountOut.sub(a.amountOut));
-}
+})
 
 
 export const swapTokens = async (tokenA: any, tokenB: any, network: any, oracleContracts: any, providers: Record<string, Provider>) => {
