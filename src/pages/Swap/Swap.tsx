@@ -133,18 +133,20 @@ function Swap({ wallet, tokens: tokensMap, network, rate, providers }: ISwapProp
     }
 
 
-    const changeAmountOne = (input: string) => {
+    const changeAmountOne = (e: any) => {
         setFeeOnTransfer(false);
+        const input = e.target.value;
         if (input.match(/^[0-9]{0,10}(?:\.[0-9]{0,8})?$/)) {
-            setTokenOneAmount(input ? (['.', '0'].includes(input.charAt(input.length - 1)) ? input : parseFloat(input).toString()) : 0);
+            setTokenOneAmountInput(input ? (['.', '0'].includes(input.charAt(input.length - 1)) ? input : parseFloat(input).toString()) : 0);
         }
     }
 
 
-    const changeAmountTwo = (input: string) => {
+    const changeAmountTwo = (e: any) => {
         setFeeOnTransfer(true);
+        const input = e.target.value;
         if (input.match(/^[0-9]{0,10}(?:\.[0-9]{0,8})?$/)) {
-            setTokenTwoAmount(input ? (['.', '0'].includes(input.charAt(input.length - 1)) ? input : parseFloat(input).toString()) : 0);
+            setTokenTwoAmountInput(input ? (['.', '0'].includes(input.charAt(input.length - 1)) ? input : parseFloat(input).toString()) : 0);
         }
     }
 
@@ -155,8 +157,8 @@ function Swap({ wallet, tokens: tokensMap, network, rate, providers }: ISwapProp
             HeliSwap: null,
             HSuite: null,
         })
-        setTokenOneAmount(0);
-        setTokenTwoAmount(0);
+        setTokenOneAmountInput(0);
+        setTokenTwoAmountInput(0);
         setTokenOne(tokenTwo);
         setTokenTwo(tokenOne);
         fetchDexSwap(tokenTwo.solidityAddress, tokenOne.solidityAddress)
@@ -174,8 +176,8 @@ function Swap({ wallet, tokens: tokensMap, network, rate, providers }: ISwapProp
             HeliSwap: null,
             HSuite: null,
         })
-        setTokenOneAmount(0)
-        setTokenTwoAmount(0)
+        setTokenOneAmountInput(0)
+        setTokenTwoAmountInput(0)
         if (changeToken === 1) {
             setTokenOne(tokens[i])
             fetchDexSwap(tokens[i].solidityAddress, tokenTwo.solidityAddress)
@@ -425,7 +427,7 @@ function Swap({ wallet, tokens: tokensMap, network, rate, providers }: ISwapProp
             }
         }
 
-        feeOnTransfer ? setTokenTwoAmount(0) : setTokenOneAmount(0);
+        feeOnTransfer ? setTokenTwoAmountInput(0) : setTokenOneAmountInput(0);
     }
 
     const getBestPriceDescr = () => {
@@ -484,9 +486,9 @@ function Swap({ wallet, tokens: tokensMap, network, rate, providers }: ISwapProp
         if (!feeOnTransfer) {
             const bestReceive = getSortedPrices(prices, tokenOne, tokenTwo, tokenTwoAmount, tokenOneAmount, feeOnTransfer, network, providers)?.[0]?.amountOut?.toString();
             if (tokenOneAmount && bestReceive && parseFloat(bestReceive) !== 0) {
-                setTokenTwoAmount(ethers.utils.formatUnits(bestReceive, tokenTwo?.decimals));
+                setTokenTwoAmountInput(ethers.utils.formatUnits(bestReceive, tokenTwo?.decimals));
             } else {
-                setTokenTwoAmount(0);
+                setTokenTwoAmountInput(0);
             }
         }
     }, [tokenOneAmount]);
@@ -495,21 +497,21 @@ function Swap({ wallet, tokens: tokensMap, network, rate, providers }: ISwapProp
         if (feeOnTransfer) {
             const bestSpend = getSortedPrices(prices, tokenOne, tokenTwo, tokenTwoAmount, tokenOneAmount, feeOnTransfer, network, providers)?.[0]?.amountOut?.toString();
             if (tokenTwoAmount && bestSpend && parseFloat(bestSpend) !== 0) {
-                setTokenOneAmount(ethers.utils.formatUnits(bestSpend, tokenOne?.decimals));
+                setTokenOneAmountInput(ethers.utils.formatUnits(bestSpend, tokenOne?.decimals));
             } else {
-                setTokenOneAmount(0);
+                setTokenOneAmountInput(0);
             }
         }
     }, [tokenTwoAmount]);
 
     useEffect(() => {
         if (debouncedTokenTwoAmountInput) {
-            changeAmountTwo(debouncedTokenTwoAmountInput);
+            setTokenTwoAmount(debouncedTokenTwoAmountInput);
         }
     }, [debouncedTokenTwoAmountInput]);
     useEffect(() => {
         if (debouncedTokenOneAmountInput) {
-            changeAmountOne(debouncedTokenOneAmountInput);
+            setTokenOneAmount(debouncedTokenOneAmountInput);
         }
     }, [debouncedTokenOneAmountInput]);
 
@@ -533,8 +535,8 @@ function Swap({ wallet, tokens: tokensMap, network, rate, providers }: ISwapProp
     }, [oracleContracts]);
 
     useEffect(() => {
-        setTokenOneAmount(0);
-        setTokenTwoAmount(0);
+        setTokenOneAmountInput(0);
+        setTokenTwoAmountInput(0);
         const provider = new ethers.providers.JsonRpcProvider(`https://${network}.hashio.io/api`);
         setOracleContracts(network === NETWORKS.MAINNET ? {
             SaucerSwap: new ethers.Contract(providers.SaucerSwap.getOracle(network)!, BasicOracleABI, provider),
@@ -582,7 +584,7 @@ function Swap({ wallet, tokens: tokensMap, network, rate, providers }: ISwapProp
                         <Input
                             placeholder='0'
                             value={tokenOneAmountInput}
-                            onChange={(e) => setTokenOneAmountInput(e.target.value)}
+                            onChange={changeAmountOne}
                             disabled={isAtLeastOnePrice()}
                         />
                     </div>
@@ -590,7 +592,7 @@ function Swap({ wallet, tokens: tokensMap, network, rate, providers }: ISwapProp
                         <Input
                             placeholder='0'
                             value={tokenTwoAmountInput}
-                            onChange={(e) => setTokenTwoAmountInput(e.target.value)}
+                            onChange={changeAmountTwo}
                             disabled={isAtLeastOnePrice()}
                         />
                     </div>
