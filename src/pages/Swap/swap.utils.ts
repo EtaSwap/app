@@ -2,7 +2,7 @@ import {NETWORKS} from "../../utils/constants";
 import {BigNumber, ethers} from "ethers";
 import {sqrt} from "../../utils/utils";
 import { Provider } from '../../class/providers/provider';
-import memoize from 'memoize-one';
+import axios from 'axios';
 
 export const defaultOracleContracts = {
     SaucerSwap: null,
@@ -31,53 +31,8 @@ export const defaultTokens = (tokensMap: any) => ([...tokensMap]
     )
 );
 
-export const getSortedPrices = memoize((prices: any, tokenOne: any, tokenTwo: any, tokenTwoAmount: any, tokenOneAmount: any, feeOnTransfer: any, network: any, providers: Record<string, Provider>) => {
-    console.log('Prices!');
-    const sortedPrices = Object.keys(prices)
-        .filter(name => prices[name]?.rate && !prices[name]?.rate?.eq(0))
-        .sort((a, b) => prices[b].rate.sub(prices[a].rate))
-        .map(name => ({name, price: prices[name].rate, weight: prices[name].weight}));
 
-    const bestPrice = sortedPrices?.[0]?.price;
-    if (parseFloat(bestPrice) === 0) {
-        return [];
-    }
-    const pricesRes = [];
-    for (let {name, price, weight} of sortedPrices) {
-        if (!price || !tokenOne?.decimals || !tokenTwo?.decimals) {// || !oracleSettings(network)[name]) {
-            continue;
-        }
-
-        const priceRes: any = {price, weight, name};
-
-        const volume = weight.pow(2);
-        const Va = sqrt(volume.mul(BigNumber.from(10).pow(18)).div(price));
-        const Vb = volume.div(Va);
-
-        if (feeOnTransfer) {
-            const amountOut = BigNumber.from(ethers.utils.parseUnits(tokenTwoAmount.toString(), tokenTwo.decimals)).mul(1000 + providers[name].feePromille + providers[name].feeDEXPromille).div(1000);
-            const VaAfter = amountOut.mul(Va).div(Vb.sub(amountOut));
-            const priceImpact = amountOut.mul(10000).div(Vb);
-            priceRes.amountOut = VaAfter;
-            priceRes.priceImpact = priceImpact;
-            if (VaAfter.gt(0)) {
-                pricesRes.push(priceRes);
-            }
-        } else {
-            const amountIn = BigNumber.from(ethers.utils.parseUnits(tokenOneAmount.toString(), tokenOne.decimals)).mul(1000 - providers[name].feePromille - providers[name].feeDEXPromille).div(1000);
-            const VbAfter = amountIn.mul(Vb).div(Va.add(amountIn));
-            const priceImpact = VbAfter.mul(10000).div(Vb);
-            priceRes.amountOut = VbAfter;
-            priceRes.priceImpact = priceImpact;
-            pricesRes.push(priceRes);
-        }
-    }
-
-    return pricesRes.sort((a: any, b: any) => feeOnTransfer ? a.amountOut.sub(b.amountOut) : b.amountOut.sub(a.amountOut));
-})
-
-
-export const swapTokens = async (tokenA: any, tokenB: any, network: any, oracleContracts: any, providers: Record<string, Provider>) => {
+export const fetchRates = async (tokenA: any, tokenB: any, network: any, oracleContracts: any, providers: Record<string, Provider>) => {
     const res = await Promise.allSettled([
         oracleContracts.SaucerSwap ? providers.SaucerSwap.getPrice(tokenA, tokenB, network, oracleContracts.SaucerSwap) : null,
         oracleContracts.Pangolin ? providers.Pangolin.getPrice(tokenA, tokenB, network, oracleContracts.Pangolin) : null,

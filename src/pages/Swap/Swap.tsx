@@ -17,8 +17,8 @@ import {
     defaultOracleContracts,
     defaultPrices,
     defaultTokens,
-    exchange, getSortedPrices,
-    swapTokens
+    exchange,
+    fetchRates
 } from "./swap.utils";
 import { SlippageTolerance } from "./Components/SlippageTolerance/SlippageTolerance";
 import { TokensModal } from "./Components/TokensModal/TokensModal";
@@ -27,6 +27,7 @@ import { Token } from '../../types/token';
 import { Provider } from '../../class/providers/provider';
 import {IAssociatedButton, typeWallet} from "../../models";
 import useDebounce from "../../hooks/useDebounce";
+import { sqrt } from '../../utils/utils';
 
 export interface ISwapProps {
     wallet: any;
@@ -45,15 +46,15 @@ function Swap({ wallet, tokens: tokensMap, network, rate, providers }: ISwapProp
     const [tokenTwoAmountInput, setTokenTwoAmountInput] = useState<any>(0);
     const [tokenOneAmount, setTokenOneAmount] = useState<any>(0);
     const [tokenTwoAmount, setTokenTwoAmount] = useState<any>(0);
-    const [tokenOne, setTokenOne] = useState(tokens[1]);
-    const [tokenTwo, setTokenTwo] = useState(tokens[7]);
+    const [tokenOne, setTokenOne] = useState(tokens[0]);
+    const [tokenTwo, setTokenTwo] = useState(tokens[6]);
 
     const debouncedTokenOneAmountInput: string = useDebounce(tokenOneAmountInput, 500);
     const debouncedTokenTwoAmountInput: string = useDebounce(tokenTwoAmountInput, 500);
     const [oracleContracts, setOracleContracts] = useState<any>(defaultOracleContracts);
     const [associatedButtons, setAssociatedButtons] = useState<IAssociatedButton[]>([]);
     const [slippage, setSlippage] = useState(1);
-    const [feeOnTransfer, setFeeOnTransfer] = useState<any>(false);
+    const [feeOnTransfer, setFeeOnTransfer] = useState<boolean>(false);
     const [messageApi, contextHolder] = message.useMessage()
     const [isOpen, setIsOpen] = useState(false)
     const [checkAllRatesOpen, setCheckAllRatesOpen] = useState(true);
@@ -63,7 +64,8 @@ function Swap({ wallet, tokens: tokensMap, network, rate, providers }: ISwapProp
     const [isRefreshAnimationActive, setIsRefreshAnimationActive] = useState(false);
     const [searchPhrase, setSearchPhrase] = useState('');
     const [hiddenTokens, setHiddenTokens] = useState([]);
-    const [prices, setPrices] = useState(defaultPrices);
+    const [prices, setPrices] = useState<any>(defaultPrices);
+    const [sortedPrices, setSortedPrices] = useState<any>([]);
 
     const smartNodeSocket = async () => {
         return new Promise(async (resolve, reject) => {
@@ -132,9 +134,10 @@ function Swap({ wallet, tokens: tokensMap, network, rate, providers }: ISwapProp
         setSlippage(e.target.value);
     }
 
-
     const changeAmountOne = (e: any) => {
-        setFeeOnTransfer(false);
+        if (feeOnTransfer) {
+            setFeeOnTransfer(false);
+        }
         const input = e.target.value;
         if (input.match(/^[0-9]{0,10}(?:\.[0-9]{0,8})?$/)) {
             setTokenOneAmountInput(input ? (['.', '0'].includes(input.charAt(input.length - 1)) ? input : parseFloat(input).toString()) : 0);
@@ -143,7 +146,9 @@ function Swap({ wallet, tokens: tokensMap, network, rate, providers }: ISwapProp
 
 
     const changeAmountTwo = (e: any) => {
-        setFeeOnTransfer(true);
+        if (!feeOnTransfer) {
+            setFeeOnTransfer(true);
+        }
         const input = e.target.value;
         if (input.match(/^[0-9]{0,10}(?:\.[0-9]{0,8})?$/)) {
             setTokenTwoAmountInput(input ? (['.', '0'].includes(input.charAt(input.length - 1)) ? input : parseFloat(input).toString()) : 0);
@@ -193,11 +198,8 @@ function Swap({ wallet, tokens: tokensMap, network, rate, providers }: ISwapProp
         if (isLoader) {
             showLoader();
         }
-        const result = await swapTokens(tokenA, tokenB, network, oracleContracts, providers);
+        const result = await fetchRates(tokenA, tokenB, network, oracleContracts, providers);
 
-        if (isLoader) {
-            hideLoader();
-        }
         setPrices(result as any);
     }
 
@@ -243,7 +245,7 @@ function Swap({ wallet, tokens: tokensMap, network, rate, providers }: ISwapProp
     const fetchDex = async () => {
         const deadline = Math.floor(Date.now() / 1000) + 1000;
 
-        const bestRate = getSortedPrices(prices, tokenOne, tokenTwo, tokenTwoAmount, tokenOneAmount, feeOnTransfer, network, providers)?.[0];
+        const bestRate = sortedPrices?.[0];
         if (!bestRate?.price || bestRate.price.eq(0)) {
             messageApi.open({
                 type: 'error',
@@ -431,16 +433,16 @@ function Swap({ wallet, tokens: tokensMap, network, rate, providers }: ISwapProp
     }
 
     const getBestPriceDescr = () => {
-        const bestPrice = getSortedPrices(prices, tokenOne, tokenTwo, tokenTwoAmount, tokenOneAmount, feeOnTransfer, network, providers)?.[0];
+        const bestPrice = sortedPrices?.[0];
         return parseFloat(convertPrice(bestPrice?.price))?.toFixed(6);
     }
 
     const getBestImpactError = () => {
-        return (getSortedPrices(prices, tokenOne, tokenTwo, tokenTwoAmount, tokenOneAmount, feeOnTransfer, network, providers)?.[0]?.priceImpact || BigNumber.from(0)).gt(2000);
+        return (sortedPrices?.[0]?.priceImpact || BigNumber.from(0)).gt(2000);
     }
 
     const swapDisabled = () => {
-        const bestPrice = getSortedPrices(prices, tokenOne, tokenTwo, tokenTwoAmount, tokenOneAmount, feeOnTransfer, network, providers)?.[0];
+        const bestPrice = sortedPrices?.[0];
         let availableTokens = false;
         if(wallet.associatedTokens && tokenOne && tokenTwo){
             if(!(wallet.associatedTokens.has(tokenTwo.address) || tokenOne.symbol === typeWallet.HBAR) ||
@@ -457,7 +459,7 @@ function Swap({ wallet, tokens: tokensMap, network, rate, providers }: ISwapProp
     }
 
     const getNetworkFee = () => {
-        const bestPrice = getSortedPrices(prices, tokenOne, tokenTwo, tokenTwoAmount, tokenOneAmount, feeOnTransfer, network, providers)?.[0];
+        const bestPrice = sortedPrices?.[0];
         if (!rate || !tokenOne || !tokenTwo || !bestPrice?.name) {
             return 0;
         }
@@ -482,27 +484,97 @@ function Swap({ wallet, tokens: tokensMap, network, rate, providers }: ISwapProp
         refreshTimer.current = setTimeout(refreshRate, (25000 + 30 * refreshCount.current * refreshCount.current));
     };
 
+    const getSortedPrices = async () => {
+        const sortedPrices = Object.keys(prices)
+            .filter(name => prices[name]?.rate && !prices[name]?.rate?.eq(0))
+            .sort((a, b) => prices[b].rate.sub(prices[a].rate))
+            .map(name => ({name, price: prices[name].rate, weight: prices[name].weight}));
+
+        const bestPrice = sortedPrices?.[0]?.price;
+        if (parseFloat(bestPrice) === 0) {
+            return [];
+        }
+        const pricesRes = [];
+        for (let {name, price, weight} of sortedPrices) {
+            if (!price || !tokenOne?.decimals || !tokenTwo?.decimals) {// || !oracleSettings(network)[name]) {
+                continue;
+            }
+
+            const priceRes: any = { price, weight, name };
+            if (name === 'HSuite') {
+                let amount = '0';
+                let baseToken;
+                let swapToken;
+                if (feeOnTransfer) {
+                    amount = BigNumber.from(ethers.utils.parseUnits(tokenTwoAmount.toString(), tokenTwo.decimals)).toString();
+                    baseToken = tokenTwo.solidityAddress === ethers.constants.AddressZero ? 'HBAR' : tokenTwo.address;
+                    swapToken = tokenOne.solidityAddress === ethers.constants.AddressZero ? 'HBAR' : tokenOne.address;
+                } else {
+                    amount = BigNumber.from(ethers.utils.parseUnits(tokenOneAmount.toString(), tokenOne.decimals)).toString();
+                    baseToken = tokenOne.solidityAddress === ethers.constants.AddressZero ? 'HBAR' : tokenOne.address;
+                    swapToken = tokenTwo.solidityAddress === ethers.constants.AddressZero ? 'HBAR' : tokenTwo.address;
+                }
+                const { data } = await axios.get(`https://${network}-sn1.hbarsuite.network/pools/price?amount=${amount}&baseToken=${baseToken}&swapToken=${swapToken}`);
+
+                //TODO: calculate price impact
+                priceRes.priceImpact = 0;
+                if (feeOnTransfer) {
+                    priceRes.amountOut = BigNumber.from(ethers.utils.parseUnits(data?.[data.length - 1]?.payout?.amount, tokenOne.decimals));
+                } else {
+                    priceRes.amountOut = BigNumber.from(ethers.utils.parseUnits(data?.[data.length - 1]?.payout?.amount, tokenTwo.decimals));
+                }
+                pricesRes.push(priceRes);
+            } else {
+                const volume = weight.pow(2);
+                const Va = sqrt(volume.mul(BigNumber.from(10).pow(18)).div(price));
+                const Vb = volume.div(Va);
+
+                if (feeOnTransfer) {
+                    const amountOut = BigNumber.from(ethers.utils.parseUnits(tokenTwoAmount.toString(), tokenTwo.decimals)).mul(1000 + providers[name].feePromille + providers[name].feeDEXPromille).div(1000);
+                    const VaAfter = amountOut.mul(Va).div(Vb.sub(amountOut));
+                    const priceImpact = amountOut.mul(10000).div(Vb);
+                    priceRes.amountOut = VaAfter;
+                    priceRes.priceImpact = priceImpact;
+                    if (VaAfter.gt(0)) {
+                        pricesRes.push(priceRes);
+                    }
+                } else {
+                    const amountIn = BigNumber.from(ethers.utils.parseUnits(tokenOneAmount.toString(), tokenOne.decimals)).mul(1000 - providers[name].feePromille - providers[name].feeDEXPromille).div(1000);
+                    const VbAfter = amountIn.mul(Vb).div(Va.add(amountIn));
+                    const priceImpact = VbAfter.mul(10000).div(Vb);
+                    priceRes.amountOut = VbAfter;
+                    priceRes.priceImpact = priceImpact;
+                    pricesRes.push(priceRes);
+                }
+            }
+        }
+
+        if (loading) {
+            hideLoader();
+        }
+        return pricesRes.sort((a: any, b: any) => feeOnTransfer ? a.amountOut.sub(b.amountOut) : b.amountOut.sub(a.amountOut));
+    }
+
     useEffect(() => {
-        if (!feeOnTransfer) {
-            const bestReceive = getSortedPrices(prices, tokenOne, tokenTwo, tokenTwoAmount, tokenOneAmount, feeOnTransfer, network, providers)?.[0]?.amountOut?.toString();
-            if (tokenOneAmount && bestReceive && parseFloat(bestReceive) !== 0) {
-                setTokenTwoAmountInput(ethers.utils.formatUnits(bestReceive, tokenTwo?.decimals));
+        getSortedPrices().then((res: any[]) => { setSortedPrices(res) });
+    }, [prices, tokenOneAmount, tokenTwoAmount]);
+
+    useEffect(() => {
+        const bestAmountOut = sortedPrices?.[0]?.amountOut?.toString();
+        if (feeOnTransfer) {
+            if (tokenTwoAmount && bestAmountOut && parseFloat(bestAmountOut) !== 0) {
+                setTokenOneAmountInput(ethers.utils.formatUnits(bestAmountOut, tokenOne?.decimals));
+            } else {
+                setTokenOneAmountInput(0);
+            }
+        } else {
+            if (tokenOneAmount && bestAmountOut && parseFloat(bestAmountOut) !== 0) {
+                setTokenTwoAmountInput(ethers.utils.formatUnits(bestAmountOut, tokenTwo?.decimals));
             } else {
                 setTokenTwoAmountInput(0);
             }
         }
-    }, [tokenOneAmount]);
-
-    useEffect(() => {
-        if (feeOnTransfer) {
-            const bestSpend = getSortedPrices(prices, tokenOne, tokenTwo, tokenTwoAmount, tokenOneAmount, feeOnTransfer, network, providers)?.[0]?.amountOut?.toString();
-            if (tokenTwoAmount && bestSpend && parseFloat(bestSpend) !== 0) {
-                setTokenOneAmountInput(ethers.utils.formatUnits(bestSpend, tokenOne?.decimals));
-            } else {
-                setTokenOneAmountInput(0);
-            }
-        }
-    }, [tokenTwoAmount]);
+    }, [sortedPrices]);
 
     useEffect(() => {
         if (debouncedTokenTwoAmountInput) {
@@ -530,8 +602,8 @@ function Swap({ wallet, tokens: tokensMap, network, rate, providers }: ISwapProp
 
     useEffect(() => {
         setTokenOne(tokens[0]);
-        setTokenTwo(tokens[13]);
-        fetchDexSwap(tokens[0]?.solidityAddress, tokens[13]?.solidityAddress)
+        setTokenTwo(tokens[6]);
+        fetchDexSwap(tokens[0]?.solidityAddress, tokens[6]?.solidityAddress)
     }, [oracleContracts]);
 
     useEffect(() => {
@@ -620,13 +692,7 @@ function Swap({ wallet, tokens: tokensMap, network, rate, providers }: ISwapProp
                                 onClick={() => switchAllRates()}>{checkAllRatesOpen ? 'Hide all rates' : 'Show all rates'}</button>
                     </div>
                     {checkAllRatesOpen
-                        ? getSortedPrices(prices, tokenOne, tokenTwo, tokenTwoAmount, tokenOneAmount, feeOnTransfer, network, providers).map(({
-                                                                                                                                                  name,
-                                                                                                                                                  price,
-                                                                                                                                                  lowVolume,
-                                                                                                                                                  amountOut,
-                                                                                                                                                  priceImpact
-                                                                                                                                              }) =>
+                        ? sortedPrices.map(({ name, price, lowVolume, amountOut, priceImpact }: any) =>
                             <div
                                 className='ratesLogo' key={name}>
                                 <img className='ratesLogoIcon' title={name} src={providers[name].icon}
