@@ -161,9 +161,11 @@ function Swap({ wallet, tokens: tokensMap, network, rate, providers }: ISwapProp
             Pangolin: null,
             HeliSwap: null,
             HSuite: null,
-        })
+        });
         setTokenOneAmountInput(0);
         setTokenTwoAmountInput(0);
+        setTokenOneAmount(0);
+        setTokenTwoAmount(0);
         setTokenOne(tokenTwo);
         setTokenTwo(tokenOne);
         fetchDexSwap(tokenTwo.solidityAddress, tokenOne.solidityAddress)
@@ -485,6 +487,8 @@ function Swap({ wallet, tokens: tokensMap, network, rate, providers }: ISwapProp
     };
 
     const getSortedPrices = async () => {
+        showLoader();
+
         const sortedPrices = Object.keys(prices)
             .filter(name => prices[name]?.rate && !prices[name]?.rate?.eq(0))
             .sort((a, b) => prices[b].rate.sub(prices[a].rate))
@@ -492,34 +496,31 @@ function Swap({ wallet, tokens: tokensMap, network, rate, providers }: ISwapProp
 
         const bestPrice = sortedPrices?.[0]?.price;
         if (parseFloat(bestPrice) === 0) {
+            hideLoader();
             return [];
         }
         const pricesRes = [];
         for (let {name, price, weight} of sortedPrices) {
-            if (!price || !tokenOne?.decimals || !tokenTwo?.decimals) {// || !oracleSettings(network)[name]) {
+            if (!price || !tokenOne?.decimals || !tokenTwo?.decimals) {
                 continue;
             }
 
             const priceRes: any = { price, weight, name };
             if (name === 'HSuite') {
                 let amount = '0';
-                let baseToken;
-                let swapToken;
+                const baseToken = tokenOne.solidityAddress === ethers.constants.AddressZero ? 'HBAR' : tokenOne.address;
+                const swapToken = tokenTwo.solidityAddress === ethers.constants.AddressZero ? 'HBAR' : tokenTwo.address;
                 if (feeOnTransfer) {
                     amount = BigNumber.from(ethers.utils.parseUnits(tokenTwoAmount.toString(), tokenTwo.decimals)).toString();
-                    baseToken = tokenTwo.solidityAddress === ethers.constants.AddressZero ? 'HBAR' : tokenTwo.address;
-                    swapToken = tokenOne.solidityAddress === ethers.constants.AddressZero ? 'HBAR' : tokenOne.address;
                 } else {
                     amount = BigNumber.from(ethers.utils.parseUnits(tokenOneAmount.toString(), tokenOne.decimals)).toString();
-                    baseToken = tokenOne.solidityAddress === ethers.constants.AddressZero ? 'HBAR' : tokenOne.address;
-                    swapToken = tokenTwo.solidityAddress === ethers.constants.AddressZero ? 'HBAR' : tokenTwo.address;
                 }
-                const { data } = await axios.get(`https://${network}-sn1.hbarsuite.network/pools/price?amount=${amount}&baseToken=${baseToken}&swapToken=${swapToken}`);
-
-                //TODO: calculate price impact
-                priceRes.priceImpact = 0;
+                const pricePath = feeOnTransfer ? 'price-reverse' : 'price';
+                const res = await axios.get(`https://${network}-sn1.hbarsuite.network/pools/${pricePath}?amount=${amount}&baseToken=${baseToken}&swapToken=${swapToken}`);
+                const data = feeOnTransfer ? res.data?.routing : res.data;
+                priceRes.priceImpact = BigNumber.from(Math.max(...data.map((route: any) => parseFloat(route?.payout?.priceImpact || 0) * 100)).toFixed(0));
                 if (feeOnTransfer) {
-                    priceRes.amountOut = BigNumber.from(ethers.utils.parseUnits(data?.[data.length - 1]?.payout?.amount, tokenOne.decimals));
+                    priceRes.amountOut = BigNumber.from(ethers.utils.parseUnits(data?.[0]?.payin?.amount, tokenOne.decimals));
                 } else {
                     priceRes.amountOut = BigNumber.from(ethers.utils.parseUnits(data?.[data.length - 1]?.payout?.amount, tokenTwo.decimals));
                 }
@@ -549,9 +550,7 @@ function Swap({ wallet, tokens: tokensMap, network, rate, providers }: ISwapProp
             }
         }
 
-        if (loading) {
-            hideLoader();
-        }
+        hideLoader();
         return pricesRes.sort((a: any, b: any) => feeOnTransfer ? a.amountOut.sub(b.amountOut) : b.amountOut.sub(a.amountOut));
     }
 
