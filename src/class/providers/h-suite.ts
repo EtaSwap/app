@@ -6,7 +6,7 @@ import { ContractId, TokenId } from '@hashgraph/sdk';
 // @ts-ignore
 import HSuiteLogo from '../../assets/img/hsuite.png';
 import { NETWORKS } from '../../utils/constants';
-import { PriceMirrorNodeResponse } from './types/price';
+import { Price } from './types/price';
 import { BigNumber, ethers } from 'ethers';
 import axios from 'axios';
 import { sqrt } from '../../utils/utils';
@@ -41,7 +41,7 @@ export class HSuite extends Provider {
         return 'd5db1f4a-8791-4f12-925f-920754547ce7';
     }
 
-    public getPrice(tokenA: string, tokenB: string, network: string): Promise<PriceMirrorNodeResponse> | null {
+    public getPrice(tokenA: string, tokenB: string, network: string): Promise<Price> | null {
         if (!tokenA || !tokenB || !network) {
             return null;
         }

@@ -3,6 +3,7 @@ import {BigNumber, ethers} from "ethers";
 import {sqrt} from "../../utils/utils";
 import { Provider } from '../../class/providers/provider';
 import axios from 'axios';
+import { Price } from '../../class/providers/types/price';
 
 export const defaultOracleContracts = {
     SaucerSwap: null,
@@ -32,7 +33,7 @@ export const defaultTokens = (tokensMap: any) => ([...tokensMap]
 );
 
 
-export const fetchRates = async (tokenA: any, tokenB: any, network: any, oracleContracts: any, providers: Record<string, Provider>) => {
+export const fetchRates = async (tokenA: any, tokenB: any, network: any, oracleContracts: any, providers: Record<string, Provider>): Promise<Record<string, Price | null>> => {
     const res = await Promise.allSettled([
         oracleContracts.SaucerSwap ? providers.SaucerSwap.getPrice(tokenA, tokenB, network, oracleContracts.SaucerSwap) : null,
         oracleContracts.Pangolin ? providers.Pangolin.getPrice(tokenA, tokenB, network, oracleContracts.Pangolin) : null,

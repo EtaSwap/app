@@ -2,7 +2,7 @@ import { GetToken, GetTokensResponse } from './types/tokens';
 import axios, { AxiosResponse } from 'axios';
 import { Props } from './types/props';
 import { Token } from '../../types/token';
-import { PriceMirrorNodeResponse } from './types/price';
+import { Price } from './types/price';
 import { ethers } from 'ethers';
 
 export abstract class Provider {
@@ -35,7 +35,7 @@ export abstract class Provider {
         return null;
     }
 
-    public getPrice(tokenA: string, tokenB: string, network: string, oracleContract: any): Promise<PriceMirrorNodeResponse> | null {
+    public getPrice(tokenA: string, tokenB: string, network: string, oracleContract: any): Promise<Price> | null {
         let _tokenA = tokenA;
         let _tokenB = tokenB;
         if (tokenA === ethers.constants.AddressZero) {

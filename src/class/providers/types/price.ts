@@ -1,6 +1,6 @@
 import { BigNumber } from 'ethers';
 
-export type PriceMirrorNodeResponse = {
+export type Price = {
     rate: BigNumber | null;
     weight: BigNumber | null;
 }

@@ -28,6 +28,8 @@ import { Provider } from '../../class/providers/provider';
 import {IAssociatedButton, typeWallet} from "../../models";
 import useDebounce from "../../hooks/useDebounce";
 import { sqrt } from '../../utils/utils';
+import { SortedPrice } from '../../types/sorted-price';
+import { Price } from '../../class/providers/types/price';
 
 export interface ISwapProps {
     wallet: any;
@@ -64,8 +66,8 @@ function Swap({ wallet, tokens: tokensMap, network, rate, providers }: ISwapProp
     const [isRefreshAnimationActive, setIsRefreshAnimationActive] = useState(false);
     const [searchPhrase, setSearchPhrase] = useState('');
     const [hiddenTokens, setHiddenTokens] = useState([]);
-    const [prices, setPrices] = useState<any>(defaultPrices);
-    const [sortedPrices, setSortedPrices] = useState<any>([]);
+    const [prices, setPrices] = useState<Record<string, Price | null>>(defaultPrices);
+    const [sortedPrices, setSortedPrices] = useState<SortedPrice[]>([]);
 
     const smartNodeSocket = async () => {
         return new Promise(async (resolve, reject) => {
@@ -202,7 +204,7 @@ function Swap({ wallet, tokens: tokensMap, network, rate, providers }: ISwapProp
         }
         const result = await fetchRates(tokenA, tokenB, network, oracleContracts, providers);
 
-        setPrices(result as any);
+        setPrices(result);
     }
 
     const convertPrice = (price: any) => {
@@ -301,7 +303,7 @@ function Swap({ wallet, tokens: tokensMap, network, rate, providers }: ISwapProp
             if (tokenOne.solidityAddress === ethers.constants.AddressZero) {
                 amountFromHsuite = amountFromHsuite.mul(1000 - providers[bestRate.name].feePromille).div(1000);
             } else if (tokenOne.symbol === 'HSUITE') {
-                const hSuiteFee = Math.max(10000, amountFromHsuite.mul(providers[bestRate].feeDEXPromille).div(1000).toNumber());
+                const hSuiteFee = Math.max(10000, amountFromHsuite.mul(providers[bestRate.name].feeDEXPromille).div(1000).toNumber());
                 amountFromHsuite = amountFromHsuite.sub(hSuiteFee);
             }
 
@@ -486,16 +488,16 @@ function Swap({ wallet, tokens: tokensMap, network, rate, providers }: ISwapProp
         refreshTimer.current = setTimeout(refreshRate, (25000 + 30 * refreshCount.current * refreshCount.current));
     };
 
-    const getSortedPrices = async () => {
+    const getSortedPrices = async (): Promise<SortedPrice[]> => {
         showLoader();
 
         const sortedPrices = Object.keys(prices)
             .filter(name => prices[name]?.rate && !prices[name]?.rate?.eq(0))
-            .sort((a, b) => prices[b].rate.sub(prices[a].rate))
-            .map(name => ({name, price: prices[name].rate, weight: prices[name].weight}));
+            .sort((a, b) => prices[b]!.rate!.sub(prices[a]!.rate!).toString() as any)
+            .map(name => ({name, price: prices[name]!.rate, weight: prices[name]!.weight}));
 
         const bestPrice = sortedPrices?.[0]?.price;
-        if (parseFloat(bestPrice) === 0) {
+        if (!bestPrice || parseFloat(bestPrice.toString()) === 0) {
             hideLoader();
             return [];
         }
@@ -505,7 +507,7 @@ function Swap({ wallet, tokens: tokensMap, network, rate, providers }: ISwapProp
                 continue;
             }
 
-            const priceRes: any = { price, weight, name };
+            const priceRes: SortedPrice = { price, weight: weight!, name, priceImpact: BigNumber.from(0), amountOut: BigNumber.from(0) };
             if (name === 'HSuite') {
                 let amount = '0';
                 const baseToken = tokenOne.solidityAddress === ethers.constants.AddressZero ? 'HBAR' : tokenOne.address;
@@ -526,7 +528,7 @@ function Swap({ wallet, tokens: tokensMap, network, rate, providers }: ISwapProp
                 }
                 pricesRes.push(priceRes);
             } else {
-                const volume = weight.pow(2);
+                const volume = weight!.pow(2);
                 const Va = sqrt(volume.mul(BigNumber.from(10).pow(18)).div(price));
                 const Vb = volume.div(Va);
 
