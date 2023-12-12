@@ -5,7 +5,7 @@ import { BigNumber, ethers } from 'ethers';
 import {
     ContractExecuteTransaction,
     ContractFunctionParameters,
-    AccountAllowanceApproveTransaction, Transaction,
+    AccountAllowanceApproveTransaction, Transaction, TransferTransaction, Hbar, HbarUnit,
 } from '@hashgraph/sdk';
 import axios from 'axios';
 import BasicOracleABI from '../../assets/abi/basic-oracle-abi.json';
@@ -30,6 +30,8 @@ import useDebounce from "../../hooks/useDebounce";
 import { sqrt } from '../../utils/utils';
 import { SortedPrice } from '../../types/sorted-price';
 import { Price } from '../../class/providers/types/price';
+import { Long } from '@hashgraph/sdk/lib/long';
+import Tinybar = HbarUnit.Tinybar;
 
 export interface ISwapProps {
     wallet: any;
@@ -265,8 +267,21 @@ function Swap({ wallet, tokens: tokensMap, network, rate, providers }: ISwapProp
             socketConnection.socket.getSocket('gateway').on('swapPoolRequest', async (resPool: any) => {
                 try {
                     if (resPool.status === 'success') {
-                        let transaction = Transaction.fromBytes(new Uint8Array(resPool.payload.transaction));
-                        //TODO: checkTransaction() before sign (make sure summ is correct)
+                        let transaction: TransferTransaction = Transaction.fromBytes(new Uint8Array(resPool.payload.transaction)) as TransferTransaction;
+                        const minToReceive = ethers.utils.parseUnits(tokenTwoAmount, tokenTwo.decimals).mul(1000 - slippage * 10).div(1000);
+                        let amountTo: BigNumber;
+                        if (tokenTwo.solidityAddress === ethers.constants.AddressZero) {
+                            amountTo = BigNumber.from(transaction.hbarTransfers.get(wallet.address)?.toTinybars()?.toString() || 0);
+                            if (amountTo.lt(minToReceive)) {
+                                throw new Error('Unexpected receive amount');
+                            }
+                        } else {
+                            amountTo = BigNumber.from(transaction.tokenTransfers.get(tokenTwo.address)?.get(wallet.address)?.toString() || 0);
+                            if (amountTo.lt(minToReceive)) {
+                                throw new Error('Unexpected receive amount');
+                            }
+                        }
+
 
                         let signedTransactionBytes = await wallet.signTransaction(transaction);
 
@@ -433,7 +448,10 @@ function Swap({ wallet, tokens: tokensMap, network, rate, providers }: ISwapProp
             }
         }
 
-        feeOnTransfer ? setTokenTwoAmountInput(0) : setTokenOneAmountInput(0);
+        setTokenOneAmountInput(0);
+        setTokenTwoAmountInput(0);
+        setTokenOneAmount(0);
+        setTokenTwoAmount(0);
     }
 
     const getBestPriceDescr = () => {
@@ -456,7 +474,7 @@ function Swap({ wallet, tokens: tokensMap, network, rate, providers }: ISwapProp
         }
 
         return !tokenOneAmount
-            || availableTokens
+            // || availableTokens
             || !wallet?.address
             || !bestPrice?.price
             || bestPrice?.priceImpact?.gt(2000);
