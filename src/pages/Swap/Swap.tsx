@@ -681,9 +681,9 @@ function Swap({ wallet, tokens: tokensMap, network, rate, providers }: ISwapProp
                         {tokenTwo?.symbol}
                     </div>
                 </div>
-                {associatedButtons.map((e: IAssociatedButton) => <div>
+                {/*{associatedButtons.map((e: IAssociatedButton) => <div>
                     <p>Token {e.name} is not associated with your account</p>
-                </div>)}
+                </div>)}*/}
 
 
                 <div className='ratesLogoWrapper'>
