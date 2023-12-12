@@ -13,7 +13,7 @@ import { sqrt } from '../../utils/utils';
 
 export class HSuite extends Provider {
     public icon = HSuiteLogo;
-    public aggregatorId = /* #__PURE__ */ this.constructor.name;
+    public aggregatorId = 'HSuite';
     public feePromille = 3;
     public feeDEXPromille = 3;
 
