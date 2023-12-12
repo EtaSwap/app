@@ -65,7 +65,7 @@ export function TokensModal({
                             </div>
                             <div className='tokenChoiceProviders'>
                                 {token.providers.map((provider: string) => {
-                                    if (providers[provider].icon) {
+                                    if (providers?.[provider]?.icon) {
                                         return <img src={providers[provider].icon} alt={provider} key={provider}/>
                                     }
                                 })}
