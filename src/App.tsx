@@ -85,7 +85,7 @@ function App() {
             hsuiteTokens,
         ]: (AxiosResponse | null)[]) => {
             const tokenMap: Map<string, Token> = new Map();
-            const providerNames: string[] = Object.values(providers).map(provider => provider.constructor.name);
+            const providerNames: string[] = Object.values(providers).map(provider => provider.aggregatorId);
             tokenMap.set(ethers.constants.AddressZero, {
                 name: 'Hbar',
                 symbol: 'HBAR',
@@ -111,7 +111,7 @@ function App() {
                     .map((token: PangolinGetToken) => {
                     const existing = tokenMap.get(token.address.toLowerCase());
                     if (existing) {
-                        existing.providers.push(providers.Pangolin.constructor.name);
+                        existing.providers.push(providers.Pangolin.aggregatorId);
                     } else if (tokenList.has(ContractId.fromSolidityAddress(token.address).toString())) {
                         tokenMap.set(token.address.toLowerCase(), providers.Pangolin.mapProviderTokenToToken(token));
                     }
@@ -122,7 +122,7 @@ function App() {
                 heliswapTokens.data.tokens.map((token: HeliSwapGetToken) => {
                     const existing = tokenMap.get(token.address.toLowerCase());
                     if (existing) {
-                        existing.providers.push(providers.HeliSwap.constructor.name);
+                        existing.providers.push(providers.HeliSwap.aggregatorId);
                     } else if (tokenList.has(ContractId.fromSolidityAddress(token.address).toString())) {
                         tokenMap.set(token.address.toLowerCase(), providers.HeliSwap.mapProviderTokenToToken(token));
                     }
@@ -135,7 +135,7 @@ function App() {
                         const solidityAddress = `0x${ContractId.fromString(token.id).toSolidityAddress()}`.toLowerCase();
                         const existing = tokenMap.get(solidityAddress);
                         if (existing) {
-                            existing.providers.push(providers.HSuite.constructor.name);
+                            existing.providers.push(providers.HSuite.aggregatorId);
                         } else if (tokenList.has(token.id)) {
                             tokenMap.set(solidityAddress, providers.HSuite.mapProviderTokenToToken(token));
                         }
