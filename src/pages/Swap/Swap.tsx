@@ -30,8 +30,6 @@ import useDebounce from "../../hooks/useDebounce";
 import { sqrt } from '../../utils/utils';
 import { SortedPrice } from '../../types/sorted-price';
 import { Price } from '../../class/providers/types/price';
-import { Long } from '@hashgraph/sdk/lib/long';
-import Tinybar = HbarUnit.Tinybar;
 
 export interface ISwapProps {
     wallet: any;

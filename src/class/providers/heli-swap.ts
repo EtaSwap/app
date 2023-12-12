@@ -8,7 +8,7 @@ import HeliSwapLogo from '../../assets/img/heliswap.png';
 
 export class HeliSwap extends Provider {
     public icon = HeliSwapLogo;
-    public aggregatorId = this.constructor.name;
+    public aggregatorId = /* #__PURE__ */ this.constructor.name;
     public feePromille = 5;
     public feeDEXPromille = 3;
 

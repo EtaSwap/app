@@ -8,7 +8,7 @@ import PangolinLogo from '../../assets/img/pangolin.png';
 
 export class Pangolin extends Provider {
     public icon = PangolinLogo;
-    public aggregatorId = this.constructor.name;
+    public aggregatorId /* #__PURE__ */ = this.constructor.name;
     public feePromille = 3;
     public feeDEXPromille = 3;
 

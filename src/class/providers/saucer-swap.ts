@@ -8,7 +8,7 @@ import SaucerSwapLogo from '../../assets/img/saucerswap.ico';
 
 export class SaucerSwap extends Provider {
     public icon = SaucerSwapLogo;
-    public aggregatorId = this.constructor.name;
+    public aggregatorId = /* #__PURE__ */ this.constructor.name;
     public feePromille = 3;
     public feeDEXPromille = 3;
 
