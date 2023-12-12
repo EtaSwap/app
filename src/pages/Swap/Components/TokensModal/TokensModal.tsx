@@ -54,7 +54,7 @@ export function TokensModal({
                             key={index}
                             onClick={() => modifyToken(index)}
                         >
-                            <img src={token.icon} alt={token.symbol} className="tokenLogo"/>
+                            <img src={token?.icon || ''} alt={token.symbol} className="tokenLogo"/>
                             <div className='tokenChoiceNames'>
                                 <div className='tokenName'>
                                     {token.name}
