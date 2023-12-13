@@ -185,8 +185,10 @@ function Swap({ wallet, tokens: tokensMap, network, rate, providers }: ISwapProp
             HeliSwap: null,
             HSuite: null,
         })
-        setTokenOneAmountInput(0)
-        setTokenTwoAmountInput(0)
+        setTokenOneAmountInput(0);
+        setTokenTwoAmountInput(0);
+        setTokenOneAmount(0);
+        setTokenTwoAmount(0);
         if (changeToken === 1) {
             setTokenOne(tokens[i])
             fetchDexSwap(tokens[i].solidityAddress, tokenTwo.solidityAddress)
@@ -626,6 +628,8 @@ function Swap({ wallet, tokens: tokensMap, network, rate, providers }: ISwapProp
     useEffect(() => {
         setTokenOneAmountInput(0);
         setTokenTwoAmountInput(0);
+        setTokenOneAmount(0);
+        setTokenTwoAmount(0);
         const provider = new ethers.providers.JsonRpcProvider(`https://${network}.hashio.io/api`);
         setOracleContracts(network === NETWORKS.MAINNET ? {
             SaucerSwap: new ethers.Contract(providers.SaucerSwap.getOracle(network)!, BasicOracleABI, provider),
