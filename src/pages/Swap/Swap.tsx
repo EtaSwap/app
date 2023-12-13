@@ -465,8 +465,8 @@ function Swap({ wallet, tokens: tokensMap, network, rate, providers }: ISwapProp
         const bestPrice = sortedPrices?.[0];
         let availableTokens = false;
         if(wallet.associatedTokens && tokenOne && tokenTwo){
-            if(!(wallet.associatedTokens.has(tokenTwo.address) || tokenOne.symbol === typeWallet.HBAR) ||
-                !(wallet.associatedTokens.has(tokenOne.address) || tokenOne.symbol === typeWallet.HBAR)){
+            if(!(wallet.associatedTokens.has(tokenOne.address)) && tokenOne.symbol !== typeWallet.HBAR ||
+                !(wallet.associatedTokens.has(tokenTwo.address)) && tokenTwo.symbol !== typeWallet.HBAR){
                 availableTokens = true;
             }
         }
@@ -607,15 +607,15 @@ function Swap({ wallet, tokens: tokensMap, network, rate, providers }: ISwapProp
     useEffect(() => {
         if(wallet.associatedTokens && tokenOne && tokenTwo){
             let tokens: IAssociatedButton[] = [];
-            if(!(wallet.associatedTokens.has(tokenOne.address) || tokenOne.symbol === typeWallet.HBAR)){
+            if(!(wallet.associatedTokens.has(tokenOne.address)) && tokenOne.symbol !== typeWallet.HBAR){
                 tokens.push({...tokenOne});
             }
-            if(!(wallet.associatedTokens.has(tokenTwo.address) || tokenOne.symbol === typeWallet.HBAR)){
+            if(!(wallet.associatedTokens.has(tokenTwo.address)) && tokenTwo.symbol !== typeWallet.HBAR){
                 tokens.push({...tokenTwo});
             }
             setAssociatedButtons(tokens);
         }
-    },[tokenOne, tokenTwo]);
+    },[tokenOne, tokenTwo, tokenOneAmountInput, tokenTwoAmountInput]);
 
     useEffect(() => {
         setTokenOne(tokens[0]);
