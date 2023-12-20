@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, {useEffect, useState} from 'react'
 // @ts-ignore
 import HederaLogo from '../../assets/img/hedera-logo.png'
 // @ts-ignore
@@ -46,6 +46,12 @@ function Header({ wallet, wallets, network, setNetwork }: IHeaderProps) {
       }
       setNetworkModalOpen(false);
   }
+
+    useEffect(() => {
+        if(wallet && wallet.address && wallet.address.length > 0){
+            wallets[wallet.name].instance.updateBalance();
+        }
+    }, [wallet.address]);
 
   return (
     <header className='header'>

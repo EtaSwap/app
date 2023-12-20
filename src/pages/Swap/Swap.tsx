@@ -30,6 +30,7 @@ import useDebounce from "../../hooks/useDebounce";
 import { sqrt } from '../../utils/utils';
 import { SortedPrice } from '../../types/sorted-price';
 import { Price } from '../../class/providers/types/price';
+import AssociateNewToken from "./Components/AssociateNewToken/AssociateNewToken";
 
 export interface ISwapProps {
     wallet: any;
@@ -464,6 +465,7 @@ function Swap({ wallet, tokens: tokensMap, network, rate, providers }: ISwapProp
     }
 
     const swapDisabled = () => {
+        // console.log(tokenTwo);
         const bestPrice = sortedPrices?.[0];
         let availableTokens = false;
         if(wallet.associatedTokens && tokenOne && tokenTwo){
@@ -474,7 +476,7 @@ function Swap({ wallet, tokens: tokensMap, network, rate, providers }: ISwapProp
         }
 
         return !tokenOneAmount
-            // || availableTokens
+            || availableTokens
             || !wallet?.address
             || !bestPrice?.price
             || bestPrice?.priceImpact?.gt(2000);
@@ -505,6 +507,38 @@ function Swap({ wallet, tokens: tokensMap, network, rate, providers }: ISwapProp
         setTimeout(() => setIsRefreshAnimationActive(true), 0);
         refreshTimer.current = setTimeout(refreshRate, (25000 + 30 * refreshCount.current * refreshCount.current));
     };
+    const associateToken = async (token: IAssociatedButton) => {
+        showLoader();
+        const result = await wallet.associateNewToken(token.address);
+        if(result){
+            if(result.error === "USER_REJECT") {
+                showToast('Associate Token', `Token ${token.name} Association was rejected`, toastTypes.error);
+            }else if(result.error.includes('precheck with status')){
+                showToast('Associate Token', result.error, toastTypes.error);
+            }
+        } else {
+            showToast('Error', `An unknown error occurred`, toastTypes.error);
+        }
+        checkAssociateTokens();
+        hideLoader();
+    }
+
+    const checkAssociateTokens = () => {
+        if(wallet && wallet.signer === null){
+            setAssociatedButtons([]);
+            return;
+        }
+        if(wallet.associatedTokens && tokenOne && tokenTwo){
+            let tokens: IAssociatedButton[] = [];
+            if(!(wallet.associatedTokens.has(tokenOne.address)) && tokenOne.symbol !== typeWallet.HBAR){
+                tokens.push({...tokenOne});
+            }
+            if(!(wallet.associatedTokens.has(tokenTwo.address)) && tokenTwo.symbol !== typeWallet.HBAR){
+                tokens.push({...tokenTwo});
+            }
+            setAssociatedButtons(tokens);
+        }
+    }
 
     const getSortedPrices = async (): Promise<SortedPrice[]> => {
         showLoader();
@@ -607,17 +641,8 @@ function Swap({ wallet, tokens: tokensMap, network, rate, providers }: ISwapProp
     }, [debouncedTokenOneAmountInput]);
 
     useEffect(() => {
-        if(wallet.associatedTokens && tokenOne && tokenTwo){
-            let tokens: IAssociatedButton[] = [];
-            if(!(wallet.associatedTokens.has(tokenOne.address)) && tokenOne.symbol !== typeWallet.HBAR){
-                tokens.push({...tokenOne});
-            }
-            if(!(wallet.associatedTokens.has(tokenTwo.address)) && tokenTwo.symbol !== typeWallet.HBAR){
-                tokens.push({...tokenTwo});
-            }
-            setAssociatedButtons(tokens);
-        }
-    },[tokenOne, tokenTwo, tokenOneAmountInput, tokenTwoAmountInput]);
+        checkAssociateTokens();
+    },[tokenOne, tokenTwo, tokenOneAmountInput, tokenTwoAmountInput, wallet.signer, wallet.associatedTokens]);
 
     useEffect(() => {
         setTokenOne(tokens[0]);
@@ -639,7 +664,14 @@ function Swap({ wallet, tokens: tokensMap, network, rate, providers }: ISwapProp
             SaucerSwap: new ethers.Contract(providers.SaucerSwap.getOracle(network)!, BasicOracleABI, provider),
             Pangolin: new ethers.Contract(providers.Pangolin.getOracle(network)!, BasicOracleABI, provider),
         });
+
     }, [wallet, tokensMap]);
+
+    useEffect(() => {
+        if(wallet && wallet.updateBalance){
+            wallet.updateBalance();
+        }
+    }, [wallet.signer]);
 
 
     useEffect(() => {
@@ -701,10 +733,7 @@ function Swap({ wallet, tokens: tokensMap, network, rate, providers }: ISwapProp
                         {tokenTwo?.symbol}
                     </div>
                 </div>
-                {/*{associatedButtons.map((e: IAssociatedButton) => <div>
-                    <p>Token {e.name} is not associated with your account</p>
-                </div>)}*/}
-
+                <AssociateNewToken handleClick={associateToken} associatedButtons={associatedButtons} />
 
                 <div className='ratesLogoWrapper'>
                     <div className='ratesLogoInner'>

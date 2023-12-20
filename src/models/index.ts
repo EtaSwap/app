@@ -46,7 +46,8 @@ export interface IAssociatedButton{
 export interface IWallet {
     name: string;
     address: string;
-    signer: any
+    signer: any;
+    updateBalance?: () => void;
 }
 
 export interface IWallets {
