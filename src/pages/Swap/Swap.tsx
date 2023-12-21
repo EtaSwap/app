@@ -510,11 +510,22 @@ function Swap({ wallet, tokens: tokensMap, network, rate, providers }: ISwapProp
     const associateToken = async (token: IAssociatedButton) => {
         showLoader();
         const result = await wallet.associateNewToken(token.address);
+
+        console.log(result);
+
         if(result){
-            if(result.error === "USER_REJECT") {
-                showToast('Associate Token', `Token ${token.name} Association was rejected`, toastTypes.error);
-            }else if(result.error.includes('precheck with status')){
-                showToast('Associate Token', result.error, toastTypes.error);
+            if(result.error){
+                if(result.error === "USER_REJECT") {
+                    showToast('Associate Token', `Token ${token.name} Association was rejected`, toastTypes.error);
+                }else if(result.error.includes('precheck with status')){
+                    showToast('Associate Token', result.error, toastTypes.error);
+                } else if(result.error.includes('TOKEN_ALREADY_ASSOCIATED_TO_ACCOUNT')){
+                    // "receipt for transaction 0.0.5948290@1703145822.184660155 contained error status TOKEN_ALREADY_ASSOCIATED_TO_ACCOUNT"
+                    showToast('Associate Token', result.error, toastTypes.error);
+                    wallet.updateBalance();
+                }
+            } else if(result?.res.nodeId) {
+                showToast('Associate Token', `Token ${token.name} Association was successful`, toastTypes.success);
             }
         } else {
             showToast('Error', `An unknown error occurred`, toastTypes.error);
@@ -666,12 +677,6 @@ function Swap({ wallet, tokens: tokensMap, network, rate, providers }: ISwapProp
         });
 
     }, [wallet, tokensMap]);
-
-    useEffect(() => {
-        if(wallet && wallet.updateBalance){
-            wallet.updateBalance();
-        }
-    }, [wallet.signer]);
 
 
     useEffect(() => {

@@ -38,7 +38,8 @@ export class HashpackWallet {
             auth: this.auth.bind(this),
             signTransaction: this.signTransaction.bind(this),
             executeTransaction: this.executeTransaction.bind(this),
-            associateNewToken: this.associateNewToken.bind(this)
+            associateNewToken: this.associateNewToken.bind(this),
+            updateBalance: this.updateBalance.bind(this)
         });
     }
 
@@ -62,11 +63,11 @@ export class HashpackWallet {
     }
 
     async updateBalance() {
-        console.log("Run!");
         if(this.network && this.connectionData?.topic){
             const provider = this.hashconnect.getProvider(this.network, this.connectionData?.topic, this.connectionData?.accountIds?.[0]);
             this.signer = this.hashconnect.getSigner(provider);
             const balance = await this.signer.getAccountBalance();
+            console.log(balance);
             this.associatedTokens = balance.tokens?._map;
         }else {
             this.associatedTokens = null;
