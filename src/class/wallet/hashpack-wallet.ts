@@ -1,5 +1,6 @@
 import { HashConnect } from 'hashconnect';
-import {TokenAssociateTransaction} from '@hashgraph/sdk';
+import {AccountBalanceQuery, Client, TokenAssociateTransaction} from '@hashgraph/sdk';
+import {TokenBalanceJson} from "@hashgraph/sdk/lib/account/AccountBalance";
 
 export class HashpackWallet {
     name = 'hashpack';
@@ -14,7 +15,7 @@ export class HashpackWallet {
     hashconnect: any;
     setWallet: any;
     network: any;
-    associatedTokens: any[] | null = null;
+    associatedTokens: TokenBalanceJson[] | null = null;
 
     constructor(setWallet: any) {
         this.hashconnect = new HashConnect();
@@ -50,6 +51,8 @@ export class HashpackWallet {
             this.network = network;
             this.connectionData = initData?.savedPairings?.[0];
             this.address = this.connectionData?.accountIds?.[0];
+            const provider = this.hashconnect.getProvider(network, initData?.topic, initData?.savedPairings?.[0]?.accountIds?.[0]);
+            this.signer = this.hashconnect.getSigner(provider);
             await this.updateBalance();
             this.refreshWallet();
         } else if (!onLoad) {
@@ -63,12 +66,11 @@ export class HashpackWallet {
     }
 
     async updateBalance() {
-        if(this.network && this.connectionData?.topic){
-            const provider = this.hashconnect.getProvider(this.network, this.connectionData?.topic, this.connectionData?.accountIds?.[0]);
-            this.signer = this.hashconnect.getSigner(provider);
-            const balance = await this.signer.getAccountBalance();
-            console.log(balance);
-            this.associatedTokens = balance.tokens?._map;
+        if(this.network && this.hashconnect) {
+            const client = this.network === 'testnet' ? Client.forTestnet() : Client.forMainnet();
+            const tokens = await new AccountBalanceQuery().setAccountId(this.address).execute(client);
+            this.associatedTokens = tokens.toJSON().tokens;
+            console.log(this.associatedTokens, "R16!");
         }else {
             this.associatedTokens = null;
         }
@@ -80,7 +82,6 @@ export class HashpackWallet {
             return;
         }
         try {
-            console.log(tokenAddress, "R9!");
             const associateTx = await new TokenAssociateTransaction();
             associateTx.setTokenIds([tokenAddress]);
             associateTx.setAccountId(this.signer.accountToSign);

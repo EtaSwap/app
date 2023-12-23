@@ -31,6 +31,7 @@ import { sqrt } from '../../utils/utils';
 import { SortedPrice } from '../../types/sorted-price';
 import { Price } from '../../class/providers/types/price';
 import AssociateNewToken from "./Components/AssociateNewToken/AssociateNewToken";
+import {TokenBalanceJson} from "@hashgraph/sdk/lib/account/AccountBalance";
 
 export interface ISwapProps {
     wallet: any;
@@ -469,8 +470,8 @@ function Swap({ wallet, tokens: tokensMap, network, rate, providers }: ISwapProp
         const bestPrice = sortedPrices?.[0];
         let availableTokens = false;
         if(wallet.associatedTokens && tokenOne && tokenTwo){
-            if(!(wallet.associatedTokens.has(tokenOne.address)) && tokenOne.symbol !== typeWallet.HBAR ||
-                !(wallet.associatedTokens.has(tokenTwo.address)) && tokenTwo.symbol !== typeWallet.HBAR){
+            if(!(wallet.associatedTokens?.find((e: TokenBalanceJson) => e.tokenId === tokenOne.address)) && tokenOne.symbol !== typeWallet.HBAR ||
+                !(wallet.associatedTokens?.find((e: TokenBalanceJson) => e.tokenId === tokenOne.address)) && tokenTwo.symbol !== typeWallet.HBAR){
                 availableTokens = true;
             }
         }
@@ -539,12 +540,12 @@ function Swap({ wallet, tokens: tokensMap, network, rate, providers }: ISwapProp
             setAssociatedButtons([]);
             return;
         }
-        if(wallet.associatedTokens && tokenOne && tokenTwo){
+        if(wallet.associatedTokens !== null && tokenOne && tokenTwo){
             let tokens: IAssociatedButton[] = [];
-            if(!(wallet.associatedTokens.has(tokenOne.address)) && tokenOne.symbol !== typeWallet.HBAR){
+            if(!(wallet.associatedTokens?.find((e: TokenBalanceJson) => e.tokenId === tokenOne.address)) && tokenOne.symbol !== typeWallet.HBAR){
                 tokens.push({...tokenOne});
             }
-            if(!(wallet.associatedTokens.has(tokenTwo.address)) && tokenTwo.symbol !== typeWallet.HBAR){
+            if(!(wallet.associatedTokens?.find((e: TokenBalanceJson) => e.tokenId === tokenOne.address)) && tokenTwo.symbol !== typeWallet.HBAR){
                 tokens.push({...tokenTwo});
             }
             setAssociatedButtons(tokens);

@@ -48,7 +48,7 @@ function Header({ wallet, wallets, network, setNetwork }: IHeaderProps) {
   }
 
     useEffect(() => {
-        if(wallet && wallet.address && wallet.address.length > 0){
+        if(wallet && wallet.address && wallet.address.length > 0 && wallets[wallet.name].instance.updateBalance){
             wallets[wallet.name].instance.updateBalance();
         }
     }, [wallet.address]);

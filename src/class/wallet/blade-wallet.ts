@@ -1,4 +1,6 @@
 import { BladeConnector, ConnectorStrategy } from '@bladelabs/blade-web3.js';
+import {AccountBalanceQuery, Client, TokenAssociateTransaction} from "@hashgraph/sdk";
+import {TokenBalanceJson} from "@hashgraph/sdk/lib/account/AccountBalance";
 
 export class BladeWallet {
     name = 'blade';
@@ -13,6 +15,7 @@ export class BladeWallet {
     bladeConnector: any = null;
     setWallet: any;
     network: any;
+    associatedTokens: TokenBalanceJson[] | null = null;
 
     constructor(setWallet: any) {
         this.setWallet = setWallet;
@@ -22,10 +25,12 @@ export class BladeWallet {
         this.setWallet({
             name: this.name,
             address: this.address,
+            associatedTokens: this.associatedTokens,
             signer: this.signer,
             auth: this.auth.bind(this),
             signTransaction: this.signTransaction.bind(this),
             executeTransaction: this.executeTransaction.bind(this),
+            associateNewToken: this.associateNewToken.bind(this),
         });
     }
 
@@ -43,6 +48,37 @@ export class BladeWallet {
 
         this.refreshWallet();
     }
+
+    async updateBalance() {
+        if(this.network && this.bladeConnector) {
+            const client = this.network === 'testnet' ? Client.forTestnet() : Client.forMainnet();
+            const tokens = await new AccountBalanceQuery().setAccountId(this.address).execute(client);
+            this.associatedTokens = tokens.toJSON().tokens;
+            console.log(this.associatedTokens, "R13!");
+        }else {
+            this.associatedTokens = null;
+        }
+        this.refreshWallet();
+    }
+
+    async associateNewToken(tokenAddress: string | null) {
+        if(!tokenAddress){
+            return;
+        }
+        try {
+            const associateTx = await new TokenAssociateTransaction();
+            associateTx.setTokenIds([tokenAddress]);
+            associateTx.setAccountId(this.signer.accountToSign);
+            await associateTx.freezeWithSigner(this.signer);
+            const result: any = await this.executeTransaction(associateTx);
+            this.refreshWallet();
+            return result;
+        } catch (error) {
+            this.refreshWallet();
+            return {error: 'ERROR'};
+        }
+    }
+
 
     async auth({ serverAddress, serverSignature, originalPayload }: any) {
         const payload = { serverSignature, originalPayload };
