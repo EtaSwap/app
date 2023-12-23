@@ -68,14 +68,15 @@ export class BladeWallet {
         try {
             const associateTx = await new TokenAssociateTransaction();
             associateTx.setTokenIds([tokenAddress]);
-            associateTx.setAccountId(this.signer.accountToSign);
+            associateTx.setAccountId(this.signer.accountId.toString());
             await associateTx.freezeWithSigner(this.signer);
             const result: any = await this.executeTransaction(associateTx);
             this.refreshWallet();
+            console.log(result);
             return result;
         } catch (error) {
             this.refreshWallet();
-            return {error: 'ERROR'};
+            return null;
         }
     }
 

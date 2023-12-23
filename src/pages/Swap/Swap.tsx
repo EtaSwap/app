@@ -512,8 +512,6 @@ function Swap({ wallet, tokens: tokensMap, network, rate, providers }: ISwapProp
         showLoader();
         const result = await wallet.associateNewToken(token.address);
 
-        console.log(result);
-
         if(result){
             if(result.error){
                 if(result.error === "USER_REJECT") {
