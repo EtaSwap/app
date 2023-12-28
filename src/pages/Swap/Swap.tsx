@@ -28,10 +28,11 @@ import { Provider } from '../../class/providers/provider';
 import {IAssociatedButton, typeWallet} from "../../models";
 import useDebounce from "../../hooks/useDebounce";
 import { sqrt } from '../../utils/utils';
-import { SortedPrice } from '../../types/sorted-price';
+import { PriceOutput } from '../../class/providers/types/price-output';
 import { Price } from '../../class/providers/types/price';
 import AssociateNewToken from "./Components/AssociateNewToken/AssociateNewToken";
 import {TokenBalanceJson} from "@hashgraph/sdk/lib/account/AccountBalance";
+import { SortedPrice } from '../../class/providers/types/sorted-price';
 
 export interface ISwapProps {
     wallet: any;
@@ -50,8 +51,8 @@ function Swap({ wallet, tokens: tokensMap, network, rate, providers }: ISwapProp
     const [tokenTwoAmountInput, setTokenTwoAmountInput] = useState<any>(0);
     const [tokenOneAmount, setTokenOneAmount] = useState<any>(0);
     const [tokenTwoAmount, setTokenTwoAmount] = useState<any>(0);
-    const [tokenOne, setTokenOne] = useState(tokens[0]);
-    const [tokenTwo, setTokenTwo] = useState(tokens[6]);
+    const [tokenOne, setTokenOne] = useState<Token>(tokens[0]);
+    const [tokenTwo, setTokenTwo] = useState<Token>(tokens[6]);
 
     const debouncedTokenOneAmountInput: string = useDebounce(tokenOneAmountInput, 500);
     const debouncedTokenTwoAmountInput: string = useDebounce(tokenTwoAmountInput, 500);
@@ -69,7 +70,7 @@ function Swap({ wallet, tokens: tokensMap, network, rate, providers }: ISwapProp
     const [searchPhrase, setSearchPhrase] = useState('');
     const [hiddenTokens, setHiddenTokens] = useState([]);
     const [prices, setPrices] = useState<Record<string, Price | null>>(defaultPrices);
-    const [sortedPrices, setSortedPrices] = useState<SortedPrice[]>([]);
+    const [sortedPrices, setSortedPrices] = useState<PriceOutput[]>([]);
 
     const smartNodeSocket = async () => {
         return new Promise(async (resolve, reject) => {
@@ -550,70 +551,37 @@ function Swap({ wallet, tokens: tokensMap, network, rate, providers }: ISwapProp
         }
     }
 
-    const getSortedPrices = async (): Promise<SortedPrice[]> => {
+    const getSortedPrices = async (): Promise<PriceOutput[]> => {
         showLoader();
 
-        const sortedPrices = Object.keys(prices)
+        const sortedPrices: SortedPrice[] = Object.keys(prices)
             .filter(name => prices[name]?.rate && !prices[name]?.rate?.eq(0))
             .sort((a, b) => prices[b]!.rate!.sub(prices[a]!.rate!).toString() as any)
-            .map(name => ({name, price: prices[name]!.rate, weight: prices[name]!.weight}));
+            .map(name => ({name, price: prices[name]!.rate!, weight: prices[name]!.weight!}));
 
         const bestPrice = sortedPrices?.[0]?.price;
         if (!bestPrice || parseFloat(bestPrice.toString()) === 0) {
             hideLoader();
             return [];
         }
-        const pricesRes = [];
-        for (let {name, price, weight} of sortedPrices) {
-            if (!price || !tokenOne?.decimals || !tokenTwo?.decimals) {
+        const priceResPromises: Promise<PriceOutput | null>[] = [];
+        for (let sortedPrice of sortedPrices) {
+            if (!sortedPrice.price || !tokenOne?.decimals || !tokenTwo?.decimals) {
                 continue;
             }
 
-            const priceRes: SortedPrice = { price, weight: weight!, name, priceImpact: BigNumber.from(0), amountOut: BigNumber.from(0) };
-            if (name === 'HSuite') {
-                let amount = '0';
-                const baseToken = tokenOne.solidityAddress === ethers.constants.AddressZero ? 'HBAR' : tokenOne.address;
-                const swapToken = tokenTwo.solidityAddress === ethers.constants.AddressZero ? 'HBAR' : tokenTwo.address;
-                if (feeOnTransfer) {
-                    amount = BigNumber.from(ethers.utils.parseUnits(tokenTwoAmount.toString(), tokenTwo.decimals)).toString();
-                } else {
-                    amount = BigNumber.from(ethers.utils.parseUnits(tokenOneAmount.toString(), tokenOne.decimals)).toString();
-                }
-                const pricePath = feeOnTransfer ? 'price-reverse' : 'price';
-                const res = await axios.get(`https://${network}-sn1.hbarsuite.network/pools/${pricePath}?amount=${amount}&baseToken=${baseToken}&swapToken=${swapToken}`);
-                const data = feeOnTransfer ? res.data?.routing : res.data;
-                priceRes.priceImpact = BigNumber.from(Math.max(...data.map((route: any) => parseFloat(route?.payout?.priceImpact || 0) * 100)).toFixed(0));
-                if (feeOnTransfer) {
-                    priceRes.amountOut = BigNumber.from(ethers.utils.parseUnits(data?.[0]?.payin?.amount, tokenOne.decimals));
-                } else {
-                    priceRes.amountOut = BigNumber.from(ethers.utils.parseUnits(data?.[data.length - 1]?.payout?.amount, tokenTwo.decimals));
-                }
-                pricesRes.push(priceRes);
-            } else {
-                const volume = weight!.pow(2);
-                const Va = sqrt(volume.mul(BigNumber.from(10).pow(18)).div(price));
-                const Vb = volume.div(Va);
-
-                if (feeOnTransfer) {
-                    const amountOut = BigNumber.from(ethers.utils.parseUnits(tokenTwoAmount.toString(), tokenTwo.decimals)).mul(1000 + providers[name].feePromille + providers[name].feeDEXPromille).div(1000);
-                    const VaAfter = amountOut.mul(Va).div(Vb.sub(amountOut));
-                    const priceImpact = amountOut.mul(10000).div(Vb);
-                    priceRes.amountOut = VaAfter;
-                    priceRes.priceImpact = priceImpact;
-                    if (VaAfter.gt(0)) {
-                        pricesRes.push(priceRes);
-                    }
-                } else {
-                    const amountIn = BigNumber.from(ethers.utils.parseUnits(tokenOneAmount.toString(), tokenOne.decimals)).mul(1000 - providers[name].feePromille - providers[name].feeDEXPromille).div(1000);
-                    const VbAfter = amountIn.mul(Vb).div(Va.add(amountIn));
-                    const priceImpact = VbAfter.mul(10000).div(Vb);
-                    priceRes.amountOut = VbAfter;
-                    priceRes.priceImpact = priceImpact;
-                    pricesRes.push(priceRes);
-                }
-            }
+            priceResPromises.push(providers[sortedPrice.name].getPriceOutput(
+                sortedPrice,
+                tokenOne,
+                tokenTwo,
+                tokenOneAmount,
+                tokenTwoAmount,
+                feeOnTransfer,
+                network,
+            ));
         }
 
+        const pricesRes = (await Promise.all(priceResPromises)).filter((price): price is PriceOutput => price !== null);
         hideLoader();
         return pricesRes.sort((a: any, b: any) => feeOnTransfer ? a.amountOut.sub(b.amountOut) : b.amountOut.sub(a.amountOut));
     }

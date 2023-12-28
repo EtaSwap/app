@@ -41,7 +41,7 @@ function App() {
         signer: null,
     });
     const [tokens, setTokens] = useState<Map<string, Token>>(new Map());
-    const [network, setNetwork] = useState(NETWORKS.MAINNET);
+    const [network, setNetwork] = useState(NETWORKS.TESTNET);
     const [rate, setRate] = useState<number | null>(null);
 
     const [wallets] = useState<IWallets>({

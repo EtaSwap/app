@@ -10,6 +10,8 @@ import { Price } from './types/price';
 import { BigNumber, ethers } from 'ethers';
 import axios from 'axios';
 import { sqrt } from '../../utils/utils';
+import { SortedPrice } from './types/sorted-price';
+import { PriceOutput } from './types/price-output';
 
 export class HSuite extends Provider {
     public icon = HSuiteLogo;
@@ -71,5 +73,43 @@ export class HSuite extends Provider {
                 weight: sqrt(BigNumber.from(balanceACoins).mul(balanceBCoins)),
             });
         });
+    }
+
+    public async getPriceOutput(
+        sortedPrice: SortedPrice,
+        tokenOne: Token,
+        tokenTwo: Token,
+        tokenOneAmount: BigNumber,
+        tokenTwoAmount: BigNumber,
+        feeOnTransfer: boolean,
+        network?: string,
+    ): Promise<PriceOutput | null> {
+        const { price, name, weight } = sortedPrice;
+        const priceRes: PriceOutput = {
+            price,
+            weight: weight!,
+            name,
+            priceImpact: BigNumber.from(0),
+            amountOut: BigNumber.from(0)
+        };
+        let amount = '0';
+        const baseToken = tokenOne.solidityAddress === ethers.constants.AddressZero ? 'HBAR' : tokenOne.address;
+        const swapToken = tokenTwo.solidityAddress === ethers.constants.AddressZero ? 'HBAR' : tokenTwo.address;
+        if (feeOnTransfer) {
+            amount = BigNumber.from(ethers.utils.parseUnits(tokenTwoAmount.toString(), tokenTwo.decimals)).toString();
+        } else {
+            amount = BigNumber.from(ethers.utils.parseUnits(tokenOneAmount.toString(), tokenOne.decimals)).toString();
+        }
+        const pricePath = feeOnTransfer ? 'price-reverse' : 'price';
+        const res = await axios.get(`https://${network}-sn1.hbarsuite.network/pools/${pricePath}?amount=${amount}&baseToken=${baseToken}&swapToken=${swapToken}`);
+        const data = feeOnTransfer ? res.data?.routing : res.data;
+        priceRes.priceImpact = BigNumber.from(Math.max(...data.map((route: any) => parseFloat(route?.payout?.priceImpact || 0) * 100)).toFixed(0));
+        if (feeOnTransfer) {
+            priceRes.amountOut = BigNumber.from(ethers.utils.parseUnits(data?.[0]?.payin?.amount, tokenOne.decimals));
+        } else {
+            priceRes.amountOut = BigNumber.from(ethers.utils.parseUnits(data?.[data.length - 1]?.payout?.amount, tokenTwo.decimals));
+        }
+
+        return priceRes;
     }
 }

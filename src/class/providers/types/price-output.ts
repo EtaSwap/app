@@ -1,6 +1,6 @@
 import { BigNumber } from 'ethers';
 
-export type SortedPrice = {
+export type PriceOutput = {
     //input
     name: string;
     weight: BigNumber;
