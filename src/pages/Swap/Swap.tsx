@@ -539,7 +539,6 @@ function Swap({ wallet, tokens: tokensMap, network, rate, providers }: ISwapProp
             setAssociatedButtons([]);
             return;
         }
-        console.log(getBestPriceDescr());
         if(wallet.associatedTokens !== null && tokenOne && tokenTwo){
             let tokens: IAssociatedButton[] = [];
             if(!(wallet.associatedTokens?.find((e: TokenBalanceJson) => e.tokenId === tokenOne.address)) && tokenOne.symbol !== typeWallet.HBAR){
