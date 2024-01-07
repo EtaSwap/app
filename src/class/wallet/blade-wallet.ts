@@ -72,7 +72,6 @@ export class BladeWallet {
             await associateTx.freezeWithSigner(this.signer);
             const result: any = await this.executeTransaction(associateTx);
             this.refreshWallet();
-            console.log(result);
             return result;
         } catch (error) {
             this.refreshWallet();

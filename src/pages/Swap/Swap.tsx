@@ -472,7 +472,7 @@ function Swap({ wallet, tokens: tokensMap, network, rate, providers }: ISwapProp
         let availableTokens = false;
         if(wallet.associatedTokens && tokenOne && tokenTwo){
             if(!(wallet.associatedTokens?.find((e: TokenBalanceJson) => e.tokenId === tokenOne.address)) && tokenOne.symbol !== typeWallet.HBAR ||
-                !(wallet.associatedTokens?.find((e: TokenBalanceJson) => e.tokenId === tokenOne.address)) && tokenTwo.symbol !== typeWallet.HBAR){
+                !(wallet.associatedTokens?.find((e: TokenBalanceJson) => e.tokenId === tokenTwo.address)) && tokenTwo.symbol !== typeWallet.HBAR){
                 availableTokens = true;
             }
         }
@@ -522,7 +522,6 @@ function Swap({ wallet, tokens: tokensMap, network, rate, providers }: ISwapProp
                 } else if(result.error.includes('TOKEN_ALREADY_ASSOCIATED_TO_ACCOUNT')){
                     // "receipt for transaction 0.0.5948290@1703145822.184660155 contained error status TOKEN_ALREADY_ASSOCIATED_TO_ACCOUNT"
                     showToast('Associate Token', result.error, toastTypes.error);
-                    wallet.updateBalance();
                 }
             } else if(result?.res.nodeId) {
                 showToast('Associate Token', `Token ${token.name} Association was successful`, toastTypes.success);
@@ -530,6 +529,7 @@ function Swap({ wallet, tokens: tokensMap, network, rate, providers }: ISwapProp
         } else {
             showToast('Error', `An unknown error occurred`, toastTypes.error);
         }
+        wallet.updateBalance();
         checkAssociateTokens();
         hideLoader();
     }
@@ -539,12 +539,13 @@ function Swap({ wallet, tokens: tokensMap, network, rate, providers }: ISwapProp
             setAssociatedButtons([]);
             return;
         }
+        console.log(getBestPriceDescr());
         if(wallet.associatedTokens !== null && tokenOne && tokenTwo){
             let tokens: IAssociatedButton[] = [];
             if(!(wallet.associatedTokens?.find((e: TokenBalanceJson) => e.tokenId === tokenOne.address)) && tokenOne.symbol !== typeWallet.HBAR){
                 tokens.push({...tokenOne});
             }
-            if(!(wallet.associatedTokens?.find((e: TokenBalanceJson) => e.tokenId === tokenOne.address)) && tokenTwo.symbol !== typeWallet.HBAR){
+            if(!(wallet.associatedTokens?.find((e: TokenBalanceJson) => e.tokenId === tokenTwo.address)) && tokenTwo.symbol !== typeWallet.HBAR){
                 tokens.push({...tokenTwo});
             }
             setAssociatedButtons(tokens);
