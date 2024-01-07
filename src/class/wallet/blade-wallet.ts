@@ -95,7 +95,7 @@ export class BladeWallet {
     async executeTransaction(transaction: any) {
         const res =  await transaction.executeWithSigner(this.signer);
 
-        console.log(res);
+        await this.updateBalance();
         return {
             error: res.success ? null : res.error,
             res: res.response,

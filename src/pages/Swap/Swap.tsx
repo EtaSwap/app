@@ -523,7 +523,7 @@ function Swap({ wallet, tokens: tokensMap, network, rate, providers }: ISwapProp
                     // "receipt for transaction 0.0.5948290@1703145822.184660155 contained error status TOKEN_ALREADY_ASSOCIATED_TO_ACCOUNT"
                     showToast('Associate Token', result.error, toastTypes.error);
                 }
-            } else if(result?.res.nodeId) {
+            } else if(result?.res?.nodeId) {
                 showToast('Associate Token', `Token ${token.name} Association was successful`, toastTypes.success);
             }
         } else {
