@@ -9,7 +9,7 @@ import {
 } from '@hashgraph/sdk';
 import axios from 'axios';
 import BasicOracleABI from '../../assets/abi/basic-oracle-abi.json';
-import {NETWORKS, GAS_LIMITS, HSUITE_NODES, HSuiteInfo} from '../../utils/constants';
+import { NETWORKS, GAS_LIMITS, HSUITE_NODES, getHSuiteInfo } from '../../utils/constants';
 import { SmartNodeSocket } from '../../class/smart-node-socket';
 import { useLoader } from "../../components/Loader/LoaderContext";
 import { useToaster } from "../../components/Toaster/ToasterContext";
@@ -27,7 +27,6 @@ import { Token } from '../../types/token';
 import { Provider } from '../../class/providers/provider';
 import {IAssociatedButton, typeWallet} from "../../models";
 import useDebounce from "../../hooks/useDebounce";
-import { sqrt } from '../../utils/utils';
 import { PriceOutput } from '../../class/providers/types/price-output';
 import { Price } from '../../class/providers/types/price';
 import AssociateNewToken from "./Components/AssociateNewToken/AssociateNewToken";
@@ -52,7 +51,7 @@ function Swap({ wallet, tokens: tokensMap, network, rate, providers }: ISwapProp
     const [tokenOneAmount, setTokenOneAmount] = useState<any>(0);
     const [tokenTwoAmount, setTokenTwoAmount] = useState<any>(0);
     const [tokenOne, setTokenOne] = useState<Token>(tokens[0]);
-    const [tokenTwo, setTokenTwo] = useState<Token>(tokens[6]);
+    const [tokenTwo, setTokenTwo] = useState<Token>(tokens[7]);
 
     const debouncedTokenOneAmountInput: string = useDebounce(tokenOneAmountInput, 500);
     const debouncedTokenTwoAmountInput: string = useDebounce(tokenTwoAmountInput, 500);
@@ -468,24 +467,24 @@ function Swap({ wallet, tokens: tokensMap, network, rate, providers }: ISwapProp
 
     const swapDisabled = () => {
         const bestPrice = sortedPrices?.[0];
-        let availableTokens = false;
+        let isAnyUnassociatedTokens = false;
         if(wallet.associatedTokens && tokenOne && tokenTwo){
-            const findHSuite = sortedPrices && sortedPrices.length > 0 ? sortedPrices[0].name === HSuiteInfo.name : false;
+            const findHSuite = sortedPrices && sortedPrices.length > 0 ? bestPrice?.name === providers.HSuite.aggregatorId : false;
 
             if(!(wallet.associatedTokens?.find((e: TokenBalanceJson) => e.tokenId === tokenOne.address)) && tokenOne.symbol !== typeWallet.HBAR ||
                 !(wallet.associatedTokens?.find((e: TokenBalanceJson) => e.tokenId === tokenTwo.address)) && tokenTwo.symbol !== typeWallet.HBAR){
-                availableTokens = true;
+                isAnyUnassociatedTokens = true;
             }
 
             if(findHSuite){
-                if(!(wallet.associatedTokens?.find((e: TokenBalanceJson) => e.tokenId === HSuiteInfo.address))){
-                    availableTokens = true;
+                if(!(wallet.associatedTokens?.find((e: TokenBalanceJson) => e.tokenId === getHSuiteInfo(network).address))){
+                    isAnyUnassociatedTokens = true;
                 }
             }
         }
 
         return !tokenOneAmount
-            || availableTokens
+            || isAnyUnassociatedTokens
             || !wallet?.address
             || !bestPrice?.price
             || bestPrice?.priceImpact?.gt(2000);
@@ -529,9 +528,11 @@ function Swap({ wallet, tokens: tokensMap, network, rate, providers }: ISwapProp
                 } else if(result.error.includes('TOKEN_ALREADY_ASSOCIATED_TO_ACCOUNT')){
                     // "receipt for transaction 0.0.5948290@1703145822.184660155 contained error status TOKEN_ALREADY_ASSOCIATED_TO_ACCOUNT"
                     showToast('Associate Token', result.error, toastTypes.error);
+                } else {
+                    showToast('Error', `An unknown error occurred`, toastTypes.error);
                 }
             } else if(result?.res?.nodeId) {
-                showToast('Associate Token', `Token ${token.name} Association was successful`, toastTypes.success);
+                showToast('Associate Token', `Token ${token.name} associated to account`, toastTypes.success);
             }
         } else {
             showToast('Error', `An unknown error occurred`, toastTypes.error);
@@ -547,7 +548,7 @@ function Swap({ wallet, tokens: tokensMap, network, rate, providers }: ISwapProp
             return;
         }
         if(wallet.associatedTokens !== null && tokenOne && tokenTwo){
-            const findHSuite = sortedPrices && sortedPrices.length > 0 ? sortedPrices[0].name === HSuiteInfo.name : false;
+            const findHSuite = sortedPrices && sortedPrices.length > 0 ? sortedPrices[0].name === getHSuiteInfo(network).name : false;
             let tokens: IAssociatedButton[] = [];
             if(!(wallet.associatedTokens?.find((e: TokenBalanceJson) => e.tokenId === tokenOne.address)) && tokenOne.symbol !== typeWallet.HBAR){
                 tokens.push({...tokenOne});
@@ -556,8 +557,8 @@ function Swap({ wallet, tokens: tokensMap, network, rate, providers }: ISwapProp
                 tokens.push({...tokenTwo});
             }
             if(findHSuite){
-                if(!(wallet.associatedTokens?.find((e: TokenBalanceJson) => e.tokenId === HSuiteInfo.address))){
-                    tokens.push(HSuiteInfo);
+                if(!(wallet.associatedTokens?.find((e: TokenBalanceJson) => e.tokenId === getHSuiteInfo(network).address))){
+                    tokens.push(getHSuiteInfo(network));
                 }
             }
             setAssociatedButtons(tokens);
@@ -638,8 +639,8 @@ function Swap({ wallet, tokens: tokensMap, network, rate, providers }: ISwapProp
 
     useEffect(() => {
         setTokenOne(tokens[0]);
-        setTokenTwo(tokens[6]);
-        fetchDexSwap(tokens[0]?.solidityAddress, tokens[6]?.solidityAddress)
+        setTokenTwo(tokens[7]);
+        fetchDexSwap(tokens[0]?.solidityAddress, tokens[7]?.solidityAddress)
     }, [oracleContracts]);
 
     useEffect(() => {

@@ -5,14 +5,15 @@ export const NETWORKS = {
     TESTNET: 'testnet',
 };
 
-export const HSuiteInfo: IAssociatedButton = {
+export const getHSuiteInfo = (network: string): IAssociatedButton => ({
     name: "HSuite",
-    address: "0.0.467997",
+    address: network === NETWORKS.MAINNET ? '0.0.786931' : '0.0.467997',
+    symbol: '',
     icon: "",
     decimals: null,
     providers: [],
     solidityAddress: "",
-};
+});
 
 
 export const GAS_LIMITS: IGASLIMITS = {

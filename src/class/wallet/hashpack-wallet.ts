@@ -70,7 +70,6 @@ export class HashpackWallet {
             const client = this.network === 'testnet' ? Client.forTestnet() : Client.forMainnet();
             const tokens = await new AccountBalanceQuery().setAccountId(this.address).execute(client);
             this.associatedTokens = tokens.toJSON().tokens;
-            console.log(this.associatedTokens, "R16!");
         }else {
             this.associatedTokens = null;
         }

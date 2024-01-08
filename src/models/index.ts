@@ -36,6 +36,7 @@ export interface IGASLIMITS {
 export interface IAssociatedButton{
     address: string;
     name: string;
+    symbol: string;
     icon: string;
     providers: string[];
     solidityAddress: string;
