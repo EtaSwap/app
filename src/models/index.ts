@@ -39,7 +39,7 @@ export interface IAssociatedButton{
     icon: string;
     providers: string[];
     solidityAddress: string;
-    decimals: number;
+    decimals: number | null;
 }
 
 

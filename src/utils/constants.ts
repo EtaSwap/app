@@ -1,9 +1,19 @@
-import {IGASLIMITS} from "../models";
+import {IAssociatedButton, IGASLIMITS} from "../models";
 
 export const NETWORKS = {
     MAINNET: 'mainnet',
     TESTNET: 'testnet',
 };
+
+export const HSuiteInfo: IAssociatedButton = {
+    name: "HSuite",
+    address: "0.0.467997",
+    icon: "",
+    decimals: null,
+    providers: [],
+    solidityAddress: "",
+};
+
 
 export const GAS_LIMITS: IGASLIMITS = {
     SaucerSwap: {
