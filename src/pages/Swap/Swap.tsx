@@ -470,7 +470,7 @@ function Swap({ wallet, tokens: tokensMap, network, rate, providers }: ISwapProp
         const bestPrice = sortedPrices?.[0];
         let availableTokens = false;
         if(wallet.associatedTokens && tokenOne && tokenTwo){
-            const findHSuite = sortedPrices.find((e) => e.name === HSuiteInfo.name);
+            const findHSuite = sortedPrices && sortedPrices.length > 0 ? sortedPrices[0].name === HSuiteInfo.name : false;
 
             if(!(wallet.associatedTokens?.find((e: TokenBalanceJson) => e.tokenId === tokenOne.address)) && tokenOne.symbol !== typeWallet.HBAR ||
                 !(wallet.associatedTokens?.find((e: TokenBalanceJson) => e.tokenId === tokenTwo.address)) && tokenTwo.symbol !== typeWallet.HBAR){
@@ -547,7 +547,7 @@ function Swap({ wallet, tokens: tokensMap, network, rate, providers }: ISwapProp
             return;
         }
         if(wallet.associatedTokens !== null && tokenOne && tokenTwo){
-            const findHSuite = sortedPrices.find((e) => e.name === HSuiteInfo.name);
+            const findHSuite = sortedPrices && sortedPrices.length > 0 ? sortedPrices[0].name === HSuiteInfo.name : false;
             let tokens: IAssociatedButton[] = [];
             if(!(wallet.associatedTokens?.find((e: TokenBalanceJson) => e.tokenId === tokenOne.address)) && tokenOne.symbol !== typeWallet.HBAR){
                 tokens.push({...tokenOne});
