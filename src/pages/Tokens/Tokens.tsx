@@ -1,7 +1,6 @@
 import React from 'react'
 import './Tokens.css'
 import {parseTokens} from "./tokens.utils";
-import {IToken} from "../../models";
 import { Token } from '../../types/token';
 
 export interface ITokensProps {
@@ -17,7 +16,7 @@ function Tokens({ tokens }: ITokensProps) {
       <div className={'tokensContainer'}>
       {
           // @ts-ignore
-          parseTokens([...tokens]).map((token: IToken) => {
+          parseTokens([...tokens]).map((token: Token) => {
         return (
           <div className='tokenChoice' key={token.solidityAddress}>
             <div className="pulsating-img-container">

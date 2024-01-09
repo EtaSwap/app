@@ -1,15 +1,17 @@
-import {IAssociatedButton, IGASLIMITS} from "../models";
+import {IGASLIMITS} from "../models";
+import {Token} from "../types/token";
 
 export const NETWORKS = {
     MAINNET: 'mainnet',
     TESTNET: 'testnet',
 };
 
-export const HSuiteInfo: IAssociatedButton = {
+export const HSuiteInfo: Token = {
     name: "HSuite",
     address: "0.0.467997",
     icon: "",
-    decimals: null,
+    symbol: "",
+    decimals: 0,
     providers: [],
     solidityAddress: "",
 };

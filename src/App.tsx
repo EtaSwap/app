@@ -24,7 +24,7 @@ import pkg from '../package.json';
 import {LoaderProvider} from "./components/Loader/LoaderContext";
 import {ToasterProvider} from "./components/Toaster/ToasterContext";
 import {ToastContainer} from "react-toastify";
-import {IToken, IWallet, IWallets, typeWallet} from "./models";
+import {IWallet, IWallets, typeWallet} from "./models";
 import AppRouter from "./router";
 import { SaucerSwap } from './class/providers/saucer-swap';
 import { Pangolin } from './class/providers/pangolin';

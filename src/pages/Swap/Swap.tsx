@@ -25,7 +25,7 @@ import { TokensModal } from "./Components/TokensModal/TokensModal";
 import { toastTypes } from "../../models/Toast";
 import { Token } from '../../types/token';
 import { Provider } from '../../class/providers/provider';
-import {IAssociatedButton, typeWallet} from "../../models";
+import {typeWallet} from "../../models";
 import useDebounce from "../../hooks/useDebounce";
 import { sqrt } from '../../utils/utils';
 import { PriceOutput } from '../../class/providers/types/price-output';
@@ -57,7 +57,7 @@ function Swap({ wallet, tokens: tokensMap, network, rate, providers }: ISwapProp
     const debouncedTokenOneAmountInput: string = useDebounce(tokenOneAmountInput, 500);
     const debouncedTokenTwoAmountInput: string = useDebounce(tokenTwoAmountInput, 500);
     const [oracleContracts, setOracleContracts] = useState<any>(defaultOracleContracts);
-    const [associatedButtons, setAssociatedButtons] = useState<IAssociatedButton[]>([]);
+    const [associatedButtons, setAssociatedButtons] = useState<Token[]>([]);
     const [slippage, setSlippage] = useState(1);
     const [feeOnTransfer, setFeeOnTransfer] = useState<boolean>(false);
     const [messageApi, contextHolder] = message.useMessage()
@@ -313,7 +313,7 @@ function Swap({ wallet, tokens: tokensMap, network, rate, providers }: ISwapProp
                     }
                 } catch (e) {
                     console.error(e);
-                    showToast('Transaction', 'Unexpected error', toastTypes.error);
+                    showToast('Transaction', 'An unknown error occurred.', toastTypes.error);
                 }
             });
 
@@ -447,7 +447,7 @@ function Swap({ wallet, tokens: tokensMap, network, rate, providers }: ISwapProp
                 }, 6000);
             } else {
                 console.error('Empty/incorrect transaction response');
-                showToast('Transaction', 'Unexpected error', toastTypes.error);
+                showToast('Transaction', 'An unknown error occurred.', toastTypes.error);
             }
         }
 
@@ -516,25 +516,25 @@ function Swap({ wallet, tokens: tokensMap, network, rate, providers }: ISwapProp
         setTimeout(() => setIsRefreshAnimationActive(true), 0);
         refreshTimer.current = setTimeout(refreshRate, (25000 + 30 * refreshCount.current * refreshCount.current));
     };
-    const associateToken = async (token: IAssociatedButton) => {
+    const associateToken = async (token: Token) => {
         showLoader();
         const result = await wallet.associateNewToken(token.address);
 
         if(result){
             if(result.error){
                 if(result.error === "USER_REJECT") {
-                    showToast('Associate Token', `Token ${token.name} Association was rejected`, toastTypes.error);
+                    showToast('Associate Token', `Token ${token.name} association was rejected.`, toastTypes.error);
                 }else if(result.error.includes('precheck with status')){
-                    showToast('Associate Token', result.error, toastTypes.error);
+                    showToast('Associate token', result.error, toastTypes.error);
                 } else if(result.error.includes('TOKEN_ALREADY_ASSOCIATED_TO_ACCOUNT')){
                     // "receipt for transaction 0.0.5948290@1703145822.184660155 contained error status TOKEN_ALREADY_ASSOCIATED_TO_ACCOUNT"
-                    showToast('Associate Token', result.error, toastTypes.error);
+                    showToast('Associate token', result.error, toastTypes.error);
                 }
             } else if(result?.res?.nodeId) {
-                showToast('Associate Token', `Token ${token.name} Association was successful`, toastTypes.success);
+                showToast('Associate token', `Token ${token.name} association was successful.`, toastTypes.success);
             }
         } else {
-            showToast('Error', `An unknown error occurred`, toastTypes.error);
+            showToast('Error', `An unknown error occurred.`, toastTypes.error);
         }
         wallet.updateBalance();
         checkAssociateTokens();
@@ -542,13 +542,13 @@ function Swap({ wallet, tokens: tokensMap, network, rate, providers }: ISwapProp
     }
 
     const checkAssociateTokens = () => {
-        if(wallet && wallet.signer === null){
+        if(wallet && wallet.signer === null) {
             setAssociatedButtons([]);
             return;
         }
         if(wallet.associatedTokens !== null && tokenOne && tokenTwo){
             const findHSuite = sortedPrices && sortedPrices.length > 0 ? sortedPrices[0].name === HSuiteInfo.name : false;
-            let tokens: IAssociatedButton[] = [];
+            let tokens: Token[] = [];
             if(!(wallet.associatedTokens?.find((e: TokenBalanceJson) => e.tokenId === tokenOne.address)) && tokenOne.symbol !== typeWallet.HBAR){
                 tokens.push({...tokenOne});
             }
