@@ -6,15 +6,15 @@ export const NETWORKS = {
     TESTNET: 'testnet',
 };
 
-export const HSuiteInfo: Token = {
+export const getHSuiteInfo = (network: string): Token => ({
     name: "HSuite",
-    address: "0.0.467997",
-    icon: "",
+    address: network === NETWORKS.MAINNET ? '0.0.786931' : '0.0.467997',
     symbol: "",
+    icon: "",
     decimals: 0,
     providers: [],
     solidityAddress: "",
-};
+});
 
 
 export const GAS_LIMITS: IGASLIMITS = {

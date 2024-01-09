@@ -9,7 +9,7 @@ export interface IAssociateNewTokenProps{
 const AssociateNewToken = ({associatedButtons, handleClick}: IAssociateNewTokenProps) => {
     return <>
         {associatedButtons.map((e: Token, indexButton) => <div key={indexButton} className={'associate-button'}>
-        <button onClick={() => handleClick(e)} className={'associate-button__button'}>Associate {e.name}
+        <button onClick={() => handleClick(e)} className={'associate-button__button'}>Associate {e.name} ({e.symbol})
         <span>Token is not associated with your account</span></button>
     </div>)}
         </>
