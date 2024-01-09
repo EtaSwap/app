@@ -31,6 +31,7 @@ export class BladeWallet {
             signTransaction: this.signTransaction.bind(this),
             executeTransaction: this.executeTransaction.bind(this),
             associateNewToken: this.associateNewToken.bind(this),
+            updateBalance: this.updateBalance.bind(this),
         });
     }
 
