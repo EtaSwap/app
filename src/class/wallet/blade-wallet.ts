@@ -50,7 +50,16 @@ export class BladeWallet {
         this.refreshWallet();
     }
 
-    async updateBalance() {
+    async updateBalance(isDelay = false) {
+        if(isDelay){
+            setTimeout(async () => {
+                await this.getBalance();
+            }, 3000);
+        }else {
+            await this.getBalance();
+        }
+    }
+    getBalance = async () => {
         if(this.network && this.bladeConnector) {
             const client = this.network === 'testnet' ? Client.forTestnet() : Client.forMainnet();
             const tokens = await new AccountBalanceQuery().setAccountId(this.address).execute(client);

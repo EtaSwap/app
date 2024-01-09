@@ -537,7 +537,7 @@ function Swap({ wallet, tokens: tokensMap, network, rate, providers }: ISwapProp
         } else {
             showToast('Error', `An unknown error occurred.`, toastTypes.error);
         }
-        wallet.updateBalance();
+        wallet.updateBalance(true);
         checkAssociateTokens();
         hideLoader();
     }
