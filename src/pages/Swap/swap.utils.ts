@@ -4,6 +4,7 @@ import {sqrt} from "../../utils/utils";
 import { Provider } from '../../class/providers/provider';
 import axios from 'axios';
 import { Price } from '../../class/providers/types/price';
+import {Token} from "../../types/token";
 
 export const defaultOracleContracts = {
     SaucerSwap: null,
@@ -17,6 +18,19 @@ export const defaultPrices = {
     HeliSwap: null,
     HSuite: null,
 };
+
+export const filterUniqueTokens = (tokens: Token[]) => {
+    const result = tokens.reduce((acc: Token[], current: Token) => {
+        const x = acc.find(item => item.address === current.address);
+        if (!x) {
+            return acc.concat([current]);
+        } else {
+            return acc;
+        }
+    }, []);
+    return result;
+}
+
 
 export const exchange = (network: any) => network === NETWORKS.MAINNET ? '0.0.3745835' : '0.0.1772118';
 

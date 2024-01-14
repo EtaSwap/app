@@ -18,7 +18,8 @@ import {
     defaultPrices,
     defaultTokens,
     exchange,
-    fetchRates
+    fetchRates,
+    filterUniqueTokens
 } from "./swap.utils";
 import { SlippageTolerance } from "./Components/SlippageTolerance/SlippageTolerance";
 import { TokensModal } from "./Components/TokensModal/TokensModal";
@@ -561,8 +562,8 @@ function Swap({ wallet, tokens: tokensMap, network, rate, providers }: ISwapProp
                     tokens.push(getHSuiteInfo(network));
                 }
             }
-            setAssociatedButtons(tokens);
-
+            const uniqueArray = filterUniqueTokens(tokens);
+            setAssociatedButtons(uniqueArray);
         }
     }
 
