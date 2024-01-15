@@ -131,7 +131,7 @@ function App() {
 
             if (hsuiteTokens?.data) {
                 hsuiteTokens.data.map((token: HSuiteGetToken) => {
-                    if (token.id !== typeWallet.HBAR) {
+                    if (token.id !== typeWallet.HBAR && token.type !== 'NON_FUNGIBLE_UNIQUE') {
                         const solidityAddress = `0x${ContractId.fromString(token.id).toSolidityAddress()}`.toLowerCase();
                         const existing = tokenMap.get(solidityAddress);
                         if (existing) {
