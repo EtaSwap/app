@@ -19,7 +19,7 @@ export class SaucerSwap extends Provider {
     public mapProviderTokenToToken(providerToken: SaucerSwapGetToken): Token {
         const solidityAddress = `0x${ContractId.fromString(providerToken.id).toSolidityAddress()}`.toLowerCase();
         return {
-            name: providerToken.name,
+            name: providerToken.symbol,
             symbol: providerToken.symbol,
             decimals: providerToken.decimals,
             address: providerToken.id,
