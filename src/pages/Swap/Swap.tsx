@@ -51,8 +51,8 @@ function Swap({ wallet, tokens: tokensMap, network, rate, providers }: ISwapProp
     const [tokenTwoAmountInput, setTokenTwoAmountInput] = useState<any>(0);
     const [tokenOneAmount, setTokenOneAmount] = useState<any>(0);
     const [tokenTwoAmount, setTokenTwoAmount] = useState<any>(0);
-    const [tokenOne, setTokenOne] = useState<Token>(tokens[0]);
-    const [tokenTwo, setTokenTwo] = useState<Token>(tokens[7]);
+    const [tokenOne, setTokenOne] = useState(tokens[0]);
+    const [tokenTwo, setTokenTwo] = useState(tokens[4]);
 
     const debouncedTokenOneAmountInput: string = useDebounce(tokenOneAmountInput, 500);
     const debouncedTokenTwoAmountInput: string = useDebounce(tokenTwoAmountInput, 500);
@@ -640,8 +640,8 @@ function Swap({ wallet, tokens: tokensMap, network, rate, providers }: ISwapProp
 
     useEffect(() => {
         setTokenOne(tokens[0]);
-        setTokenTwo(tokens[7]);
-        fetchDexSwap(tokens[0]?.solidityAddress, tokens[7]?.solidityAddress)
+        setTokenTwo(tokens[4]);
+        fetchDexSwap(tokens[0]?.solidityAddress, tokens[4]?.solidityAddress)
     }, [oracleContracts]);
 
     useEffect(() => {

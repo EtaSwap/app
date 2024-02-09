@@ -5,7 +5,6 @@ export type SaucerSwapGetToken = {
     icon: string;
     id: string;
     isFeeOnTransferToken: boolean;
-    name: string;
     price: string;
     priceUsd: number;
     sentinelReport: unknown;

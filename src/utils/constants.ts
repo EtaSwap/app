@@ -19,7 +19,7 @@ export const getHSuiteInfo = (network: string): Token => ({
 
 export const GAS_LIMITS: IGASLIMITS = {
     SaucerSwap: {
-        exactTokenToToken: 900000, //877969    875079
+        exactTokenToToken: 920000, //877969    875079
         exactHBARToToken: 260000, //221207     203366
         exactTokenToHBAR: 1690000, //1629306   1623679     1040000
         tokenToExactToken: 920000, //894071    891182
@@ -27,7 +27,7 @@ export const GAS_LIMITS: IGASLIMITS = {
         tokenToExactHBAR: 1690000, //1645353   1639941     1352000
     },
     Pangolin: {
-        exactTokenToToken: 900000,
+        exactTokenToToken: 920000,
         exactHBARToToken: 260000,
         exactTokenToHBAR: 1690000,
         tokenToExactToken: 920000,
@@ -35,7 +35,7 @@ export const GAS_LIMITS: IGASLIMITS = {
         tokenToExactHBAR: 1690000,
     },
     HeliSwap: {
-        exactTokenToToken: 900000,
+        exactTokenToToken: 920000,
         exactHBARToToken: 260000,
         exactTokenToHBAR: 1300000, // Experimental
         tokenToExactToken: 920000,
