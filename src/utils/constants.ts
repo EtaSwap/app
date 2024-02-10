@@ -9,7 +9,7 @@ export const NETWORKS = {
 export const getHSuiteInfo = (network: string): Token => ({
     name: "HSuite",
     address: network === NETWORKS.MAINNET ? '0.0.786931' : '0.0.467997',
-    symbol: "",
+    symbol: "HSUITE",
     icon: "",
     decimals: 0,
     providers: [],

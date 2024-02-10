@@ -730,11 +730,13 @@ function Swap({ wallet, tokens: tokensMap, network, rate, providers }: ISwapProp
                                 onClick={() => switchAllRates()}>{checkAllRatesOpen ? 'Hide all rates' : 'Show all rates'}</button>
                     </div>
                     {checkAllRatesOpen
-                        ? sortedPrices.map(({ name, price, lowVolume, amountOut, priceImpact }: any) =>
+                        ? sortedPrices.map(({ name, amountOut, priceImpact, extension }: any) =>
                             <div
                                 className='ratesLogo' key={name}>
-                                <img className='ratesLogoIcon' title={name} src={providers[name].icon}
-                                     alt={name}/> {ethers.utils.formatUnits(amountOut, feeOnTransfer ? tokenOne?.decimals : tokenTwo.decimals)} (impact: {ethers.utils.formatUnits(priceImpact.toString(), 2)}%)
+                                <img className='ratesLogoIcon' title={name} src={providers[name].icon} alt={name}/>
+                                {ethers.utils.formatUnits(amountOut, feeOnTransfer ? tokenOne?.decimals : tokenTwo.decimals)}
+                                (impact: {ethers.utils.formatUnits(priceImpact.toString(), 2)}%)
+                                {extension ? `(${extension})` : ''}
                             </div>)
                         : ''
                     }
@@ -747,9 +749,6 @@ function Swap({ wallet, tokens: tokensMap, network, rate, providers }: ISwapProp
                             receive: {ethers.utils.formatUnits(ethers.utils.parseUnits(tokenTwoAmount, tokenTwo.decimals).mul(1000 - slippage * 10).div(1000).toString(), tokenTwo.decimals)}</div>
                     : ''
                 }
-                { sortedPrices[0]?.extensions?.map(extension =>
-                    <div className='networkFee'>{extension.title}: {extension.value}</div>
-                )}
                 <div className='networkFee'>Network fee: ≈{getNetworkFee().toFixed(4)} HBAR</div>
                 <div className="refreshTicker">
                     <div className={isRefreshAnimationActive ? 'active' : ''}

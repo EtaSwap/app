@@ -115,10 +115,7 @@ export class HSuite extends Provider {
                 .map((route: any) => parseFloat(route?.fees?.amount || 0))
                 .reduce((acc: number, val: number) => acc + val, 0)
         );
-        priceRes.extensions = [{
-            title: 'HSuite fee',
-            value: `${hSuiteFee} HSUITE`,
-        }];
+        priceRes.extension = `-${hSuiteFee} HSUITE`;
 
         return priceRes;
     }
