@@ -721,7 +721,7 @@ function Swap({ wallet, tokens: tokensMap, network, rate, providers }: ISwapProp
                         {tokenTwo?.symbol}
                     </div>
                 </div>
-                <AssociateNewToken handleClick={associateToken} associatedButtons={associatedButtons} />
+                <AssociateNewToken handleClick={associateToken} associatedButtons={associatedButtons}/>
 
                 <div className='ratesLogoWrapper'>
                     <div className='ratesLogoInner'>
@@ -747,10 +747,13 @@ function Swap({ wallet, tokens: tokensMap, network, rate, providers }: ISwapProp
                             receive: {ethers.utils.formatUnits(ethers.utils.parseUnits(tokenTwoAmount, tokenTwo.decimals).mul(1000 - slippage * 10).div(1000).toString(), tokenTwo.decimals)}</div>
                     : ''
                 }
+                { sortedPrices[0]?.extensions?.map(extension =>
+                    <div className='networkFee'>{extension.title}: {extension.value}</div>
+                )}
                 <div className='networkFee'>Network fee: ≈{getNetworkFee().toFixed(4)} HBAR</div>
                 <div className="refreshTicker">
                     <div className={isRefreshAnimationActive ? 'active' : ''}
-                         style={{animationDuration: parseInt(String((25000 + 30 * refreshCount.current * refreshCount.current) / 1000)) + 's'}}></div>
+                         style={{ animationDuration: parseInt(String((25000 + 30 * refreshCount.current * refreshCount.current) / 1000)) + 's' }}></div>
                 </div>
                 <div className='assocWarning'>&#9432; Make sure selected tokens are associated to your account.</div>
                 {getBestImpactError()

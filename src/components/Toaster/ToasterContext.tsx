@@ -45,7 +45,7 @@ export const ToasterProvider = ({children}: IToasterProviderProps) => {
                 </div>, {
                     ...toastOptions,
                     onClose: () => {
-                        copyToClipboard(`${title}.${message}`);
+                        copyToClipboard(`${title}. ${message}`);
                     },
                 });
                 break;
@@ -61,7 +61,7 @@ export const ToasterProvider = ({children}: IToasterProviderProps) => {
                     </div>, {
                     ...toastOptions,
                     onClose: () => {
-                        copyToClipboard(`${title}.${message}`);
+                        copyToClipboard(`${title}. ${message}`);
                     },
                 });
                 break;
@@ -77,7 +77,7 @@ export const ToasterProvider = ({children}: IToasterProviderProps) => {
                     </div>, {
                     ...toastOptions,
                     onClose: () => {
-                        copyToClipboard(`${title}.${message}`);
+                        copyToClipboard(`${title}. ${message}`);
                     },
                 });
                 break;
@@ -93,7 +93,7 @@ export const ToasterProvider = ({children}: IToasterProviderProps) => {
                     </div>, {
                     ...toastOptions,
                     onClose: () => {
-                        copyToClipboard(`${title}.${message}`);
+                        copyToClipboard(`${title}. ${message}`);
                     },
                 });
                 break;

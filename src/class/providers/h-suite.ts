@@ -90,7 +90,7 @@ export class HSuite extends Provider {
             weight: weight!,
             name,
             priceImpact: BigNumber.from(0),
-            amountOut: BigNumber.from(0)
+            amountOut: BigNumber.from(0),
         };
         let amount = '0';
         const baseToken = tokenOne.solidityAddress === ethers.constants.AddressZero ? 'HBAR' : tokenOne.address;
@@ -109,6 +109,16 @@ export class HSuite extends Provider {
         } else {
             priceRes.amountOut = BigNumber.from(ethers.utils.parseUnits(data?.[data.length - 1]?.payout?.amount, tokenTwo.decimals));
         }
+
+        const hSuiteFee = parseInt(
+            data
+                .map((route: any) => parseFloat(route?.fees?.amount || 0))
+                .reduce((acc: number, val: number) => acc + val, 0)
+        );
+        priceRes.extensions = [{
+            title: 'HSuite fee',
+            value: `${hSuiteFee} HSUITE`,
+        }];
 
         return priceRes;
     }

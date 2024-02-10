@@ -1,5 +1,10 @@
 import { BigNumber } from 'ethers';
 
+export type PriceOutputExtension = {
+    title: string;
+    value: string;
+}
+
 export type PriceOutput = {
     //input
     name: string;
@@ -9,4 +14,5 @@ export type PriceOutput = {
     //output
     priceImpact: BigNumber;
     amountOut: BigNumber;
+    extensions?: PriceOutputExtension[];
 }
