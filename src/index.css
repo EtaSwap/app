@@ -617,10 +617,12 @@ img {
   flex-direction: column;
 }
 
+body.app {
+  background: linear-gradient(170.28deg, #292F37 -9.44%, #000000 100%);
+}
+
 .appheader {
-  position: sticky;
-  top: 0;
-  left: 0;
+
 }
 
 .appheader__wrapper {
