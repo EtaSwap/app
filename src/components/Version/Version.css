@@ -1,0 +1,19 @@
+.version__wrapper {
+    background: var(--dark-gray);
+    position: fixed;
+    right: 10px;
+    bottom: 10px;
+    padding: 7px;
+    border-radius: 4px;
+    display: flex;
+    z-index: 3;
+}
+
+.version__healthcheck {
+
+}
+
+.version {
+    color: var(--gray);
+
+}

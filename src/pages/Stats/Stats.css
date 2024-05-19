@@ -1,0 +1,11 @@
+.stats {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.stats__construction {
+    max-width: 300px;
+    width: 100%;
+    padding-top: 100px;
+}

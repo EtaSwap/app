@@ -1,0 +1,21 @@
+.social {
+    position: relative;
+    display: -webkit-box;
+    display: -ms-flexbox;
+    display: flex;
+    z-index: 2;
+    padding: 20px;
+    justify-content: center;
+}
+
+.social__link {
+    text-decoration: none;
+    display: inline-block;
+    margin: 0 4px;
+}
+
+.social__image {
+    width: 40px;
+    height: 40px;
+    vertical-align: top;
+}
