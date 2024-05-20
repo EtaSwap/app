@@ -9,13 +9,19 @@
 }
 
 .social__link {
-    text-decoration: none;
-    display: inline-block;
     margin: 0 4px;
+    text-decoration: none;
+    padding: 10px;
+    background: var(--dark-gray);
+    border-radius: 20px;
+    transition: all 0.2s linear;
+}
+
+.social__link:hover {
+    background: #000000;
 }
 
 .social__image {
-    width: 40px;
-    height: 40px;
-    vertical-align: top;
+    width: 20px;
+    height: 20px;
 }

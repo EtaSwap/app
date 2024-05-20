@@ -5,19 +5,29 @@ function Social() {
     return (
         <div className="social">
             <a className="social__link" href="https://twitter.com/eta_swap" target="_blank" title="Twitter">
-                <img className="social__image" src="/icon_twitter.svg" alt="Twitter"/>
+                <svg className="social__image">
+                    <use href="#icon-twitter" xlinkHref="#icon-twitter"></use>
+                </svg>
             </a>
             <a className="social__link" href="https://t.me/etaswap" target="_blank" title="Telegram">
-                <img className="social__image" src="/icon_telegram.svg" alt="Telegram"/>
+                <svg className="social__image">
+                    <use href="#icon-telegram" xlinkHref="#icon-telegram"></use>
+                </svg>
             </a>
             <a className="social__link" href="https://www.reddit.com/r/etaswap/" target="_blank" title="Reddit">
-                <img className="social__image" src="/icon_reddit.svg" alt="Reddit"/>
+                <svg className="social__image">
+                    <use href="#icon-reddit" xlinkHref="#icon-reddit"></use>
+                </svg>
             </a>
             <a className="social__link" href="https://discord.gg/8uHPAT4Nhx" target="_blank" title="Discord">
-                <img className="social__image" src="/icon_discord.svg" alt="Discord"/>
+                <svg className="social__image">
+                    <use href="#icon-discord" xlinkHref="#icon-discord"></use>
+                </svg>
             </a>
             <a className="social__link" href="https://github.com/EtaSwap" target="_blank" title="GitHub">
-                <img className="social__image" src="/icon_github.svg" alt="GitHub"/>
+                <svg className="social__image">
+                    <use href="#icon-github" xlinkHref="#icon-github"></use>
+                </svg>
             </a>
         </div>
     )
