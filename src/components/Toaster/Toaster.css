@@ -13,7 +13,7 @@
 }
 
 .toast-wrapper {
-    background-color: #1f2639!important;
+    background-color: var(--dark-gray)!important;
     border: 0;
     text-align: left;
     border-radius: 0!important;
