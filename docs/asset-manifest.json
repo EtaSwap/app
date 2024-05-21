@@ -1,6 +1,6 @@
 {
   "files": {
-    "main.css": "/static/css/main.212cc521.css",
+    "main.css": "/static/css/main.c6a5fe88.css",
     "main.js": "/static/js/main.cb7afa03.js",
     "static/media/InterVariable-Italic.woff2": "/static/media/InterVariable-Italic.e295f70fe3e2df296c7b.woff2",
     "static/media/InterVariable.woff2": "/static/media/InterVariable.a0e477f2f1f9d2376fde.woff2",
@@ -54,7 +54,7 @@
     "static/media/scale.svg": "/static/media/scale.849d4a479c9cfc28c8f2.svg"
   },
   "entrypoints": [
-    "static/css/main.212cc521.css",
+    "static/css/main.c6a5fe88.css",
     "static/js/main.cb7afa03.js"
   ]
 }
