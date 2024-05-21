@@ -14,9 +14,9 @@
 
 .toast-wrapper {
     background-color: #1f2639!important;
-    border: 1px solid #E8FFCE;
+    border: 0;
     text-align: left;
-    border-radius: 12px!important;
+    border-radius: 0!important;
 }
 
 .toast-header {
