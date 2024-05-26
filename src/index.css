@@ -1066,8 +1066,8 @@ body.app {
 }
 
 .modal__tokens {
-  height: calc(100vh - 700px);
-  max-height: calc(100vh - 150px);
+  height: calc(100vh - 500px);
+  min-height: 200px;
   overflow-y: scroll;
   color: var(--gray);
 }
