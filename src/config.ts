@@ -42,7 +42,7 @@ export const PROVIDERS: Partial<Record<AggregatorId, Provider>> = {
 };
 export const EXCHANGE_ADDRESS = '0.0.4817907';
 // export const API = 'https://api.etaswap.com/v1';
-export const API = 'http://localhost:3000/v1';
+export const API = 'https://api.etaswap.com/v1';
 export const WHBAR_LIST = [
     '0x0000000000000000000000000000000000163b5a',
     '0x00000000000000000000000000000000001a8837',
