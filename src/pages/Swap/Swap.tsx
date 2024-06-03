@@ -336,35 +336,74 @@ function Swap({wallet, tokens: tokensMap, rate, providers, setWalletModalOpen}: 
             //prevent double-firing approval event on HashPack
             await new Promise(resolve => setTimeout(resolve, 500));
 
-            let swapTransaction = await new ContractExecuteTransaction()
-                .setContractId(EXCHANGE_ADDRESS)
-                .setGas(bestRate.gasEstimate)
-                .setFunction('swap', new ContractFunctionParameters()
-                    .addString(bestRate.aggregatorId)
-                    .addBytes(bytesFromHex(bestRate.path.substring(2)))
-                    .addUint256(
-                        // @ts-ignore
-                        feeOnTransfer
-                            ? bestRate.amountIn.mul(1000 + slippage * 10).div(1000).toString()
-                            : bestRate.amountIn.toString()
+            let swapTransaction: Transaction;
+            if (bestRate.transactionType === TransactionType.SPLIT_SWAP) {
+                // TODO: implement
+                swapTransaction = await new ContractExecuteTransaction()
+                    .setContractId(EXCHANGE_ADDRESS)
+                    .setGas(bestRate.gasEstimate)
+                    .setFunction('splitSwap', new ContractFunctionParameters()
+                        .addStringArray(bestRate.aggregatorId)
+                        .addBytesArray(bestRate.path.map(path => bytesFromHex(path.substring(2))))
+                        .addUint256Array(
+                            // @ts-ignore
+                            bestRate.amountIn.map(amountIn => {
+                                return feeOnTransfer
+                                    ? amountIn.mul(1000 + slippage * 10).div(1000).toString()
+                                    : amountIn.toString()
+                            })
+                        )
+                        .addUint256Array(
+                            // @ts-ignore
+                            bestRate.amountOut.map(amountOut => {
+                                return feeOnTransfer
+                                    ? amountOut.toString()
+                                    : amountOut.mul(1000 - slippage * 10).div(1000).toString()
+                            })
+                        )
+                        .addUint256(deadline)
+                        .addBool(tokenOne.solidityAddress === ethers.constants.AddressZero)
+                        .addBool(feeOnTransfer)
                     )
-                    .addUint256(
-                        // @ts-ignore
-                        feeOnTransfer
-                            ? bestRate.amountOut.toString()
-                            : bestRate.amountOut.mul(1000 - slippage * 10).div(1000).toString()
+                    .setPayableAmount(tokenOne.solidityAddress === ethers.constants.AddressZero
+                        ? (feeOnTransfer
+                                ? ethers.utils.formatUnits(summAmount(bestRate.amountIn).mul(1000 + slippage * 10).div(1000), 8)
+                                : ethers.utils.formatUnits(summAmount(bestRate.amountIn), 8)
+                        )
+                        : 0)
+                    .freezeWithSigner(wallet.signer);
+            } else {
+                swapTransaction = await new ContractExecuteTransaction()
+                    .setContractId(EXCHANGE_ADDRESS)
+                    .setGas(bestRate.gasEstimate)
+                    .setFunction('swap', new ContractFunctionParameters()
+                        .addString(bestRate.aggregatorId)
+                        .addBytes(bytesFromHex(bestRate.path.substring(2)))
+                        .addUint256(
+                            // @ts-ignore
+                            // TODO: BigNumber -> bigNumber.js conversion?
+                            feeOnTransfer
+                                ? bestRate.amountIn.mul(1000 + slippage * 10).div(1000).toString()
+                                : bestRate.amountIn.toString()
+                        )
+                        .addUint256(
+                            // @ts-ignore
+                            feeOnTransfer
+                                ? bestRate.amountOut.toString()
+                                : bestRate.amountOut.mul(1000 - slippage * 10).div(1000).toString()
+                        )
+                        .addUint256(deadline)
+                        .addBool(tokenOne.solidityAddress === ethers.constants.AddressZero)
+                        .addBool(feeOnTransfer)
                     )
-                    .addUint256(deadline)
-                    .addBool(tokenOne.solidityAddress === ethers.constants.AddressZero)
-                    .addBool(feeOnTransfer)
-                )
-                .setPayableAmount(tokenOne.solidityAddress === ethers.constants.AddressZero
-                    ? (feeOnTransfer
-                            ? ethers.utils.formatUnits(bestRate.amountIn.mul(1000 + slippage * 10).div(1000), 8)
-                            : ethers.utils.formatUnits(bestRate.amountIn, 8)
-                    )
-                    : 0)
-                .freezeWithSigner(wallet.signer);
+                    .setPayableAmount(tokenOne.solidityAddress === ethers.constants.AddressZero
+                        ? (feeOnTransfer
+                                ? ethers.utils.formatUnits(bestRate.amountIn.mul(1000 + slippage * 10).div(1000), 8)
+                                : ethers.utils.formatUnits(bestRate.amountIn, 8)
+                        )
+                        : 0)
+                    .freezeWithSigner(wallet.signer);
+            }
 
             let execTransaction: any = null;
             try {
@@ -465,8 +504,8 @@ function Swap({wallet, tokens: tokensMap, rate, providers, setWalletModalOpen}: 
             const res = await axios.get(req);
             setSortedPrices(res.data.map((price: any) => ({
                 ...price,
-                amountIn: BigNumber.from(price.amountFrom),
-                amountOut: BigNumber.from(price.amountTo),
+                amountIn: Array.isArray(price.amountFrom) ? price.amountFrom.map((amount: string) => BigNumber.from(amount)) : BigNumber.from(price.amountFrom),
+                amountOut: Array.isArray(price.amountTo) ? price.amountTo.map((amount: string) => BigNumber.from(amount)) : BigNumber.from(price.amountTo),
             })));
         } catch (e) {
             console.log(e);
@@ -474,6 +513,13 @@ function Swap({wallet, tokens: tokensMap, rate, providers, setWalletModalOpen}: 
         } finally {
             hideLoader();
         }
+    }
+
+    const summAmount = (amount: BigNumber | BigNumber[]): BigNumber => {
+        if (Array.isArray(amount)) {
+            return amount.reduce((acc, val) => acc.add(val), BigNumber.from(0));
+        }
+        return amount;
     }
 
     const associateToken = async (token: Token) => {
@@ -546,7 +592,15 @@ function Swap({wallet, tokens: tokensMap, rate, providers, setWalletModalOpen}: 
             return;
         }
         return <div className="swap__route-coin" key={solidityAddress}>
-            <img src={token.icon} alt={token.symbol} className="swap__route-icon"/>
+            <img
+                src={token.icon}
+                alt={token.symbol}
+                className="swap__route-icon"
+                onError={(e) => {
+                    (e.target as HTMLImageElement).onerror = null;
+                    (e.target as HTMLImageElement).src = defaultImage;
+                }}
+            />
             <span className="swap__route-symbol">{token.symbol}</span>
         </div>;
     }
@@ -617,14 +671,14 @@ function Swap({wallet, tokens: tokensMap, rate, providers, setWalletModalOpen}: 
 
     useEffect(() => {
         if (feeOnTransfer) {
-            const bestAmountIn = sortedPrices?.[0]?.amountIn?.toString();
+            const bestAmountIn = summAmount(sortedPrices?.[0]?.amountIn)?.toString();
             if (tokenTwoAmount && bestAmountIn) {
                 setTokenOneAmountInput(ethers.utils.formatUnits(bestAmountIn, tokenOne?.decimals));
             } else {
                 setTokenOneAmountInput('0');
             }
         } else {
-            const bestAmountOut = sortedPrices?.[0]?.amountOut?.toString();
+            const bestAmountOut = summAmount(sortedPrices?.[0]?.amountOut)?.toString();
             if (tokenOneAmount && bestAmountOut) {
                 setTokenTwoAmountInput(ethers.utils.formatUnits(bestAmountOut, tokenTwo?.decimals));
             } else {
@@ -829,39 +883,23 @@ function Swap({wallet, tokens: tokensMap, rate, providers, setWalletModalOpen}: 
                                     : transactionType === TransactionType.SPLIT_SWAP
                                         ? <div className="swap__route" key={i}>
                                             <div className="swap__route-stages">
-                                                <div className="swap__route-split">
-                                                    <img src="./img/logo-color.svg" alt="Exchange"
-                                                         className="swap__route-exchange"/>:
-                                                    <div className="swap__route-coin">
-                                                        <img src="./img/logo-color.svg" alt="Coin"
-                                                             className="swap__route-icon"/>
-                                                        <span className="swap__route-symbol">HBAR</span>
+                                                {aggregatorId.map((id, i) =>
+                                                    <div className="swap__route-split" key={id + i}>
+                                                        <img
+                                                            title={id}
+                                                            src={providers[id].icon}
+                                                            alt={id}
+                                                            className="swap__route-exchange"
+                                                        />:
+                                                        {route[i].slice(0, -1).map(coin => getSwapRouteCoin(coin))}
                                                     </div>
-                                                </div>
-                                                <div className="swap__route-split">
-                                                    <img src="./img/logo-color.svg" alt="Exchange"
-                                                         className="swap__route-exchange"/>:
-                                                    <div className="swap__route-coin">
-                                                        <img src="./img/logo-color.svg" alt="Coin"
-                                                             className="swap__route-icon"/>
-                                                        <span className="swap__route-symbol">HBAR</span>
-                                                    </div>
-                                                    <div className="swap__route-coin">
-                                                        <img src="./img/logo-color.svg" alt="Coin"
-                                                             className="swap__route-icon"/>
-                                                        <span className="swap__route-symbol">HELI</span>
-                                                    </div>
-                                                </div>
+                                                )}
                                             </div>
                                             <div className="swap__route-combine">
                                                 <svg className="swap__combine" viewBox="0 0 22 60">
                                                     <use href="#icon--combine" xlinkHref="#icon--combine"></use>
                                                 </svg>
-                                                <div className="swap__route-coin">
-                                                    <img src="./img/logo-color.svg" alt="Coin"
-                                                         className="swap__route-icon"/>
-                                                    <span className="swap__route-symbol">USDC</span>
-                                                </div>
+                                                {getSwapRouteCoin(route[0][route[0].length - 1])}
                                             </div>
                                         </div>
                                         : '')
@@ -876,7 +914,8 @@ function Swap({wallet, tokens: tokensMap, rate, providers, setWalletModalOpen}: 
                     </div>
                     {(TOKEN_WITH_CUSTOM_FEES_LIST.includes(tokenOne?.solidityAddress) || TOKEN_WITH_CUSTOM_FEES_LIST.includes(tokenTwo?.solidityAddress))
                         ?
-                        <div className='swap__warning'><span className='swap__warning-icon'>&#9432;</span> You're exchanging tokens, which has custom fees on token
+                        <div className='swap__warning'><span className='swap__warning-icon'>&#9432;</span> You're
+                            exchanging tokens, which has custom fees on token
                             side.
                             Transaction may fail or it can affect output amount.</div>
                         : ''
