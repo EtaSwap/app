@@ -1,7 +1,7 @@
 {
   "files": {
     "main.css": "/static/css/main.f322a393.css",
-    "main.js": "/static/js/main.692dc352.js",
+    "main.js": "/static/js/main.7d15e999.js",
     "static/media/InterVariable-Italic.woff2": "/static/media/InterVariable-Italic.e295f70fe3e2df296c7b.woff2",
     "static/media/InterVariable.woff2": "/static/media/InterVariable.a0e477f2f1f9d2376fde.woff2",
     "static/media/hsuite.png": "/static/media/hsuite.0e7a3cce7ed97e875494.png",
@@ -55,6 +55,6 @@
   },
   "entrypoints": [
     "static/css/main.f322a393.css",
-    "static/js/main.692dc352.js"
+    "static/js/main.7d15e999.js"
   ]
 }
