@@ -13,6 +13,12 @@ import HashpackIcon from './assets/img/hashpack-icon.png';
 import BladeLogo from './assets/img/blade.svg';
 // @ts-ignore
 import BladeIcon from './assets/img/blade-icon.webp';
+// @ts-ignore
+import WalletConnectLogo from './assets/img/wallet-connect.svg';
+// @ts-ignore
+import KabilaLogo from './assets/img/kabila-logo.svg';
+// @ts-ignore
+import KabilaIcon from './assets/img/kabila-icon.svg';
 import { HashpackWallet } from './class/wallet/hashpack-wallet';
 import { BladeWallet } from './class/wallet/blade-wallet';
 import Social from './components/Social/Social';
@@ -27,6 +33,9 @@ import { toastTypes } from './models/Toast';
 import { AggregatorId } from './class/providers/types/props';
 import {ConnectWalletModal} from "./components/Header/components/ConnectWalletModal";
 import Version from "./components/Version/Version";
+import {WalletConnect} from "./class/wallet/wallet-connect";
+
+const walletConnect = new WalletConnect();
 
 function App() {
     const [wallet, setWallet] = useState<IWallet>({
@@ -38,7 +47,7 @@ function App() {
     const [rate, setRate] = useState<number | null>(null);
     const [walletModalOpen, setWalletModalOpen] = useState(false);
 
-    const [wallets] = useState<IWallets>({
+    const [wallets, setWallets] = useState<IWallets>({
         hashpack: {
             name: 'hashpack',
             title: 'HashPack',
@@ -52,8 +61,7 @@ function App() {
             instance: new BladeWallet(setWallet),
             image: BladeLogo,
             icon: BladeIcon,
-        },
-    });
+    }});
     const [providers] = useState(PROVIDERS);
     const { showToast } = useToaster();
 
@@ -72,7 +80,7 @@ function App() {
             }
             wallets[wallet.name].instance.disconnect();
         }
-        wallets[name].instance.connect();
+        wallets[name].instance.connect(wallets[name].extensionId);
         setWalletModalOpen(false);
     }
 
@@ -81,6 +89,35 @@ function App() {
             wallets[wallet.name].instance.updateBalance();
         }
     }, [wallet.address]);
+
+    useEffect(() => {
+        walletConnect.init(setWallet).then(extensionData => {
+            const walletConnectWallets: IWallets = {};
+            extensionData.forEach(extension => {
+                if (extension.id === 'cnoepnljjcacmnjnopbhjelpmfokpijm') {
+                    walletConnectWallets.kabila = {
+                        name: 'kabila',
+                        title: extension.name || 'Kabila',
+                        instance: walletConnect,
+                        image: KabilaLogo,
+                        icon: KabilaIcon,
+                        extensionId: extension.id,
+                    };
+                }
+            });
+            walletConnectWallets.walletConnect = {
+                name: 'walletConnect',
+                title: 'WalletConnect',
+                instance: walletConnect,
+                image: WalletConnectLogo,
+                icon: WalletConnectLogo,
+            };
+            setWallets({
+                ...wallets,
+                ...walletConnectWallets,
+            })
+        });
+    }, []);
 
     useEffect(() => {
         wallets.hashpack.instance.connect(NETWORK, true);
