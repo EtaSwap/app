@@ -68,7 +68,7 @@ export class WalletConnect {
         return [];
     }
 
-    async connect (extensionId: string) {
+    async connect (onLoad = false, extensionId?: string) {
         try {
             if (!this.dAppConnector) {
                 throw new Error('DAppConnector is required');

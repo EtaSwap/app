@@ -80,7 +80,7 @@ function App() {
             }
             wallets[wallet.name].instance.disconnect();
         }
-        wallets[name].instance.connect(wallets[name].extensionId);
+        wallets[name].instance.connect(false, wallets[name].extensionId);
         setWalletModalOpen(false);
     }
 
