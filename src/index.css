@@ -1120,12 +1120,14 @@ body.app {
 }
 
 .modal__wallet {
-  padding: 6px;
+  padding: 25px 35px;
   border: 1px solid transparent;
   border-radius: 4px;
   cursor: pointer;
   transition: all 0.2s linear;
   background-color: var(--dark-gray);
+  display: inline-block;
+  width: 50%;
 }
 
 .modal__wallet:hover {
