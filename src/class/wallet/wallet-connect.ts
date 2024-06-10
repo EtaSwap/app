@@ -18,7 +18,7 @@ import {
 import {NETWORK} from "../../config";
 
 export class WalletConnect {
-    name = 'walletconnect';
+    name = 'walletConnect';
     address = '';
     signer: DAppSigner | null = null;
     private appMetadata: SignClientTypes.Metadata = {
@@ -77,10 +77,10 @@ export class WalletConnect {
             let session: SessionTypes.Struct;
             if (extensionId) {
                 session = await this.dAppConnector.connectExtension(extensionId);
-                this.name = extensionId === 'cnoepnljjcacmnjnopbhjelpmfokpijm' ? 'kabila' : 'walletconnect';
+                this.name = extensionId === 'cnoepnljjcacmnjnopbhjelpmfokpijm' ? 'kabila' : 'walletConnect';
             } else {
                 session = await this.dAppConnector.openModal();
-                this.name = 'walletconnect';
+                this.name = 'walletConnect';
             }
 
             const sessionAccount = session.namespaces?.hedera?.accounts?.[0]

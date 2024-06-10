@@ -16,6 +16,8 @@ import BladeIcon from './assets/img/blade-icon.webp';
 // @ts-ignore
 import WalletConnectLogo from './assets/img/wallet-connect.svg';
 // @ts-ignore
+import WalletConnectIcon from './assets/img/wallet-connect-icon.svg';
+// @ts-ignore
 import KabilaLogo from './assets/img/kabila-logo.svg';
 // @ts-ignore
 import KabilaIcon from './assets/img/kabila-icon.svg';
@@ -110,7 +112,7 @@ function App() {
                 title: 'WalletConnect',
                 instance: walletConnect,
                 image: WalletConnectLogo,
-                icon: WalletConnectLogo,
+                icon: WalletConnectIcon,
             };
             setWallets({
                 ...wallets,
