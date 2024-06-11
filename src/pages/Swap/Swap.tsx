@@ -418,11 +418,11 @@ function Swap({wallet, tokens: tokensMap, rate, providers, setWalletModalOpen}: 
             }
 
             if (execTransaction.res?.transactionId) {
-                const idTransaction = `${execTransaction.res.transactionId.substr(0, 4)}${execTransaction.res.transactionId.substr(4).replace(/@/, '-').replace('.', '-')}`;
+                const idTransaction = `${execTransaction.res.transactionId.toString().substr(0, 4)}${execTransaction.res.transactionId.toString().substr(4).replace(/@/, '-').replace('.', '-')}`;
                 setTimeout(() => {
                     axios.get(`${MIRRORNODE}/api/v1/transactions/${idTransaction}`).then(res => {
                         if (res?.data?.transactions?.[0]?.result) {
-                            showToast('Transaction', `The transaction was successfully processed. Transaction ID: ${execTransaction.res.transactionId}`, toastTypes.success);
+                            showToast('Transaction', `The transaction was successfully processed. Transaction ID: ${execTransaction.res.transactionId.toString()}`, toastTypes.success);
                         } else {
                             showToast('Transaction', 'Error on processing transaction', toastTypes.error);
                         }
@@ -436,7 +436,6 @@ function Swap({wallet, tokens: tokensMap, rate, providers, setWalletModalOpen}: 
             }
         }
 
-        console.log('update balance');
         wallet.updateBalance(true);
     }
 

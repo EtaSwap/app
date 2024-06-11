@@ -29,6 +29,7 @@ export interface IWalletsInfo {
     instance: any;
     image: string;
     icon: string;
+    extensionId?: string; //WalletConnect
 }
 
 
