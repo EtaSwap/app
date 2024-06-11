@@ -8,7 +8,6 @@ function Header({wallet, wallets, disconnectWallet, setWalletModalOpen}: {
     disconnectWallet: any;
     setWalletModalOpen: any;
 }) {
-    console.log(wallets, wallet.name);
     return (
         <header className="appheader">
             <div className="container">
