@@ -3,7 +3,6 @@ import { SaucerSwapV1 } from './class/providers/saucer-swap-v1';
 import { SaucerSwapV2 } from './class/providers/saucer-swap-v2';
 import { HSuite } from './class/providers/h-suite';
 import { Provider } from './class/providers/provider';
-import tokenListMainnet from './tokenListMainnet.json';
 import tokensWithCustomFeesMainnet from './tokensWithCustomFeesMainnet.json';
 import { AggregatorId } from './class/providers/types/props';
 import { Pangolin } from './class/providers/pangolin';
@@ -11,7 +10,6 @@ import { HeliSwap } from './class/providers/heli-swap';
 
 export const NETWORK: string = 'mainnet';
 export const MIRRORNODE: string = 'https://mainnet-public.mirrornode.hedera.com';
-export const TOKEN_LIST: string[] = tokenListMainnet;
 export const TOKEN_WITH_CUSTOM_FEES_LIST: string[] = tokensWithCustomFeesMainnet;
 export const DEFAULT_TOKENS: number[] = [0, 3];
 export const QUICK_ACCESS_TOKENS= [

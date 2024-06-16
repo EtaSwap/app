@@ -30,7 +30,7 @@ import { IWallet, IWallets, typeWallet } from "./models";
 import AppRouter from "./router";
 import { Token } from './types/token';
 import { GetToken, HeliSwapGetToken, HSuiteGetToken, } from './class/providers/types/tokens';
-import { MIRRORNODE, NETWORK, PROVIDERS, TOKEN_LIST, WHBAR_LIST } from './config';
+import {API, MIRRORNODE, NETWORK, PROVIDERS, WHBAR_LIST} from './config';
 import { toastTypes } from './models/Toast';
 import { AggregatorId } from './class/providers/types/props';
 import {ConnectWalletModal} from "./components/Header/components/ConnectWalletModal";
@@ -129,13 +129,16 @@ function App() {
 
         const providersList = Object.values(providers);
         const tokenPromises = providersList.map(provider => provider.getTokens(NETWORK));
-        const etaSwapTokenList = new Set(TOKEN_LIST);
+        tokenPromises.unshift(axios.get(`${API}/settings/tokens`));
 
         Promise.allSettled(tokenPromises).then((tokenLists: PromiseSettledResult<any>[]) => {
+            const [etaSwapTokenList, ...restTokenLists] = tokenLists;
+            const etaSwapTokenListMap: Set<string> = etaSwapTokenList.status === 'fulfilled' ? new Set(etaSwapTokenList.value.data) : new Set();
+
             const tokenMap: Map<string, Token> = new Map();
             const hbarProviders: AggregatorId[] = [];
 
-            tokenLists.forEach(((tokenList, i) => {
+            restTokenLists.forEach(((tokenList, i) => {
                 const aggregatorId = providersList[i].aggregatorId;
                 if (tokenList.status === 'fulfilled') {
                     let tokensToMap: GetToken[];
@@ -184,7 +187,7 @@ function App() {
                             }
                         } else if (
                             aggregatorId === AggregatorId.HSuite
-                            || etaSwapTokenList.has(solidityAddress)
+                            || etaSwapTokenListMap.has(solidityAddress)
                         ) {
                             tokenMap.set(solidityAddress, providersList[i].mapProviderTokenToToken(token));
                         }
