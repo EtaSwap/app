@@ -365,6 +365,7 @@ function Swap({wallet, tokens: tokensMap, rate, providers, setWalletModalOpen}: 
                         .addBool(tokenOne.solidityAddress === ethers.constants.AddressZero)
                         .addBool(feeOnTransfer)
                     )
+                    .setTransactionMemo('Token Swap executed via EtaSwap')
                     .setPayableAmount(tokenOne.solidityAddress === ethers.constants.AddressZero
                         ? (feeOnTransfer
                                 ? ethers.utils.formatUnits(summAmount(bestRate.amountIn).mul(1000 + slippage * 10).div(1000), 8)
@@ -396,6 +397,7 @@ function Swap({wallet, tokens: tokensMap, rate, providers, setWalletModalOpen}: 
                         .addBool(tokenOne.solidityAddress === ethers.constants.AddressZero)
                         .addBool(feeOnTransfer)
                     )
+                    .setTransactionMemo('Token Swap executed via EtaSwap')
                     .setPayableAmount(tokenOne.solidityAddress === ethers.constants.AddressZero
                         ? (feeOnTransfer
                                 ? ethers.utils.formatUnits(bestRate.amountIn.mul(1000 + slippage * 10).div(1000), 8)
