@@ -29,7 +29,7 @@ const AppRouter = ({wallet, tokens, rate, providers, setWalletModalOpen}: IAppRo
                 />
             }/>
             <Route path="/tokens" element={<Tokens tokens={tokens}/>}/>
-            <Route path="/stats" element={<Stats/>}/>
+            <Route path="/stats/*" element={<Stats/>}/>
         </Routes>
     );
 };

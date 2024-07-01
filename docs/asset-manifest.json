@@ -1,7 +1,7 @@
 {
   "files": {
-    "main.css": "/static/css/main.05679680.css",
-    "main.js": "/static/js/main.79057167.js",
+    "main.css": "/static/css/main.59085251.css",
+    "main.js": "/static/js/main.2985b5b4.js",
     "static/media/InterVariable-Italic.woff2": "/static/media/InterVariable-Italic.e295f70fe3e2df296c7b.woff2",
     "static/media/InterVariable.woff2": "/static/media/InterVariable.a0e477f2f1f9d2376fde.woff2",
     "static/media/hsuite.png": "/static/media/hsuite.0e7a3cce7ed97e875494.png",
@@ -41,7 +41,6 @@
     "static/media/Inter-Thin.woff2": "/static/media/Inter-Thin.2deca9291ec28e5bbe13.woff2",
     "static/media/InterDisplay-Thin.woff2": "/static/media/InterDisplay-Thin.8869ea180347c0b3e105.woff2",
     "static/media/InterDisplay-Regular.woff2": "/static/media/InterDisplay-Regular.a4074fefb60f137f7974.woff2",
-    "static/media/under-construction.webp": "/static/media/under-construction.b93c8c39f04ad8a8578e.webp",
     "static/media/pangolin.png": "/static/media/pangolin.536ec485f1c5157a1b53.png",
     "static/media/saucerswapv2.png": "/static/media/saucerswapv2.2bc413e1be473d3df1e9.png",
     "static/media/heliswap.png": "/static/media/heliswap.b9d459943ee7444f0c81.png",
@@ -58,7 +57,7 @@
     "static/media/scale.svg": "/static/media/scale.849d4a479c9cfc28c8f2.svg"
   },
   "entrypoints": [
-    "static/css/main.05679680.css",
-    "static/js/main.79057167.js"
+    "static/css/main.59085251.css",
+    "static/js/main.2985b5b4.js"
   ]
 }
