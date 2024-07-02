@@ -23,11 +23,13 @@ export function StatsVolumeSource({}: {
         <div className="stats__header">
             <h2 className='stats__title'>EtaSwap volume by source</h2>
             <Select
+                style={{width: 120}}
                 value={groupBy}
                 onChange={(value) => setGroupBy(value)}
                 options={Object.keys(STATS_GROUP_BY).map(option => ({ value: option, label: option }))}
             />
             <Select
+                style={{width: 80}}
                 value={currency}
                 onChange={(value) => setCurrency(value)}
                 options={Object.keys(STATS_CURRENCY).map(option => ({ value: option, label: option }))}

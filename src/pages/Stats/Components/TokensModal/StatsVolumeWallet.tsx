@@ -22,6 +22,7 @@ export function StatsVolumeWallet({}: {
         <div className="stats__header">
             <h2 className='stats__title'>EtaSwap volume by wallet</h2>
             <Select
+                style={{width: 80}}
                 value={currency}
                 onChange={(value) => setCurrency(value)}
                 options={Object.keys(STATS_CURRENCY).map(option => ({ value: option, label: option }))}
