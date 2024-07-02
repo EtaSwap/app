@@ -55,8 +55,8 @@ function Swap({wallet, tokens: tokensMap, rate, providers, setWalletModalOpen}: 
     const [tokenOne, setTokenOne] = useState(tokens[DEFAULT_TOKENS[0]]);
     const [tokenTwo, setTokenTwo] = useState(tokens[DEFAULT_TOKENS[1]]);
 
-    const debouncedTokenOneAmountInput: string = useDebounce(tokenOneAmountInput, 500);
-    const debouncedTokenTwoAmountInput: string = useDebounce(tokenTwoAmountInput, 500);
+    const debouncedTokenOneAmountInput: string = useDebounce(tokenOneAmountInput, 650);
+    const debouncedTokenTwoAmountInput: string = useDebounce(tokenTwoAmountInput, 650);
     const [associatedButtons, setAssociatedButtons] = useState<Token[]>([]);
     const [slippage, setSlippage] = useState(1);
     const [feeOnTransfer, setFeeOnTransfer] = useState<boolean>(false);
@@ -712,6 +712,12 @@ function Swap({wallet, tokens: tokensMap, rate, providers, setWalletModalOpen}: 
     useEffect(() => {
         checkAssociateTokens();
     }, [wallet]);
+
+    useEffect(() => {
+        return () => {
+            clearTimeout(refreshTimer.current);
+        }
+    }, [])
 
     return (
         <>

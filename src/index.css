@@ -619,6 +619,7 @@ img {
 
 body.app {
   background: linear-gradient(170.28deg, #292F37 -9.44%, #000000 100%);
+  margin: 0;
 }
 
 .appheader {
@@ -1250,7 +1251,6 @@ body.app {
   border-color: var(--dark-green);
   color: var(--black);
 }
-
 
 /* Modifiers */
 
