@@ -37,6 +37,7 @@ export function StatsVolumeSource({}: {
         </div>
         <Column
             data={transformDataToStackedColumn(data, currency)}
+            stack={true}
             colorField='type'
             xField='label'
             yField='value'
