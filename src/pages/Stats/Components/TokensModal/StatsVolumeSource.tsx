@@ -41,7 +41,7 @@ export function StatsVolumeSource({}: {
             colorField='type'
             xField='label'
             yField='value'
-            theme='classicDark'
+            theme='dark'
         />
     </div>;
 }
