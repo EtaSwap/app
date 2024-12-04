@@ -71,6 +71,7 @@ function Swap({wallet, tokens: tokensMap, rate, providers, setWalletModalOpen}: 
     const [searchPhrase, setSearchPhrase] = useState('');
     const [hiddenTokens, setHiddenTokens] = useState<number[]>([]);
     const [sortedPrices, setSortedPrices] = useState<SortedPrice[]>([]);
+    const [activeRoute, setActiveRoute] = useState<number>(0);
 
     const smartNodeSocket = async () => {
         return new Promise(async (resolve, reject) => {
@@ -200,7 +201,7 @@ function Swap({wallet, tokens: tokensMap, rate, providers, setWalletModalOpen}: 
     const fetchDex = async () => {
         const deadline = Math.floor(Date.now() / 1000) + 1000;
 
-        const bestRate = sortedPrices?.[0];
+        const bestRate = sortedPrices?.[activeRoute];
         if (!bestRate?.amountIn || !bestRate?.amountOut) {
             messageApi.open({
                 type: 'error',
@@ -455,7 +456,7 @@ function Swap({wallet, tokens: tokensMap, rate, providers, setWalletModalOpen}: 
                 !(wallet.associatedTokens.has(tokenTwo.address) || tokenTwo.symbol === typeWallet.HBAR)) {
                 allTokensAssociated = false;
             }
-            const isHSuiteRequired = sortedPrices?.length > 0 ? sortedPrices[0].aggregatorId === AggregatorId.HSuite : false;
+            const isHSuiteRequired = sortedPrices?.length > 0 ? sortedPrices[activeRoute].aggregatorId === AggregatorId.HSuite : false;
             const hSuiteToken = tokens.find(token => token.solidityAddress === HSUITE_TOKEN_ADDRESS);
             if (isHSuiteRequired && !(wallet.associatedTokens?.has(hSuiteToken?.address))) {
                 allTokensAssociated = false;
@@ -465,7 +466,7 @@ function Swap({wallet, tokens: tokensMap, rate, providers, setWalletModalOpen}: 
             return <AssociateNewToken handleClick={associateToken} associatedButtons={associatedButtons}/>
         }
 
-        const bestPrice = sortedPrices?.[0];
+        const bestPrice = sortedPrices?.[activeRoute];
         if (!bestPrice?.amountIn || !bestPrice?.amountOut) {
             return <button
                 className="button swap__button"
@@ -481,7 +482,7 @@ function Swap({wallet, tokens: tokensMap, rate, providers, setWalletModalOpen}: 
     }
 
     const getNetworkFee = () => {
-        const bestPrice = sortedPrices?.[0];
+        const bestPrice = sortedPrices?.[activeRoute];
         if (!rate || !tokenOne || !tokenTwo || !bestPrice?.aggregatorId) {
             return 0;
         }
@@ -556,7 +557,7 @@ function Swap({wallet, tokens: tokensMap, rate, providers, setWalletModalOpen}: 
             return;
         }
         if (wallet.associatedTokens && tokenOne?.solidityAddress && tokenTwo?.solidityAddress) {
-            const isHSuiteRequired = sortedPrices?.length > 0 ? sortedPrices[0].aggregatorId === AggregatorId.HSuite : false;
+            const isHSuiteRequired = sortedPrices?.length > 0 ? sortedPrices[activeRoute].aggregatorId === AggregatorId.HSuite : false;
             const hSuiteToken = tokens.find(token => token.solidityAddress === HSUITE_TOKEN_ADDRESS);
             let tokensToAssociate: Token[] = [];
             if (!(wallet.associatedTokens?.has(tokenOne.address)) && tokenOne.symbol !== typeWallet.HBAR) {
@@ -650,6 +651,25 @@ function Swap({wallet, tokens: tokensMap, rate, providers, setWalletModalOpen}: 
         }
     }
 
+    const setTargetPrice = (route: number) => {
+        if (feeOnTransfer) {
+            const bestAmountIn = summAmount(sortedPrices?.[route]?.amountIn)?.toString();
+            console.log(tokenTwoAmount, bestAmountIn);
+            if (tokenTwoAmount && bestAmountIn) {
+                setTokenOneAmountInput(ethers.utils.formatUnits(bestAmountIn, tokenOne?.decimals));
+            } else {
+                setTokenOneAmountInput('0');
+            }
+        } else {
+            const bestAmountOut = summAmount(sortedPrices?.[route]?.amountOut)?.toString();
+            if (tokenOneAmount && bestAmountOut) {
+                setTokenTwoAmountInput(ethers.utils.formatUnits(bestAmountOut, tokenTwo?.decimals));
+            } else {
+                setTokenTwoAmountInput('0');
+            }
+        }
+    }
+
     useEffect(() => {
         if (!feeOnTransfer && tokenOneAmountInput === '0') {
             setTokenTwoAmountInput('0');
@@ -671,22 +691,16 @@ function Swap({wallet, tokens: tokensMap, rate, providers, setWalletModalOpen}: 
     }, [tokenTwoAmount]);
 
     useEffect(() => {
-        if (feeOnTransfer) {
-            const bestAmountIn = summAmount(sortedPrices?.[0]?.amountIn)?.toString();
-            if (tokenTwoAmount && bestAmountIn) {
-                setTokenOneAmountInput(ethers.utils.formatUnits(bestAmountIn, tokenOne?.decimals));
-            } else {
-                setTokenOneAmountInput('0');
-            }
-        } else {
-            const bestAmountOut = summAmount(sortedPrices?.[0]?.amountOut)?.toString();
-            if (tokenOneAmount && bestAmountOut) {
-                setTokenTwoAmountInput(ethers.utils.formatUnits(bestAmountOut, tokenTwo?.decimals));
-            } else {
-                setTokenTwoAmountInput('0');
-            }
+        setActiveRoute(0);
+        if (activeRoute === 0) {
+            setTargetPrice(0);
         }
     }, [sortedPrices]);
+
+
+    useEffect(() => {
+        setTargetPrice(activeRoute);
+    }, [activeRoute]);
 
     useEffect(() => {
         setTokenTwoAmount(debouncedTokenTwoAmountInput);
@@ -857,8 +871,9 @@ function Swap({wallet, tokens: tokensMap, rate, providers, setWalletModalOpen}: 
                 </div>
                 <hr className="swap__divider"/>
                 <div className="swap__routes">
-                    <div className={`swap__routes-title ${checkAllRatesOpen ? 'swap__routes-title--active' : ''}`}
-                         onClick={() => switchAllRates()}>{checkAllRatesOpen ? 'Hide routes' : 'Show routes'}:
+                    <div
+                        className={`swap__routes-title ${checkAllRatesOpen ? 'swap__routes-title--active' : ''}`}
+                        onClick={() => switchAllRates()}>Select route:
                     </div>
                     {checkAllRatesOpen
                         ? sortedPrices.map(({
@@ -867,7 +882,11 @@ function Swap({wallet, tokens: tokensMap, rate, providers, setWalletModalOpen}: 
                                                 route
                                             }, i) =>
                             transactionType === TransactionType.SWAP
-                                ? <div className="swap__route" key={i}>
+                                ? <div
+                                    className={`swap__route ${activeRoute === i ? 'swap__route--active' : ''}`}
+                                    key={i}
+                                    onClick={() => setActiveRoute(i)}
+                                >
                                     <img
                                         title={aggregatorId}
                                         src={providers[aggregatorId].icon}
@@ -878,7 +897,11 @@ function Swap({wallet, tokens: tokensMap, rate, providers, setWalletModalOpen}: 
                                     {getSwapRouteCoin(route[1])}
                                 </div>
                                 : transactionType === TransactionType.INDIRECT_SWAP
-                                    ? <div className="swap__route" key={i}>
+                                    ? <div
+                                        className={`swap__route ${activeRoute === i ? 'swap__route--active' : ''}`}
+                                        key={i}
+                                        onClick={() => setActiveRoute(i)}
+                                    >
                                         <img
                                             title={aggregatorId}
                                             src={providers[aggregatorId].icon}
@@ -888,7 +911,11 @@ function Swap({wallet, tokens: tokensMap, rate, providers, setWalletModalOpen}: 
                                         {route.map(coin => getSwapRouteCoin(coin))}
                                     </div>
                                     : transactionType === TransactionType.SPLIT_SWAP
-                                        ? <div className="swap__route" key={i}>
+                                        ? <div
+                                            className={`swap__route ${activeRoute === i ? 'swap__route--active' : ''}`}
+                                            key={i}
+                                            onClick={() => setActiveRoute(i)}
+                                        >
                                             <div className="swap__route-stages">
                                                 {aggregatorId.map((id, i) =>
                                                     <div className="swap__route-split" key={id + i}>

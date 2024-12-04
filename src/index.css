@@ -906,9 +906,11 @@ body.app {
   color: var(--dark-green);
   margin-bottom: 8px;
   flex-wrap: wrap;
+  cursor: pointer;
+  border: 1px solid var(--black);
 }
 
-.swap__route:nth-of-type(2) {
+.swap__route--active {
   border: 1px solid var(--dark-green);
 }
 
@@ -932,7 +934,7 @@ body.app {
   z-index: 1;
   width: 7px;
   height: 1px;
-  background: var(--gray);
+  background: var(--dark-green);
   transform: rotate(-45deg);
   right: 3px;
   top: 50%;
@@ -945,7 +947,7 @@ body.app {
   z-index: 1;
   width: 7px;
   height: 1px;
-  background: var(--gray);
+  background: var(--dark-green);
   transform: rotate(45deg);
   right: 3px;
   top: 50%;

@@ -18,7 +18,9 @@ export abstract class Provider {
         if (!this.props.getTokensUrl) {
             return null;
         }
-         return axios.get(this.props.getTokensUrl!);
+        const abortController = new AbortController();
+        setTimeout(() => abortController.abort(), 6000);
+         return axios.get(this.props.getTokensUrl!, { signal: abortController.signal });
     };
 
     abstract mapProviderTokenToToken(providerToken: GetToken): Token;
