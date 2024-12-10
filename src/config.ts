@@ -35,7 +35,7 @@ export const PROVIDERS: Partial<Record<AggregatorId, Provider>> = {
         whbar: '0x00000000000000000000000000000000002cc823',
     }),
     HSuite: new HSuite({
-        getTokensUrl: 'https://mainnet-sn1.hbarsuite.network/tokens/list',
+        getTokensUrl: `https://mainnet-sn%NODE_ID%.hbarsuite.network/tokens/list`,
     })
 };
 export const EXCHANGE_ADDRESS = '0.0.4817907';
