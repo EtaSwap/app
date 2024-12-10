@@ -1,6 +1,6 @@
-import {message, Popover} from 'antd'
-import {ArrowDownOutlined} from '@ant-design/icons'
-import {ReactElement, useEffect, useRef, useState} from 'react'
+import {message, Popover} from 'antd';
+import {ReactElement, useEffect, useRef, useState} from 'react';
+import { useSearchParams } from 'react-router-dom';
 import {BigNumber, ethers} from 'ethers';
 import {
     AccountAllowanceApproveTransaction,
@@ -72,6 +72,8 @@ function Swap({wallet, tokens: tokensMap, rate, providers, setWalletModalOpen}: 
     const [hiddenTokens, setHiddenTokens] = useState<number[]>([]);
     const [sortedPrices, setSortedPrices] = useState<SortedPrice[]>([]);
     const [activeRoute, setActiveRoute] = useState<number>(0);
+
+    const [searchParams] = useSearchParams();
 
     const smartNodeSocket = async () => {
         return new Promise(async (resolve, reject) => {
@@ -711,8 +713,23 @@ function Swap({wallet, tokens: tokensMap, rate, providers, setWalletModalOpen}: 
     }, [debouncedTokenOneAmountInput]);
 
     useEffect(() => {
-        setTokenOne(tokens[DEFAULT_TOKENS[0]]);
-        setTokenTwo(tokens[DEFAULT_TOKENS[1]]);
+        let tokenOne = tokens[DEFAULT_TOKENS[0]];
+        let tokenTwo = tokens[DEFAULT_TOKENS[1]];
+        if (searchParams.get('tokenFrom')) {
+            const tokenFromQuery = tokens.find(token => token.solidityAddress === searchParams.get('tokenFrom'));
+            if (tokenFromQuery) {
+                tokenOne = tokenFromQuery;
+            }
+        }
+        if (searchParams.get('tokenTo')) {
+            const tokenToQuery = tokens.find(token => token.solidityAddress === searchParams.get('tokenTo'));
+            if (tokenToQuery) {
+                tokenTwo = tokenToQuery;
+            }
+        }
+
+        setTokenOne(tokenOne);
+        setTokenTwo(tokenTwo);
         setTokenOneAmountInput('0');
         setTokenTwoAmountInput('0');
         setTokenOneAmount('0');
