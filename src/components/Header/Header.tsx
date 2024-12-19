@@ -23,10 +23,15 @@ function Header({wallet, wallets, disconnectWallet, setWalletModalOpen}: {
                             <Link className={'appheader__menu-link'} to='/tokens'>Tokens</Link>
                         </li>
                         <li className="appheader__menu-item">
-                            <a className='appheader__menu-link' href='https://docs.etaswap.com' target='_blank'>Docs</a>
+                            <a className='appheader__menu-link' href='https://docs.etaswap.com' target='_blank'
+                               rel="noreferrer">Docs</a>
                         </li>
                         <li className="appheader__menu-item">
                             <Link className={'appheader__menu-link'} to='/stats'>Stats</Link>
+                        </li>
+                        <li className="appheader__menu-item">
+                            <a className='appheader__menu-link' href='https://bridge.etaswap.com' target='_blank'
+                               rel="noreferrer">Bridge<sup className="beta">beta</sup></a>
                         </li>
                     </menu>
                     <div className="appheader__button">
