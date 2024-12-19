@@ -1184,6 +1184,12 @@ body.app {
   color: var(--gray);
 }
 
+.beta {
+  content: 'beta';
+  color: yellow;
+  padding: 0 2px;
+}
+
 /* overwriting antd */
 
 .modal__title,
