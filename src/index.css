@@ -634,6 +634,19 @@ body.app {
 }
 
 .appheader__logo {
+  position: relative;
+
+}
+
+.appheader__logo::after {
+  content: '';
+  background: url('../public/hat.svg') no-repeat;
+  width: 40px;
+  height: 26px;
+  position: absolute;
+  left: -9px;
+  top: -6px;
+  rotate: -21deg;
 }
 
 .appheader__menu {
@@ -1287,6 +1300,15 @@ body.app {
   .logo {
     width: 34px;
     height: 34px;
+  }
+
+  .appheader__logo::after {
+    width: 22px;
+    height: 14px;
+    position: absolute;
+    left: -5px;
+    top: -4px;
+    rotate: -21deg;
   }
 
   .appheader__menu-item {

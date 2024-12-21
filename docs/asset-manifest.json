@@ -1,7 +1,7 @@
 {
   "files": {
-    "main.css": "/static/css/main.0ae888b0.css",
-    "main.js": "/static/js/main.4df43208.js",
+    "main.css": "/static/css/main.04a3a560.css",
+    "main.js": "/static/js/main.c1f7bb37.js",
     "static/media/InterVariable-Italic.woff2": "/static/media/InterVariable-Italic.e295f70fe3e2df296c7b.woff2",
     "static/media/InterVariable.woff2": "/static/media/InterVariable.a0e477f2f1f9d2376fde.woff2",
     "static/media/hsuite.png": "/static/media/hsuite.0e7a3cce7ed97e875494.png",
@@ -46,6 +46,7 @@
     "static/media/heliswap.png": "/static/media/heliswap.b9d459943ee7444f0c81.png",
     "static/media/saucerswapv1.ico": "/static/media/saucerswapv1.940556ea4a58a5aa76b6.ico",
     "index.html": "/index.html",
+    "static/media/hat.svg": "/static/media/hat.6c0cadabf1a6cc986097.svg",
     "static/media/hashpack.svg": "/static/media/hashpack.0dcc6a9da73b509263f8446b5eb0ea41.svg",
     "static/media/kabila-logo.svg": "/static/media/kabila-logo.07ac3626cd8dc1dd6f99322f9c321647.svg",
     "static/media/wallet-connect.svg": "/static/media/wallet-connect.dfa6eb08cd00d62ba202796b83b46ffa.svg",
@@ -57,7 +58,7 @@
     "static/media/scale.svg": "/static/media/scale.849d4a479c9cfc28c8f2.svg"
   },
   "entrypoints": [
-    "static/css/main.0ae888b0.css",
-    "static/js/main.4df43208.js"
+    "static/css/main.04a3a560.css",
+    "static/js/main.c1f7bb37.js"
   ]
 }

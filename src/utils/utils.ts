@@ -13,3 +13,17 @@ export function sqrt(value: number| BigNumber) {
     }
     return y;
 }
+
+export const trimNumberString = (stringifiedNumber: string, digitsAfterDot: number) => {
+    const numberString = stringifiedNumber.toString();
+    const dotIndex = numberString.indexOf(".");
+    if (dotIndex === -1) {
+        return numberString;
+    }
+
+    const integerPart = numberString.slice(0, dotIndex);
+    const decimalPart = numberString.slice(dotIndex + 1);
+    const trimmedDecimalPart = decimalPart.slice(0, digitsAfterDot);
+
+    return `${integerPart}.${trimmedDecimalPart}`;
+}

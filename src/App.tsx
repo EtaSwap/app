@@ -36,6 +36,7 @@ import { AggregatorId } from './class/providers/types/props';
 import {ConnectWalletModal} from "./components/Header/components/ConnectWalletModal";
 import Version from "./components/Version/Version";
 import {WalletConnect} from "./class/wallet/wallet-connect";
+import TOKENS_WITH_CUSTOM_FEES from './tokensWithCustomFeesMainnet.json';
 
 const walletConnect = new WalletConnect();
 
@@ -187,7 +188,7 @@ function App() {
                             }
                         } else if (
                             aggregatorId === AggregatorId.HSuite
-                            || etaSwapTokenListMap.has(solidityAddress)
+                            || !TOKENS_WITH_CUSTOM_FEES.includes(solidityAddress)
                         ) {
                             tokenMap.set(solidityAddress, providersList[i].mapProviderTokenToToken(token));
                         }
