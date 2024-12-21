@@ -34,6 +34,7 @@ import {
 import {AggregatorId} from '../../class/providers/types/props';
 import AssociateNewToken from './Components/AssociateNewToken/AssociateNewToken';
 import defaultImage from "../../assets/img/default.svg";
+import { trimNumberString } from '../../utils/utils';
 
 export interface ISwapProps {
     wallet: any;
@@ -72,8 +73,11 @@ function Swap({wallet, tokens: tokensMap, rate, providers, setWalletModalOpen}: 
     const [hiddenTokens, setHiddenTokens] = useState<number[]>([]);
     const [sortedPrices, setSortedPrices] = useState<SortedPrice[]>([]);
     const [activeRoute, setActiveRoute] = useState<number>(0);
+    const [hasUnlimitedAssociations, setHasUnlimitedAssociations] = useState<boolean>(false);
 
     const [searchParams] = useSearchParams();
+
+    const ASSOCIATION_GAS = 780000;
 
     const smartNodeSocket = async () => {
         return new Promise(async (resolve, reject) => {
@@ -104,7 +108,8 @@ function Swap({wallet, tokens: tokensMap, rate, providers, setWalletModalOpen}: 
                             socket: nodeSocket
                         })
                     } else {
-                        reject(new Error(`account ${wallet.address} can't connect to node ${nodeSocket.getNode().operator}, shit happens...`))
+                        showToast('Connection issue', `Account ${wallet.address} can't connect to node ${nodeSocket.getNode().operator}`, toastTypes.error);
+                        reject(new Error(`Account ${wallet.address} can't connect to node ${nodeSocket.getNode().operator}`))
                     }
                 });
 
@@ -147,7 +152,12 @@ function Swap({wallet, tokens: tokensMap, rate, providers, setWalletModalOpen}: 
             setFeeOnTransfer(false);
         }
         if (value.match(/^[0-9]{0,10}(?:\.[0-9]{0,8})?$/)) {
-            setTokenOneAmountInput(value ? (['.', '0'].includes(value.charAt(value.length - 1)) ? value : parseFloat(value).toString()) : '0');
+            setTokenOneAmountInput(
+                trimNumberString(
+                    value ? (['.', '0'].includes(value.charAt(value.length - 1)) ? value : parseFloat(value).toString()) : '0',
+                    tokenOne.decimals,
+                )
+            );
         }
     }
 
@@ -157,7 +167,12 @@ function Swap({wallet, tokens: tokensMap, rate, providers, setWalletModalOpen}: 
             setFeeOnTransfer(true);
         }
         if (value.match(/^[0-9]{0,10}(?:\.[0-9]{0,8})?$/)) {
-            setTokenTwoAmountInput(value ? (['.', '0'].includes(value.charAt(value.length - 1)) ? value : parseFloat(value).toString()) : '0');
+            setTokenTwoAmountInput(
+                trimNumberString(
+                    value ? (['.', '0'].includes(value.charAt(value.length - 1)) ? value : parseFloat(value).toString()) : '0',
+                    tokenTwo.decimals,
+                )
+            );
         }
     }
 
@@ -200,6 +215,16 @@ function Swap({wallet, tokens: tokensMap, rate, providers, setWalletModalOpen}: 
         setCheckAllRatesOpen(!checkAllRatesOpen);
     }
 
+    const parseTokenOneAmount = (): BigNumber => {
+        const trimedTokenOneAmount = trimNumberString(tokenOneAmount, tokenOne.decimals);
+        return ethers.utils.parseUnits(trimedTokenOneAmount, tokenOne.decimals);
+    }
+
+    const parseTokenTwoAmount = (): BigNumber => {
+        const trimedTokenTwoAmount = trimNumberString(tokenTwoAmount, tokenTwo.decimals);
+        return ethers.utils.parseUnits(trimedTokenTwoAmount, tokenTwo.decimals);
+    }
+
     const fetchDex = async () => {
         const deadline = Math.floor(Date.now() / 1000) + 1000;
 
@@ -220,7 +245,7 @@ function Swap({wallet, tokens: tokensMap, rate, providers, setWalletModalOpen}: 
                 try {
                     if (resPool.status === 'success') {
                         let transaction: TransferTransaction = Transaction.fromBytes(new Uint8Array(resPool.payload.transaction)) as TransferTransaction;
-                        const minToReceive = ethers.utils.parseUnits(tokenTwoAmount, tokenTwo.decimals).mul(1000 - slippage * 10).div(1000);
+                        const minToReceive = parseTokenTwoAmount().mul(1000 - slippage * 10).div(1000);
                         let amountTo: BigNumber;
                         if (tokenTwo.solidityAddress === ethers.constants.AddressZero) {
                             amountTo = BigNumber.from(transaction.hbarTransfers.get(wallet.address)?.toTinybars()?.toString() || 0);
@@ -266,7 +291,7 @@ function Swap({wallet, tokens: tokensMap, rate, providers, setWalletModalOpen}: 
                 }
             });
 
-            let amountFromHsuite = ethers.utils.parseUnits(tokenOneAmount, tokenOne.decimals);
+            let amountFromHsuite = parseTokenOneAmount();
             if (tokenOne.solidityAddress === ethers.constants.AddressZero) {
                 amountFromHsuite = amountFromHsuite.mul(1000 - providers[bestRate.aggregatorId].feePromille).div(1000);
             } else if (tokenOne.symbol === 'HSUITE') {
@@ -296,7 +321,7 @@ function Swap({wallet, tokens: tokensMap, rate, providers, setWalletModalOpen}: 
                     },
                     amount: {
                         value: ethers.utils.formatUnits(
-                            ethers.utils.parseUnits(tokenTwoAmount, tokenTwo.decimals),
+                            parseTokenTwoAmount(),
                             tokenTwo.decimals
                         )
                     }
@@ -318,8 +343,8 @@ function Swap({wallet, tokens: tokensMap, rate, providers, setWalletModalOpen}: 
                         EXCHANGE_ADDRESS,
                         // @ts-ignore
                         feeOnTransfer
-                            ? ethers.utils.parseUnits(tokenOneAmount, tokenOne.decimals).mul(1000 + slippage * 10).div(1000).toString()
-                            : ethers.utils.parseUnits(tokenOneAmount, tokenOne.decimals).toString(),
+                            ? parseTokenOneAmount().mul(1000 + slippage * 10).div(1000).toString()
+                            : parseTokenOneAmount().toString(),
                     )
                     .freezeWithSigner(wallet.signer);
 
@@ -337,14 +362,27 @@ function Swap({wallet, tokens: tokensMap, rate, providers, setWalletModalOpen}: 
             }
 
             //prevent double-firing approval event on HashPack
-            await new Promise(resolve => setTimeout(resolve, 500));
+            await new Promise(resolve => setTimeout(resolve, 300));
 
             let swapTransaction: Transaction;
             if (bestRate.transactionType === TransactionType.SPLIT_SWAP) {
-                // TODO: implement
+                let additionalAssociationGas = 0;
+                if (tokenTwo.solidityAddress !== ethers.constants.AddressZero) {
+                    const [assoc1ToProvider, assoc2ToProvider] = await Promise.all([
+                        checkProviderAssociation(bestRate.aggregatorId[0], tokenTwo.address),
+                        checkProviderAssociation(bestRate.aggregatorId[1], tokenTwo.address),
+                    ]);
+                    if (!assoc1ToProvider) {
+                        additionalAssociationGas += ASSOCIATION_GAS;
+                    }
+                    if (!assoc2ToProvider) {
+                        additionalAssociationGas += ASSOCIATION_GAS;
+                    }
+                }
+
                 swapTransaction = await new ContractExecuteTransaction()
                     .setContractId(EXCHANGE_ADDRESS)
-                    .setGas(bestRate.gasEstimate)
+                    .setGas(bestRate.gasEstimate + additionalAssociationGas)
                     .setFunction('splitSwap', new ContractFunctionParameters()
                         .addStringArray(bestRate.aggregatorId)
                         .addBytesArray(bestRate.path.map(path => bytesFromHex(path.substring(2))))
@@ -377,9 +415,17 @@ function Swap({wallet, tokens: tokensMap, rate, providers, setWalletModalOpen}: 
                         : 0)
                     .freezeWithSigner(wallet.signer);
             } else {
+                let additionalAssociationGas = 0;
+                if (tokenTwo.solidityAddress !== ethers.constants.AddressZero) {
+                    const assocToProvider = await checkProviderAssociation(bestRate.aggregatorId, tokenTwo.address);
+                    if (!assocToProvider) {
+                        additionalAssociationGas += ASSOCIATION_GAS;
+                    }
+                }
+
                 swapTransaction = await new ContractExecuteTransaction()
                     .setContractId(EXCHANGE_ADDRESS)
-                    .setGas(bestRate.gasEstimate)
+                    .setGas(bestRate.gasEstimate + additionalAssociationGas)
                     .setFunction('swap', new ContractFunctionParameters()
                         .addString(bestRate.aggregatorId)
                         .addBytes(bytesFromHex(bestRate.path.substring(2)))
@@ -464,7 +510,7 @@ function Swap({wallet, tokens: tokensMap, rate, providers, setWalletModalOpen}: 
                 allTokensAssociated = false;
             }
         }
-        if (!allTokensAssociated) {
+        if (!allTokensAssociated && !hasUnlimitedAssociations) {
             return <AssociateNewToken handleClick={associateToken} associatedButtons={associatedButtons}/>
         }
 
@@ -501,9 +547,7 @@ function Swap({wallet, tokens: tokensMap, rate, providers, setWalletModalOpen}: 
         }
         try {
             showLoader();
-            const amount = feeOnTransfer
-                ? ethers.utils.parseUnits(tokenTwoAmount, tokenTwo.decimals).toString()
-                : ethers.utils.parseUnits(tokenOneAmount, tokenOne.decimals).toString();
+            const amount = feeOnTransfer ? parseTokenTwoAmount().toString() : parseTokenOneAmount().toString();
             const req = `${API}/rates?tokenFrom=${tokenOne.solidityAddress}&tokenTo=${tokenTwo.solidityAddress}&amount=${amount}&isReverse=${feeOnTransfer.toString()}`;
             const res = await axios.get(req);
             setSortedPrices(res.data.map((price: any) => ({
@@ -553,11 +597,36 @@ function Swap({wallet, tokens: tokensMap, rate, providers, setWalletModalOpen}: 
         hideLoader();
     }
 
+    const checkProviderAssociation = async (aggregatorId: AggregatorId, tokenId: string) => {
+        try {
+            const tokenInfo = await axios.get(`${MIRRORNODE}/api/v1/accounts/${wallet.address}/tokens?token.id=${tokenId}`);
+            return tokenInfo.data?.tokens?.length > 0;
+        } catch(e) {
+            console.error(e);
+        }
+        return false;
+    }
+
+    const checkUnlimitedAssociations = async () => {
+        if (!wallet?.address) {
+            setHasUnlimitedAssociations(false);
+            return;
+        }
+
+        try {
+            const accountInfo = await axios.get(`${MIRRORNODE}/api/v1/accounts/${wallet.address}`);
+            setHasUnlimitedAssociations(accountInfo.data?.max_automatic_token_associations === -1);
+        } catch(e) {
+            console.error(e);
+        }
+    }
+
     const checkAssociateTokens = () => {
-        if (wallet && wallet.signer === null) {
+        if ((wallet && wallet.signer === null) || hasUnlimitedAssociations) {
             setAssociatedButtons([]);
             return;
         }
+
         if (wallet.associatedTokens && tokenOne?.solidityAddress && tokenTwo?.solidityAddress) {
             const isHSuiteRequired = sortedPrices?.length > 0 ? sortedPrices[activeRoute].aggregatorId === AggregatorId.HSuite : false;
             const hSuiteToken = tokens.find(token => token.solidityAddress === HSUITE_TOKEN_ADDRESS);
@@ -656,7 +725,6 @@ function Swap({wallet, tokens: tokensMap, rate, providers, setWalletModalOpen}: 
     const setTargetPrice = (route: number) => {
         if (feeOnTransfer) {
             const bestAmountIn = summAmount(sortedPrices?.[route]?.amountIn)?.toString();
-            console.log(tokenTwoAmount, bestAmountIn);
             if (tokenTwoAmount && bestAmountIn) {
                 setTokenOneAmountInput(ethers.utils.formatUnits(bestAmountIn, tokenOne?.decimals));
             } else {
@@ -741,6 +809,7 @@ function Swap({wallet, tokens: tokensMap, rate, providers, setWalletModalOpen}: 
     }, [tokenOne, tokenTwo]);
 
     useEffect(() => {
+        checkUnlimitedAssociations();
         checkAssociateTokens();
     }, [wallet]);
 
@@ -845,11 +914,11 @@ function Swap({wallet, tokens: tokensMap, rate, providers, setWalletModalOpen}: 
                             {feeOnTransfer
                                 ? <>
                                     Max to
-                                    sell: {ethers.utils.formatUnits(ethers.utils.parseUnits(tokenOneAmount, tokenOne.decimals).mul(1000 + slippage * 10).div(1000).toString(), tokenOne.decimals)} {tokenOne?.symbol}
+                                    sell: {ethers.utils.formatUnits(parseTokenOneAmount().mul(1000 + slippage * 10).div(1000).toString(), tokenOne.decimals)} {tokenOne?.symbol}
                                 </>
                                 : <>
                                     Min
-                                    receive: {ethers.utils.formatUnits(ethers.utils.parseUnits(tokenTwoAmount, tokenTwo.decimals).mul(1000 - slippage * 10).div(1000).toString(), tokenTwo.decimals)} {tokenTwo?.symbol}
+                                    receive: {ethers.utils.formatUnits(parseTokenTwoAmount().mul(1000 - slippage * 10).div(1000).toString(), tokenTwo.decimals)} {tokenTwo?.symbol}
                                 </>
                             }&nbsp;
                             <Popover
@@ -857,8 +926,8 @@ function Swap({wallet, tokens: tokensMap, rate, providers, setWalletModalOpen}: 
                                 placement='right'
                                 content={
                                     feeOnTransfer
-                                        ? `End price is an estimate. You will sell at most ${ethers.utils.formatUnits(ethers.utils.parseUnits(tokenOneAmount, tokenOne.decimals).mul(1000 + slippage * 10).div(1000).toString(), tokenOne.decimals)} ${tokenOne?.symbol} or the transaction will be aborted.`
-                                        : `End price is an estimate. You will receive at least ${ethers.utils.formatUnits(ethers.utils.parseUnits(tokenTwoAmount, tokenTwo.decimals).mul(1000 - slippage * 10).div(1000).toString(), tokenTwo.decimals)} ${tokenTwo?.symbol} or the transaction will be aborted.`
+                                        ? `End price is an estimate. You will sell at most ${ethers.utils.formatUnits(parseTokenOneAmount().mul(1000 + slippage * 10).div(1000).toString(), tokenOne.decimals)} ${tokenOne?.symbol} or the transaction will be aborted.`
+                                        : `End price is an estimate. You will receive at least ${ethers.utils.formatUnits(parseTokenTwoAmount().mul(1000 - slippage * 10).div(1000).toString(), tokenTwo.decimals)} ${tokenTwo?.symbol} or the transaction will be aborted.`
                                 }
                             >
                                 <span className="swap__tooltip">
