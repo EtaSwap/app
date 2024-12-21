@@ -1,7 +1,7 @@
-import {message, Popover} from 'antd';
-import {ReactElement, useEffect, useRef, useState} from 'react';
+import { message, Popover } from 'antd';
+import { ReactElement, useEffect, useRef, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import {BigNumber, ethers} from 'ethers';
+import { BigNumber, ethers } from 'ethers';
 import {
     AccountAllowanceApproveTransaction,
     ContractExecuteTransaction,
@@ -10,18 +10,18 @@ import {
     TransferTransaction,
 } from '@hashgraph/sdk';
 import axios from 'axios';
-import {SmartNodeSocket} from '../../class/smart-node-socket';
-import {useLoader} from "../../components/Loader/LoaderContext";
-import {useToaster} from "../../components/Toaster/ToasterContext";
-import {bytesFromHex, sortTokens} from "./swap.utils";
-import {SlippageModal} from "./Components/SlippageModal/SlippageModal";
-import {TokensModal} from "./Components/TokensModal/TokensModal";
-import {toastTypes} from "../../models/Toast";
-import {Token} from '../../types/token';
-import {Provider} from '../../class/providers/provider';
-import {typeWallet} from "../../models";
+import { SmartNodeSocket } from '../../class/smart-node-socket';
+import { useLoader } from "../../components/Loader/LoaderContext";
+import { useToaster } from "../../components/Toaster/ToasterContext";
+import { bytesFromHex, sortTokens } from "./swap.utils";
+import { SlippageModal } from "./Components/SlippageModal/SlippageModal";
+import { TokensModal } from "./Components/TokensModal/TokensModal";
+import { toastTypes } from "../../models/Toast";
+import { Token } from '../../types/token';
+import { Provider } from '../../class/providers/provider';
+import { typeWallet } from "../../models";
 import useDebounce from "../../hooks/useDebounce";
-import {SortedPrice, TransactionType} from '../../types/sorted-price';
+import { SortedPrice, TransactionType } from '../../types/sorted-price';
 import {
     API,
     DEFAULT_TOKENS,
@@ -31,7 +31,7 @@ import {
     MIRRORNODE,
     TOKEN_WITH_CUSTOM_FEES_LIST,
 } from '../../config';
-import {AggregatorId} from '../../class/providers/types/props';
+import { AggregatorId } from '../../class/providers/types/props';
 import AssociateNewToken from './Components/AssociateNewToken/AssociateNewToken';
 import defaultImage from "../../assets/img/default.svg";
 import { trimNumberString } from '../../utils/utils';
@@ -264,7 +264,12 @@ function Swap({wallet, tokens: tokensMap, rate, providers, setWalletModalOpen}: 
 
                         socketConnection.socket.getSocket('gateway').on('swapPoolExecute', (responseEvent: any) => {
                             if (responseEvent.status === 'success') {
-                                showToast('Transaction', `The transaction was successfully processed. Transaction ID: ${responseEvent.payload?.transaction?.transactionId}`, toastTypes.success);
+                                showToast(
+                                    'Transaction',
+                                    `The transaction was successfully processed. Transaction ID: ${responseEvent.payload?.transaction?.transactionId}`,
+                                    toastTypes.success,
+                                    responseEvent.payload?.transaction?.transactionId,
+                                );
                                 socketConnection.socket.getSocket('gateway').disconnect();
                             } else {
                                 console.error(responseEvent);
@@ -287,7 +292,7 @@ function Swap({wallet, tokens: tokensMap, rate, providers, setWalletModalOpen}: 
                     }
                 } catch (e) {
                     console.error(e);
-                    showToast('Transaction', 'Unexpected error', toastTypes.error);
+                    showToast('Transaction', `Unexpected error: ${JSON.stringify(e)}`, toastTypes.error);
                 }
             });
 
@@ -473,7 +478,12 @@ function Swap({wallet, tokens: tokensMap, rate, providers, setWalletModalOpen}: 
                 setTimeout(() => {
                     axios.get(`${MIRRORNODE}/api/v1/transactions/${idTransaction}`).then(res => {
                         if (res?.data?.transactions?.[0]?.result) {
-                            showToast('Transaction', `The transaction was successfully processed. Transaction ID: ${execTransaction.res.transactionId.toString()}`, toastTypes.success);
+                            showToast(
+                                'Transaction',
+                                `The transaction was successfully processed. Transaction ID: ${execTransaction.res.transactionId.toString()}`,
+                                toastTypes.success,
+                                execTransaction.res.transactionId.toString(),
+                            );
                         } else {
                             showToast('Transaction', 'Error on processing transaction', toastTypes.error);
                         }
@@ -581,7 +591,6 @@ function Swap({wallet, tokens: tokensMap, rate, providers, setWalletModalOpen}: 
                 } else if (result.error.includes('precheck with status')) {
                     showToast('Associate token', result.error, toastTypes.error);
                 } else if (result.error.includes('TOKEN_ALREADY_ASSOCIATED_TO_ACCOUNT')) {
-                    // "receipt for transaction 0.0.5948290@1703145822.184660155 contained error status TOKEN_ALREADY_ASSOCIATED_TO_ACCOUNT"
                     showToast('Associate Token', result.error, toastTypes.error);
                 } else {
                     showToast('Error', `An unknown error occurred`, toastTypes.error);
