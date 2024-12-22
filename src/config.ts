@@ -38,6 +38,12 @@ export const PROVIDERS: Partial<Record<AggregatorId, Provider>> = {
         getTokensUrl: `https://mainnet-sn%NODE_ID%.hbarsuite.network/tokens/list`,
     })
 };
+export const PROVIDER_ADDRESSES: Partial<Record<AggregatorId, string>> = {
+    SaucerSwapV2: '0.0.4817910',
+    SaucerSwapV1: '0.0.4817915',
+    Pangolin: '0.0.4817922',
+    HeliSwap: '0.0.4817928',
+}
 export const EXCHANGE_ADDRESS = '0.0.4817907';
 // export const API = 'https://api.etaswap.com/v1';
 export const API = 'https://api.etaswap.com/v1';
