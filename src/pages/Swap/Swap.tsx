@@ -28,7 +28,7 @@ import {
     EXCHANGE_ADDRESS,
     HSUITE_NODES,
     HSUITE_TOKEN_ADDRESS,
-    MIRRORNODE,
+    MIRRORNODE, PROVIDER_ADDRESSES,
     TOKEN_WITH_CUSTOM_FEES_LIST,
 } from '../../config';
 import { AggregatorId } from '../../class/providers/types/props';
@@ -608,7 +608,7 @@ function Swap({wallet, tokens: tokensMap, rate, providers, setWalletModalOpen}: 
 
     const checkProviderAssociation = async (aggregatorId: AggregatorId, tokenId: string) => {
         try {
-            const tokenInfo = await axios.get(`${MIRRORNODE}/api/v1/accounts/${wallet.address}/tokens?token.id=${tokenId}`);
+            const tokenInfo = await axios.get(`${MIRRORNODE}/api/v1/accounts/${PROVIDER_ADDRESSES[aggregatorId]}/tokens?token.id=${tokenId}`);
             return tokenInfo.data?.tokens?.length > 0;
         } catch(e) {
             console.error(e);
