@@ -13,7 +13,7 @@ import axios from 'axios';
 import { SmartNodeSocket } from '../../class/smart-node-socket';
 import { useLoader } from "../../components/Loader/LoaderContext";
 import { useToaster } from "../../components/Toaster/ToasterContext";
-import { bytesFromHex, sortTokens } from "./swap.utils";
+import { bytesFromHex } from "./swap.utils";
 import { SlippageModal } from "./Components/SlippageModal/SlippageModal";
 import { TokensModal } from "./Components/TokensModal/TokensModal";
 import { toastTypes } from "../../models/Toast";
@@ -38,17 +38,16 @@ import { trimNumberString } from '../../utils/utils';
 
 export interface ISwapProps {
     wallet: any;
-    tokens: Map<string, Token>;
+    tokens: Token[];
     rate: number | null;
     providers: Record<string, Provider>;
     setWalletModalOpen: any;
 }
 
-function Swap({wallet, tokens: tokensMap, rate, providers, setWalletModalOpen}: ISwapProps) {
+function Swap({wallet, tokens, rate, providers, setWalletModalOpen}: ISwapProps) {
     const {showLoader, hideLoader, loading} = useLoader();
     const {showToast} = useToaster();
 
-    const tokens = sortTokens(tokensMap);
     const [tokenOneAmountInput, setTokenOneAmountInput] = useState<string>('0');
     const [tokenTwoAmountInput, setTokenTwoAmountInput] = useState<string>('0');
     const [tokenOneAmount, setTokenOneAmount] = useState<string>('0');
@@ -669,7 +668,7 @@ function Swap({wallet, tokens: tokensMap, rate, providers, setWalletModalOpen}: 
     }
 
     const getSwapRouteCoin = (solidityAddress: string): ReactElement | undefined => {
-        const token = tokensMap.get(solidityAddress);
+        const token = tokens.find(token => token.solidityAddress === solidityAddress);
         if (!token) {
             return;
         }
@@ -811,7 +810,7 @@ function Swap({wallet, tokens: tokensMap, rate, providers, setWalletModalOpen}: 
         setTokenTwoAmountInput('0');
         setTokenOneAmount('0');
         setTokenTwoAmount('0');
-    }, [tokensMap]);
+    }, [tokens]);
 
     useEffect(() => {
         triggerCalculation();
