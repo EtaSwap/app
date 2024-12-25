@@ -46,7 +46,7 @@ function App() {
         address: '',
         signer: null,
     });
-    const [tokens, setTokens] = useState<Map<string, Token>>(new Map());
+    const [tokens, setTokens] = useState<Token[]>([]);
     const [rate, setRate] = useState<number | null>(null);
     const [walletModalOpen, setWalletModalOpen] = useState(false);
 
@@ -124,94 +124,14 @@ function App() {
 
     useEffect(() => {
         wallets.hashpack.instance.connect(NETWORK, true);
-        axios.get(`${MIRRORNODE}/api/v1/network/exchangerate`).then(rate => {
+        Promise.all([
+            axios.get(`${MIRRORNODE}/api/v1/network/exchangerate`),
+            axios.get(`${API}/tokens`)
+        ]).then(([rate, tokens]) => {
             setRate(rate.data.current_rate.hbar_equivalent / rate.data.current_rate.cent_equivalent * 100);
-        });
-
-        const providersList = Object.values(providers);
-        const tokenPromises = providersList.map(provider => provider.getTokens(NETWORK));
-        tokenPromises.unshift(axios.get(`${API}/settings/tokens`));
-
-        Promise.allSettled(tokenPromises).then((tokenLists: PromiseSettledResult<any>[]) => {
-            const [etaSwapTokenList, ...restTokenLists] = tokenLists;
-            const etaSwapTokenListMap: Set<string> = etaSwapTokenList.status === 'fulfilled' ? new Set(etaSwapTokenList.value.data) : new Set();
-
-            const tokenMap: Map<string, Token> = new Map();
-            const hbarProviders: AggregatorId[] = [];
-
-            restTokenLists.forEach(((tokenList, i) => {
-                const aggregatorId = providersList[i].aggregatorId;
-                if (tokenList.status === 'fulfilled') {
-                    let tokensToMap: GetToken[];
-                    switch (aggregatorId) {
-                        case AggregatorId.SaucerSwapV1:
-                        case AggregatorId.SaucerSwapV2:
-                        case AggregatorId.HSuite:
-                            tokensToMap = tokenList.value?.data;
-                            break;
-                        case AggregatorId.Pangolin:
-                        case AggregatorId.HeliSwap:
-                            tokensToMap = tokenList.value?.data?.tokens;
-                            break;
-                    }
-
-                    hbarProviders.push(aggregatorId);
-
-                    tokensToMap?.forEach((token: GetToken) => {
-                        let solidityAddress;
-                        switch (aggregatorId) {
-                            case AggregatorId.SaucerSwapV1:
-                            case AggregatorId.SaucerSwapV2:
-                            case AggregatorId.Pangolin:
-                                const tokenId = (token as Exclude<GetToken, HeliSwapGetToken>)?.id;
-                                if (tokenId) {
-                                    solidityAddress = `0x${ContractId.fromString(tokenId).toSolidityAddress()}`.toLowerCase();
-                                }
-                                break;
-                            case AggregatorId.HeliSwap:
-                                solidityAddress = (token as HeliSwapGetToken).address.toLowerCase();
-                                break;
-                            case AggregatorId.HSuite:
-                                if ((token as HSuiteGetToken).id === typeWallet.HBAR || (token as HSuiteGetToken).type === 'NON_FUNGIBLE_UNIQUE') {
-                                    return;
-                                }
-                                solidityAddress = `0x${ContractId.fromString((token as HSuiteGetToken).id).toSolidityAddress()}`.toLowerCase();
-                                break;
-                        }
-                        if (!solidityAddress || WHBAR_LIST.includes(solidityAddress)) {
-                            return;
-                        }
-                        const existing = tokenMap.get(solidityAddress);
-                        if (existing) {
-                            if (!existing.providers.includes(aggregatorId)){
-                                existing.providers.push(aggregatorId);
-                            }
-                        } else if (
-                            aggregatorId === AggregatorId.HSuite
-                            || !TOKENS_WITH_CUSTOM_FEES.includes(solidityAddress)
-                        ) {
-                            tokenMap.set(solidityAddress, providersList[i].mapProviderTokenToToken(token));
-                        }
-                    });
-                } else {
-                    showFallbackToast(aggregatorId);
-                }
-            }));
-
-            tokenMap.set(ethers.constants.AddressZero, {
-                name: 'Hbar',
-                symbol: 'HBAR',
-                decimals: 8,
-                address: '',
-                solidityAddress: ethers.constants.AddressZero,
-                icon: HederaLogo,
-                providers: hbarProviders,
-            });
-
-            setTokens(tokenMap);
+            setTokens(tokens.data);
         });
     }, []);
-
 
     return (
         <>

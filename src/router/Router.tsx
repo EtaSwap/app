@@ -9,7 +9,7 @@ import Stats from "../pages/Stats/Stats";
 
 export interface IAppRouterProps{
     wallet: IWallet;
-    tokens: Map<string, Token>;
+    tokens: Token[];
     rate: number | null;
     providers: Record<string, Provider>;
     setWalletModalOpen: any;

@@ -2,10 +2,9 @@ import React from 'react'
 import './Tokens.css'
 import {Token} from '../../types/token';
 import defaultImage from "../../assets/img/default.svg";
-import {sortTokens} from "../Swap/swap.utils";
 
 export interface ITokensProps {
-    tokens: Map<string, Token>;
+    tokens: Token[];
 }
 
 function Tokens({tokens}: ITokensProps) {
@@ -15,7 +14,7 @@ function Tokens({tokens}: ITokensProps) {
                 <h2 className='token__header'>These tokens are available to swap:</h2>
                 <div className='token__choice-wrapper'>
                     {
-                        sortTokens(tokens).map((token) => {
+                        tokens.map((token) => {
                             return (
                                 <div className='token__choice' key={token.solidityAddress}>
                                     <img
