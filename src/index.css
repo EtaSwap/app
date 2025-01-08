@@ -638,17 +638,6 @@ body.app {
 
 }
 
-.appheader__logo::after {
-  content: '';
-  background: url('../public/hat.svg') no-repeat;
-  width: 40px;
-  height: 26px;
-  position: absolute;
-  left: -9px;
-  top: -6px;
-  rotate: -21deg;
-}
-
 .appheader__menu {
   margin: 0 auto 0 0;
   list-style: none;
