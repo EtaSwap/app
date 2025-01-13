@@ -1,10 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import Header from "./components/Header/Header";
 import axios from 'axios';
-import { ContractId } from '@hashgraph/sdk';
-import { ethers } from 'ethers';
-// @ts-ignore
-import HederaLogo from './assets/img/hedera-logo.png';
 // @ts-ignore
 import HashpackLogo from './assets/img/hashpack.svg';
 // @ts-ignore
@@ -21,22 +17,18 @@ import WalletConnectIcon from './assets/img/wallet-connect-icon.svg';
 import KabilaLogo from './assets/img/kabila-logo.svg';
 // @ts-ignore
 import KabilaIcon from './assets/img/kabila-icon.svg';
-import { HashpackWallet } from './class/wallet/hashpack-wallet';
 import { BladeWallet } from './class/wallet/blade-wallet';
 import Social from './components/Social/Social';
 import { LoaderProvider } from "./components/Loader/LoaderContext";
 import { useToaster } from "./components/Toaster/ToasterContext";
-import { IWallet, IWallets, typeWallet } from "./models";
+import { IWallet, IWallets } from "./models";
 import AppRouter from "./router";
 import { Token } from './types/token';
-import { GetToken, HeliSwapGetToken, HSuiteGetToken, } from './class/providers/types/tokens';
-import {API, MIRRORNODE, NETWORK, PROVIDERS, WHBAR_LIST} from './config';
+import { API, MIRRORNODE, PROVIDERS } from './config';
 import { toastTypes } from './models/Toast';
-import { AggregatorId } from './class/providers/types/props';
 import {ConnectWalletModal} from "./components/Header/components/ConnectWalletModal";
 import Version from "./components/Version/Version";
 import {WalletConnect} from "./class/wallet/wallet-connect";
-import TOKENS_WITH_CUSTOM_FEES from './tokensWithCustomFeesMainnet.json';
 
 const walletConnect = new WalletConnect();
 
@@ -51,13 +43,6 @@ function App() {
     const [walletModalOpen, setWalletModalOpen] = useState(false);
 
     const [wallets, setWallets] = useState<IWallets>({
-        hashpack: {
-            name: 'hashpack',
-            title: 'HashPack',
-            instance: new HashpackWallet(setWallet),
-            image: HashpackLogo,
-            icon: HashpackIcon,
-        },
         blade: {
             name: 'blade',
             title: 'Blade',
@@ -67,10 +52,6 @@ function App() {
     }});
     const [providers] = useState(PROVIDERS);
     const { showToast } = useToaster();
-
-    const showFallbackToast = (exchangeName: string) => {
-        showToast('Fetch error', `Error loading token list from ${exchangeName}`, toastTypes.warning);
-    }
 
     const disconnectWallet = (name: string) => {
         wallets[name].instance.disconnect();
@@ -107,6 +88,16 @@ function App() {
                         extensionId: extension.id,
                     };
                 }
+                if (extension.id === 'gjagmgiddbbciopjhllkdnddhcglnemk') {
+                    walletConnectWallets.hashpack = {
+                        name: 'hashpack',
+                        title: extension.name || 'HashPack',
+                        instance: walletConnect,
+                        image: HashpackLogo,
+                        icon: HashpackIcon,
+                        extensionId: extension.id,
+                    };
+                }
             });
             walletConnectWallets.walletConnect = {
                 name: 'walletConnect',
@@ -116,14 +107,13 @@ function App() {
                 icon: WalletConnectIcon,
             };
             setWallets({
-                ...wallets,
                 ...walletConnectWallets,
+                ...wallets,
             })
         });
     }, []);
 
     useEffect(() => {
-        wallets.hashpack.instance.connect(NETWORK, true);
         Promise.all([
             axios.get(`${MIRRORNODE}/api/v1/network/exchangerate`),
             axios.get(`${API}/tokens`)

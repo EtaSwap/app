@@ -15,7 +15,8 @@ import {
     TokenAssociateTransaction,
     TransactionResponse
 } from "@hashgraph/sdk";
-import {NETWORK} from "../../config";
+import { MIRRORNODE, NETWORK } from "../../config";
+import axios from 'axios';
 
 export class WalletConnect {
     name = 'walletConnect';
@@ -77,7 +78,13 @@ export class WalletConnect {
             let session: SessionTypes.Struct;
             if (extensionId) {
                 session = await this.dAppConnector.connectExtension(extensionId);
-                this.name = extensionId === 'cnoepnljjcacmnjnopbhjelpmfokpijm' ? 'kabila' : 'walletConnect';
+                if (extensionId === 'cnoepnljjcacmnjnopbhjelpmfokpijm') {
+                    this.name = 'kabila';
+                } else if (extensionId === 'gjagmgiddbbciopjhllkdnddhcglnemk') {
+                    this.name = 'hashpack';
+                } else {
+                    this.name = 'walletConnect';
+                }
             } else {
                 session = await this.dAppConnector.openModal();
                 this.name = 'walletConnect';
@@ -110,10 +117,12 @@ export class WalletConnect {
 
     getBalance = async () => {
         if (this.dAppConnector) {
-            const client = NETWORK === 'testnet' ? Client.forTestnet() : Client.forMainnet();
-            const balance = await new AccountBalanceQuery().setAccountId(this.address).execute(client);
-            this.associatedTokens = balance.tokens?._map;
-            this.associatedTokens!.set('HBAR', balance.hbars?.toTinybars() || Long.fromString('0'));
+            const balance_mirrornode = await axios.get(`${MIRRORNODE}/api/v1/accounts/${this.address}`);
+            this.associatedTokens = new Map();
+            balance_mirrornode.data.balance.tokens.forEach((token: any) => {
+                this.associatedTokens!.set(token.token_id, Long.fromValue(token.balance));
+            });
+            this.associatedTokens!.set('HBAR', Long.fromValue(balance_mirrornode.data.balance.balance) || Long.fromString('0'));
         } else {
             this.associatedTokens = undefined;
         }

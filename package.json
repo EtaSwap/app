@@ -1,7 +1,7 @@
 {
   "name": "etaswap",
   "author": "Danylo Moshenskyi",
-  "version": "1.4.3",
+  "version": "1.4.4",
   "private": true,
   "dependencies": {
     "@ant-design/charts": "^2.1.1",
@@ -18,7 +18,7 @@
     "axios": "^1.4.0",
     "crypto-js": "4.1.1",
     "ethers": "^5.7.2",
-    "hashconnect": "^0.2.4",
+    "hashconnect": "^3.0.13",
     "luxon": "^3.4.4",
     "react": "^18.2.0",
     "react-copy-to-clipboard": "^5.1.0",
