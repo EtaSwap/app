@@ -34,6 +34,7 @@ export function SlippageModal({handleSlippage, slippage, isOpen, setIsOpen}: any
                         <Radio.Button value={0.5}>0.5%</Radio.Button>
                         <Radio.Button value={1}>1%</Radio.Button>
                         <Radio.Button value={2}>2%</Radio.Button>
+                        <Radio.Button value={4}>4%</Radio.Button>
                     </Radio.Group>
                 </div>
             </div>

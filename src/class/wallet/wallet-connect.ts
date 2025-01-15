@@ -8,7 +8,6 @@ import {
 } from "@hashgraph/hedera-wallet-connect";
 import {SessionTypes, SignClientTypes} from "@walletconnect/types";
 import {
-    AccountBalanceQuery,
     AccountId,
     Client,
     LedgerId,
