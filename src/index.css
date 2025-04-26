@@ -724,8 +724,8 @@ body.app {
   margin-bottom: 8px;
 }
 
-.swap__input {
-
+input.swap__input {
+  padding: 33px 18px 33px 140px;
 }
 
 .swap__field-title {
@@ -1192,6 +1192,77 @@ body.app {
   padding: 0 2px;
 }
 
+.burger__button {
+  width: auto;
+  display: none!important;
+  padding: 8px 0 8px 8px!important;
+}
+
+.burger__button:focus,
+.burger__button:active {
+  background: none;
+  text-decoration: none;
+  outline: none;
+}
+
+.burger__button .burger__icon,
+.burger__button:focus .burger__icon,
+.burger__button:visited .burger__icon,
+.burger__button:active .burger__icon {
+  color: var(--green);
+}
+
+div.MuiDrawer-paper {
+  background: var(--dark-gray);
+}
+
+.burger__menu {
+  list-style: none;
+  padding: 0;
+}
+
+.burger__menu-item {
+  padding: 4px;
+}
+
+.burger__menu-link {
+  display: flex;
+  text-decoration: none;
+  align-items: center;
+  font-size: 1.1rem;
+  gap: 10px;
+  padding: 4px 20px;
+}
+
+.burger__menu-icon {
+
+}
+
+.burger__divider {
+  width: 80%;
+  opacity: 0.6;
+  border-bottom: none;
+  margin: 0 auto;
+}
+
+.burger__logo {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 20px 24px;
+}
+
+.burger__logo-icon {
+  width: 34px;
+  height: 34px;
+}
+
+.burger__logo-name {
+  color: #ffffff;
+  font-weight: 600;
+  font-size: 1.7rem;
+}
+
 /* overwriting antd */
 
 .modal__title,
@@ -1272,18 +1343,23 @@ body.app {
   -webkit-text-fill-color: transparent;
 }
 
-@media screen and (max-width: 600px) {
+@media screen and (max-width: 700px) {
   .main {
     padding-left: 12px;
     padding-right: 12px;
   }
 
   .appheader__wrapper {
-    padding: 1em 0.5em;
+    padding: 14px 24px;
+    gap: 12px;
   }
 
   .appheader__menu {
-    padding-left: 10px;
+    display: none;
+  }
+
+  .burger__button {
+    display: inline-flex!important;
   }
 
   .logo {
@@ -1300,12 +1376,12 @@ body.app {
     rotate: -21deg;
   }
 
-  .appheader__menu-item {
-    padding: 0;
+  .appheader__button {
+    margin-left: auto;
   }
 
-  .appheader__button {
-    gap: 0.3em;
+  .root>.social {
+    display: none;
   }
 }
 
@@ -1339,5 +1415,20 @@ body.app {
   .modal__wrapper .ant-modal-close {
     top: 14px;
     right: 14px;
+  }
+}
+
+@media screen and (max-width: 380px) {
+  .swap {
+    padding: 18px;
+  }
+
+  .swap__coin {
+    gap: 6px;
+    padding-right: 20px;
+  }
+
+  input.swap__input {
+    padding: 33px 18px 33px 130px;
   }
 }

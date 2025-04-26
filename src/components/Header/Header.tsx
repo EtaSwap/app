@@ -1,6 +1,14 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {Link} from 'react-router-dom';
 import {IWallet, IWallets} from "../../models";
+import { Drawer, IconButton } from '@mui/material';
+import MenuIcon from '@mui/icons-material/Menu';
+import HomeIcon from '@mui/icons-material/Home';
+import TollIcon from '@mui/icons-material/Toll';
+import MenuBookIcon from '@mui/icons-material/MenuBook';
+import BarChartIcon from '@mui/icons-material/BarChart';
+import SwapHorizIcon from '@mui/icons-material/SwapHoriz';
+import Social from '../Social/Social';
 
 function Header({wallet, wallets, disconnectWallet, setWalletModalOpen}: {
     wallet: IWallet;
@@ -8,6 +16,8 @@ function Header({wallet, wallets, disconnectWallet, setWalletModalOpen}: {
     disconnectWallet: any;
     setWalletModalOpen: any;
 }) {
+    const [drawerOpen, setDrawerOpen] = useState(false);
+
     return (
         <header className="appheader">
             <div className="container">
@@ -55,6 +65,54 @@ function Header({wallet, wallets, disconnectWallet, setWalletModalOpen}: {
                             </button>
                         }
                     </div>
+                    <IconButton className="burger__button" onClick={() => setDrawerOpen(true)}>
+                        <MenuIcon className="burger__icon" fontSize="large"/>
+                    </IconButton>
+                    <Drawer open={drawerOpen} onClose={() => setDrawerOpen(false)}>
+                        <div className="burger__logo">
+                            <img src="/logo-color.svg" alt="EtaSwap" className="burger__logo-icon"/>
+                            <span className='burger__logo-name'>EtaSwap</span>
+                        </div>
+                        <hr className="burger__divider"/>
+                        <menu className="burger__menu">
+                            <li className="burger__menu-item">
+                                <Link onClick={() => setDrawerOpen(false)} className={'burger__menu-link'} to='/'>
+                                    <HomeIcon className='burger__menu-icon'/>
+                                    <span className='burger__menu-title'>Home</span>
+                                </Link>
+                            </li>
+                            <li className="burger__menu-item">
+                                <Link onClick={() => setDrawerOpen(false)} className={'burger__menu-link'} to='/tokens'>
+                                    <TollIcon className='burger__menu-icon'/>
+                                    <span className='burger__menu-title'>Tokens</span>
+                                </Link>
+                            </li>
+                            <li className="burger__menu-item">
+                                <a onClick={() => setDrawerOpen(false)} className='burger__menu-link'
+                                   href='https://docs.etaswap.com' target='_blank'
+                                   rel="noreferrer">
+                                    <MenuBookIcon className='burger__menu-icon'/>
+                                    <span className='burger__menu-title'>Docs</span>
+                                </a>
+                            </li>
+                            <li className="burger__menu-item">
+                                <Link onClick={() => setDrawerOpen(false)} className={'burger__menu-link'} to='/stats'>
+                                    <BarChartIcon className='burger__menu-icon'/>
+                                    <span className='burger__menu-title'>Stats</span>
+                                </Link>
+                            </li>
+                            <li className="burger__menu-item">
+                                <a onClick={() => setDrawerOpen(false)} className='burger__menu-link'
+                                   href='https://app.etabridge.com' target='_blank'
+                                   rel="noreferrer">
+                                    <SwapHorizIcon className='burger__menu-icon'/>
+                                    <span className='burger__menu-title'>Bridge</span>
+                                </a>
+                            </li>
+                        </menu>
+                        <hr className="burger__divider"/>
+                        <Social/>
+                    </Drawer>
                 </div>
             </div>
         </header>

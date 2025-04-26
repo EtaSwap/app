@@ -1,5 +1,4 @@
 import {Modal, Popover, Radio} from "antd";
-import {ethers} from "ethers";
 
 
 export function SlippageModal({handleSlippage, slippage, isOpen, setIsOpen}: any) {
