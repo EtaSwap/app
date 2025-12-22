@@ -1644,7 +1644,6 @@ div.MuiDrawer-paper {
   align-items: center;
   padding-bottom: 8px;
   color: var(--gray);
-  font-size: 0.9rem;
 }
 .swap__slippage-options {
   display: flex;
