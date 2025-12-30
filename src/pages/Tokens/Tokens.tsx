@@ -13,7 +13,6 @@ function Tokens({ tokens }: ITokensProps) {
       <div className="container">
         <h2 className="token__header">These tokens are available to swap:</h2>
 
-        {/* Section 1: Tokens with images (Prioritized) */}
         <div className="token__choice-wrapper">
           {tokens
             .filter((token) => token.icon)
@@ -38,7 +37,6 @@ function Tokens({ tokens }: ITokensProps) {
             })}
         </div>
 
-        {/* Section 2: Tokens without images (Deprioritized) */}
         {tokens.some((token) => !token.icon) && (
           <>
             <h3 className="token__no-image-header">Other Tokens</h3>
