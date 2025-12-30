@@ -1,46 +1,69 @@
-import React from 'react'
-import './Tokens.css'
-import {Token} from '../../types/token';
+import React from "react";
+import "./Tokens.css";
+import { Token } from "../../types/token";
 import defaultImage from "../../assets/img/default.svg";
 
 export interface ITokensProps {
-    tokens: Token[];
+  tokens: Token[];
 }
 
-function Tokens({tokens}: ITokensProps) {
-    return (
-        <div className='token'>
-            <div className="container">
-                <h2 className='token__header'>These tokens are available to swap:</h2>
-                <div className='token__choice-wrapper'>
-                    {
-                        tokens.map((token) => {
-                            return (
-                                <div className='token__choice' key={token.solidityAddress}>
-                                    <img
-                                        src={token.icon}
-                                        alt={token.symbol}
-                                        className="token__choice-logo"
-                                        onError={(e) => {
-                                            (e.target as HTMLImageElement).onerror = null;
-                                            (e.target as HTMLImageElement).src = defaultImage;
-                                        }}
-                                    />
-                                    <div className='token__choice-description'>
-                                        <div className='token__choice-name'>
-                                            {token.symbol}
-                                        </div>
-                                        <div className='token__choice-address'>
-                                            {token.address}
-                                        </div>
-                                    </div>
-                                </div>
-                            )
-                        })}
+function Tokens({ tokens }: ITokensProps) {
+  return (
+    <div className="token">
+      <div className="container">
+        <h2 className="token__header">These tokens are available to swap:</h2>
+
+        {/* Section 1: Tokens with images (Prioritized) */}
+        <div className="token__choice-wrapper">
+          {tokens
+            .filter((token) => token.icon)
+            .map((token) => {
+              return (
+                <div className="token__choice" key={token.solidityAddress}>
+                  <img
+                    src={token.icon}
+                    alt={token.symbol}
+                    className="token__choice-logo"
+                    onError={(e) => {
+                      (e.target as HTMLImageElement).onerror = null;
+                      (e.target as HTMLImageElement).src = defaultImage;
+                    }}
+                  />
+                  <div className="token__choice-description">
+                    <div className="token__choice-name">{token.symbol}</div>
+                    <div className="token__choice-address">{token.address}</div>
+                  </div>
                 </div>
-            </div>
+              );
+            })}
         </div>
-    )
+
+        {/* Section 2: Tokens without images (Deprioritized) */}
+        {tokens.some((token) => !token.icon) && (
+          <>
+            <h3 className="token__no-image-header">Other Tokens</h3>
+            <div className="token__no-image-list">
+              {tokens
+                .filter((token) => !token.icon)
+                .map((token) => (
+                  <div
+                    className="token__no-image-item"
+                    key={token.solidityAddress}
+                  >
+                    <div className="token__no-image-name">
+                      {token.symbol || token.name}
+                    </div>
+                    <div className="token__no-image-address">
+                      {token.address}
+                    </div>
+                  </div>
+                ))}
+            </div>
+          </>
+        )}
+      </div>
+    </div>
+  );
 }
 
-export default Tokens
+export default Tokens;
